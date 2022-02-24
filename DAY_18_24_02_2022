@@ -1,0 +1,166 @@
+148. Sort List [MEDIUM]
+Given the head of a linked list, return the list after sorting it in ascending order.
+
+Example 1:
+Input: head = [4,2,1,3]
+Output: [1,2,3,4]
+
+Example 2:
+Input: head = [-1,5,3,4,0]
+Output: [-1,0,3,4,5]
+Example 3:
+
+Input: head = []
+Output: []
+ 
+
+Constraints:
+
+The number of nodes in the list is in the range [0, 5 * 104].
+-105 <= Node.val <= 105
+ 
+
+Follow up: Can you sort the linked list in O(n logn) time and O(1) memory (i.e. constant space)?
+MY_SOLUTION
+
+1_ST
+/**
+ * Definition for singly-linked list.
+ * public class ListNode {
+ *     int val;
+ *     ListNode next;
+ *     ListNode() {}
+ *     ListNode(int val) { this.val = val; }
+ *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }
+ * }
+ */
+
+class Solution {
+    public ListNode sortList(ListNode head) {
+        if (head == null || head.next == null)
+            return head;
+        ListNode mid = getMid(head);
+        ListNode left = sortList(head);
+        ListNode right = sortList(mid);
+        return merge(left, right);
+    }
+
+    ListNode merge(ListNode list1, ListNode list2) {
+        ListNode dummyHead = new ListNode();
+        ListNode tail = dummyHead;
+        while (list1 != null && list2 != null) {
+            if (list1.val < list2.val) {
+                tail.next = list1;
+                list1 = list1.next;
+                tail = tail.next;
+            } else {
+                tail.next = list2;
+                list2 = list2.next;
+                tail = tail.next;
+            }
+        }
+        tail.next = (list1 != null) ? list1 : list2;
+        return dummyHead.next;
+    }
+
+    ListNode getMid(ListNode head) {
+        ListNode midPrev = null;
+        while (head != null && head.next != null) {
+            midPrev = (midPrev == null) ? head : midPrev.next;
+            head = head.next.next;
+        }
+        ListNode mid = midPrev.next;
+        midPrev.next = null;
+        return mid;
+    }
+}
+
+
+2_ND
+->find middle of linked lust
+->recursively call sort method again with head and mid next again.
+->when single node left return node.(base case)
+->after that call mergeSortedLinkedList method which will merge two sorted list into one.
+Time - o(nlogn)
+space - o(logn)
+
+public ListNode sortList(ListNode head) {
+		// base case.
+		if (head == null || head.next == null) {
+			return head;
+		}
+		// find middle of linked list
+		ListNode mid = findMiddle(head);
+		// get mid next as it will be starting point of second list
+		ListNode midNext = mid.next;
+		// remove mid next node. now list is divided into two halfs one with head and
+		// other with midNext
+		mid.next = null;
+		// call recursively to divide list further
+		ListNode left = sortList(head);
+		ListNode right = sortList(midNext);
+		// merge two sorted list
+		return mergeSortedList(left, right);
+	}
+
+	private ListNode mergeSortedList(ListNode head1, ListNode head2) {
+		// take dummy to avoid additional checks
+		ListNode dummy = new ListNode(-1);
+		ListNode head = dummy;
+		// normal merge logic of two sorted list
+		while (head1 != null && head2 != null) {
+			if (head1.val < head2.val) {
+				dummy.next = head1;
+				head1 = head1.next;
+			} else {
+				dummy.next = head2;
+				head2 = head2.next;
+			}
+			dummy = dummy.next;
+		}
+		// set remaining list out of two to dummy.next
+		dummy.next = head1 == null ? head2 : head1;
+		// head returned
+		return head.next;
+	}
+
+	// find middle element of list. we are returning 1 node before centre as we need
+	// to divide it in two halfs
+	private ListNode findMiddle(ListNode head) {
+		ListNode slow = head;
+		ListNode fast = head;
+		while (fast != null && fast.next != null && fast.next.next != null) {
+			slow = slow.next;
+			fast = fast.next.next;
+		}
+		return slow;
+	}
+  
+  3_RD -> WITH EXTRA SPACE
+  class Solution {
+    public ListNode sortList(ListNode head) {
+        ListNode current = head;
+        int length = 0;
+        while(current!=null){
+            length++;
+            current = current.next;
+        }
+        current = head;
+        int[] arr = new int[length];
+        int i = 0;
+        while(current!=null){
+            arr[i] = current.val;
+            current = current.next;
+            i++;
+        }
+        Arrays.sort(arr);
+        current = head;
+        i = 0;
+        while(current!=null){
+            current.val = arr[i];
+            i++;
+            current = current.next;
+        }
+        return head;
+    }
+}
