@@ -1,0 +1,151 @@
+165. Compare Version Numbers [MEDIUM]
+
+
+Given two version numbers, version1 and version2, compare them.
+
+Version numbers consist of one or more revisions joined by a dot '.'. Each revision consists of digits and may contain leading zeros. Every revision contains at least one character. Revisions are 0-indexed from left to right, with the leftmost revision being revision 0, the next revision being revision 1, and so on. For example 2.5.33 and 0.1 are valid version numbers.
+
+To compare version numbers, compare their revisions in left-to-right order. Revisions are compared using their integer value ignoring any leading zeros. This means that revisions 1 and 001 are considered equal. If a version number does not specify a revision at an index, then treat the revision as 0. For example, version 1.0 is less than version 1.1 because their revision 0s are the same, but their revision 1s are 0 and 1 respectively, and 0 < 1.
+
+Return the following:
+
+If version1 < version2, return -1.
+If version1 > version2, return 1.
+Otherwise, return 0.
+ 
+
+Example 1:
+
+Input: version1 = "1.01", version2 = "1.001"
+Output: 0
+Explanation: Ignoring leading zeroes, both "01" and "001" represent the same integer "1".
+Example 2:
+
+Input: version1 = "1.0", version2 = "1.0.0"
+Output: 0
+Explanation: version1 does not specify revision 2, which means it is treated as "0".
+Example 3:
+
+Input: version1 = "0.1", version2 = "1.1"
+Output: -1
+Explanation: version1's revision 0 is "0", while version2's revision 0 is "1". 0 < 1, so version1 < version2.
+Constraints:
+
+1 <= version1.length, version2.length <= 500
+version1 and version2 only contain digits and '.'.
+version1 and version2 are valid version numbers.
+All the given revisions in version1 and version2 can be stored in a 32-bit integer.
+
+
+MY_SOLUTION
+
+class Solution {
+    public int compareVersion(String version1, String version2) {
+        
+        for(int i = 0,  j = 0; i < version1.length() || j < version2.length(); i++, j++){
+            int char_1 = 0;
+            int char_2 = 0;
+            // For checking the each number and skipping the zeroes
+            while(i < version1.length() && version1.charAt(i) != '.'){
+                char_1 = char_1 * 10 + version1.charAt(i++) - '0';
+            }
+             while(j < version2.length() && version2.charAt(j) != '.'){
+                char_2 = char_2 * 10 + version2.charAt(j++) - '0';
+            }
+            
+        if(char_1 < char_2){
+            return -1;
+        }
+        if(char_1 > char_2){
+            return 1;
+        }  
+    }
+          return 0;
+  }
+}
+       
+GFG_SOLUTION 
+// Java program to compare two version number
+import java.util.*;
+
+class GFG {
+
+	// Method to compare two versions.
+	// Returns 1 if v2 is
+	// smaller, -1 if v1 is smaller, 0 if equal
+	static int versionCompare(String v1, String v2)
+	{
+		// vnum stores each numeric part of version
+		int vnum1 = 0, vnum2 = 0;
+
+		// loop until both String are processed
+		for (int i = 0, j = 0; (i < v1.length()
+								|| j < v2.length());) {
+			// Storing numeric part of
+			// version 1 in vnum1
+			while (i < v1.length()
+				&& v1.charAt(i) != '.') {
+				vnum1 = vnum1 * 10
+						+ (v1.charAt(i) - '0');
+				i++;
+			}
+
+			// storing numeric part
+			// of version 2 in vnum2
+			while (j < v2.length()
+				&& v2.charAt(j) != '.') {
+				vnum2 = vnum2 * 10
+						+ (v2.charAt(j) - '0');
+				j++;
+			}
+
+			if (vnum1 > vnum2)
+				return 1;
+			if (vnum2 > vnum1)
+				return -1;
+
+			// if equal, reset variables and
+			// go for next numeric part
+			vnum1 = vnum2 = 0;
+			i++;
+			j++;
+		}
+		return 0;
+	}
+
+	// Driver method to check above
+	// comparison function
+	public static void main(String[] args)
+	{
+		String version1 = "1.0.3";
+		String version2 = "1.0.7";
+
+		if (versionCompare(version1, version2) < 0)
+			System.out.println(version1 + " is smaller");
+		else if (versionCompare(version1, version2) > 0)
+			System.out.println(version2 + " is smaller");
+		else
+			System.out.println("Both version are equal");
+	}
+}
+
+
+WITH EXTRA SPACE
+class Solution {
+    public int compareVersion(String version1, String version2) {
+        String[] ver1 = version1.split("\\.");
+        String[] ver2 = version2.split("\\.");
+        for(int i=0; i < Math.max(ver1.length, ver2.length); i++){
+            int v1 = (i < ver1.length) ? Integer.valueOf(ver1[i]) : 0;
+            int v2 = (i < ver2.length) ? Integer.valueOf(ver2[i]) : 0;
+            if(v1 < v2) return -1;
+            if(v1 > v2) return 1;
+        }
+        return 0;
+    }
+}
+
+    
+
+ 
+
