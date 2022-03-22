@@ -66,3 +66,41 @@ class Solution {
         return String.valueOf(ch);
     }
 }
+
+ANOTHER_SOLUTION
+to convert char to int =>
+(ch - 'a' + 1) .
+suppose ch is 'a' in such case 'a'-'a' will be zero. since we are dealing here as 1 index,hence 1 result.
+to convert int to char back ->
+char ch = (char)(k+'a'-1);
+example->
+k is 26, int value of 'a' is 97 and hence 97+26-1=122. which is 'z' char.
+
+Apply greedy alogrithm and try to fill as large value as possible to the last. and keep on building answer.
+
+public String getSmallestString(int n, int k) {
+		// hold answer in char array to avoid concatenation
+		char[] op = new char[n];
+		// iterate from backward direction
+		for (int i = n - 1; i >= 0; i--) {
+			// check if k can be filled with z? i.e. if we place current char as 'z', rest
+			// of the remaining chars should be at least 'a'. current k > 26 + no of char
+			// remaining on left of output string.
+			if (k > 26 + i) {
+				// place 'z' as current char
+				op[i] = 'z';
+				// subtract 26 from k
+				k = k - 26;
+			} else {
+				// it means we cannot place 'z' and hence character possible is k minus no of
+				// char remaining.
+				char ch = (char) (k - i + 'a' - 1);
+				/// place char to op[i]
+				op[i] = ch;
+				// subtract current char from k for next iteration
+				k = k - (ch - 'a' + 1);
+			}
+		}
+		// return answer.
+		return new String(op);
+	}
