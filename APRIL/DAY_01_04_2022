@@ -1,0 +1,51 @@
+344. Reverse String [EASY]
+
+Write a function that reverses a string. The input string is given as an array of characters s.
+
+You must do this by modifying the input array in-place with O(1) extra memory.
+
+ 
+
+Example 1:
+
+Input: s = ["h","e","l","l","o"]
+Output: ["o","l","l","e","h"]
+Example 2:
+
+Input: s = ["H","a","n","n","a","h"]
+Output: ["h","a","n","n","a","H"]
+ 
+
+Constraints:
+
+1 <= s.length <= 105
+s[i] is a printable ascii character.
+
+MY_SOLUTION
+class Solution {
+    public void reverseString(char[] s) {
+        int first = 0;
+        int last = s.length -1;
+        while(first <= last){
+            char temp = s[first];
+            s[first] = s[last];
+            s[last] = temp;
+            first++;
+            last--;
+        }
+    }
+}
+
+
+ANOTHER_SOLUTION
+
+public void reverseString(char[] s) {
+        for(int i=0; i<s.length/2; i++){    //Do it half the number of String length
+            char tmp = s[i];
+            s[i] = s[s.length-1-i];     //Front swap with other End side 
+            s[s.length-1-i] = tmp;      //End swap with other Front side
+        }
+    }
+    
+ANOTHER_SOLUTION
+ new StringBuilder(s).reverse().toString();
