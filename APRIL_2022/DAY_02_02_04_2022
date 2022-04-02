@@ -1,0 +1,68 @@
+680. Valid Palindrome II  [EASY]
+Given a string s, return true if the s can be palindrome after deleting at most one character from it.
+
+ 
+
+Example 1:
+
+Input: s = "aba"
+Output: true
+Example 2:
+
+Input: s = "abca"
+Output: true
+Explanation: You could delete the character 'c'.
+Example 3:
+
+Input: s = "abc"
+Output: false
+ 
+
+Constraints:
+
+1 <= s.length <= 105
+s consists of lowercase English letters.
+
+MY_SOLUTION
+Let's consider on example in order to understand it :-
+Input: s = "abcdecba"
+Output: true
+
+So, what I can do is create two pointer's & start comparing them from.
+
+One will start from 0th Index & another will start from last index.
+We'll check, if they are equal then continue checking
+But if they are undequal we can have 2 cases :-
+Case 1 : Skip e to check whether it's forming an palindrome
+Case 2 : Skip d to check whether it's forming an plaindrome
+But still if after deleting one character we are not gettong palindrome return false
+Otherwise return true
+
+
+class Solution {
+    public boolean validPalindrome(String s) {
+      int start = 0;
+        int end = s.length() - 1;
+        while(start <= end){
+           if(s.charAt(start) != s.charAt(end)) {
+               return ((isValid(s,start,end-1) || (isValid(s,start+1,end))));
+           }
+            start++;
+            end--;
+        }
+        return true;
+        
+    }
+    
+    static boolean isValid(String s, int start, int end){
+        while(start <= end){
+            if(s.charAt(start) != s.charAt(end)){
+                return false;
+            }
+            start++;
+            end--;
+            
+        }
+        return true;
+    }
+}
