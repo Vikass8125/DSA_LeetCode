@@ -1,0 +1,102 @@
+700. Search in a Binary Search Tree  [EASY]
+You are given the root of a binary search tree (BST) and an integer val.
+
+Find the node in the BST that the node's value equals val and return the subtree rooted with that node. If such a node does not exist, return null.
+
+ 
+
+Example 1:
+
+
+Input: root = [4,2,7,1,3], val = 2
+Output: [2,1,3]
+Example 2:
+
+
+Input: root = [4,2,7,1,3], val = 5
+Output: []
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [1, 5000].
+1 <= Node.val <= 107
+root is a binary search tree.
+1 <= val <= 107
+
+MY_SOLUTION
+There are four possibilities for a particular node.
+
+node == null (return null)
+node.val == element (return node)
+node.val > element (answer would be in left sub tree)
+node.val < element (answer would be in right sub tree)
+
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode() {}
+ *     TreeNode(int val) { this.val = val; }
+ *     TreeNode(int val, TreeNode left, TreeNode right) {
+ *         this.val = val;
+ *         this.left = left;
+ *         this.right = right;
+ *     }
+ * }
+ */
+class Solution {
+    public TreeNode searchBST(TreeNode root, int val) {
+        if(root == null) return null;
+        if(root.val == val){
+            return root;
+        }
+        if(root.val > val){
+            return searchBST(root.left,val);
+        }else if(root.val < val){
+            return searchBST(root.right,val);
+        }
+        else 
+            return null;
+        
+    }
+}
+
+ANOTHER_SOLUTION
+BINARY SEARCH TREE (BST) is a node-based binary tree data structure which has the properties:
+
+The left subtree of a node contains only nodes with keys lesser than the node’s key.
+The right subtree of a node contains only nodes with keys greater than the node’s key.
+The left and right subtree each must also be a binary search tree.
+image
+
+APPROCH 1 : RECURSION METHOD
+
+class Solution {
+    public TreeNode searchBST(TreeNode root, int val) {
+        if(root == null || root.val == val) return root;// Base Cases: root is null or val is present at root
+		if(root.val > val) return searchBST(root.left, val); // Value is greater than root's val then search in right side of the root
+		return searchBST(root.right, val);Value is smaller than root's val then search in left side of the root
+    }
+}
+Time Complexity : O(N)
+Space Complexity :O(N)
+Where N is height of the tree.
+
+**APPROACH 2 : ITERATIVE METHOD
+
+class Solution {
+    public TreeNode searchBST(TreeNode root, int val) {
+   
+        if(root == null)return null;//Base Condition(If tree is empty )
+        while (root != null && root.val !=val){//Tree is not empty and root value is not equals to val
+            root = val <root.val?root.left :root.right;//terminatory condition if val smaller than root value then search in left side else on right side
+        }
+        return root;  
+    }
+}
+Time Complexity : O(N)
+Space Complexity :O(1)
+Where N is height of the tree.
