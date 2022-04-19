@@ -1,0 +1,179 @@
+99. Recover Binary Search Tree   [MEDIUM]
+You are given the root of a binary search tree (BST), where the values of exactly two nodes of the tree were swapped by mistake. Recover the tree without changing its structure.
+
+ 
+
+Example 1:
+
+
+Input: root = [1,3,null,null,2]
+Output: [3,1,null,null,2]
+Explanation: 3 cannot be a left child of 1 because 3 > 1. Swapping 1 and 3 makes the BST valid.
+Example 2:
+
+
+Input: root = [3,1,4,null,null,2]
+Output: [2,1,4,null,null,3]
+Explanation: 2 cannot be in the right subtree of 3 because 2 < 3. Swapping 2 and 3 makes the BST valid.
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [2, 1000].
+-231 <= Node.val <= 231 - 1
+ 
+
+Follow up: A solution using O(n) space is pretty straight-forward. Could you devise a constant O(1) space solution?
+
+
+
+MY_SOLUTION
+
+
+
+
+Approach 1->
+
+First thing that comes into mind is that in-order traversal is sorted. so if we store in-order of tree to list and then we just need to find two nodes on which we want to swap values. i.e. start and end node.
+1.iterate the list to check first occurence where ith element > i+1th element. now,we have start node
+2.if we have start node with us . now check further if any value exists whose value is smaller then start node. store it as end node and break out of loop
+3.now just swap start and end values.
+
+example->
+inorder if suppose is ->
+-33,321,55,71,231,-13,399
+first we will get start as 321. as 321>55
+now, we have start then we meet 321<399 condition. in such case -13 will be end.
+
+public void recoverTree(TreeNode root) {
+		List<TreeNode> list = new ArrayList<>();
+		inorder(root, list);
+		int start = -1;
+		int end = list.size() - 1;
+		for (int i = 0; i < list.size() - 1; i++) {
+			if (start == -1 && list.get(i).val > list.get(i + 1).val) {
+				start = i;
+			} else if (start != -1 && list.get(start).val < list.get(i + 1).val) {
+				end = i;
+				break;
+			}
+		}
+		int temp = list.get(start).val;
+		list.get(start).val = list.get(end).val;
+		list.get(end).val = temp;
+	}
+
+	private void inorder(TreeNode root, List<TreeNode> list) {
+		if (root != null) {
+			inorder(root.left, list);
+			list.add(root);
+			inorder(root.right, list);
+		}
+	}
+Approach 2->
+
+we can observe that at a time we just need ith and i+1th node to compare. i.e. prev and curr element. and once found start and end node also needed. i.e. total 4 nodes can serve the purpose. instead of entire list.
+just convert above iterative loop into recursive approach->
+public class Solution {
+
+	TreeNode start = null;
+	TreeNode end = null;
+	TreeNode prev = null;
+
+	public void recoverTree(TreeNode root) {
+		prev = new TreeNode(Integer.MIN_VALUE);
+		inorder(root);
+		int temp = start.val;
+		//case where last node itself needed to be swapped
+		if (end == null) {
+			end = prev;
+		}
+		start.val = end.val;
+		end.val = temp;
+	}
+
+	private void inorder(TreeNode root) {
+		if (root != null) {
+			inorder(root.left);
+			if (start == null && prev.val > root.val) {
+				start = prev;
+			} else if (start != null && start.val < root.val) {
+				end = prev;
+				return;
+			}
+			prev = root;
+			inorder(root.right);
+		}
+	}
+}
+
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode() {}
+ *     TreeNode(int val) { this.val = val; }
+ *     TreeNode(int val, TreeNode left, TreeNode right) {
+ *         this.val = val;
+ *         this.left = left;
+ *         this.right = right;
+ *     }
+ * }
+ */
+
+
+SOLUTION_1
+class Solution {
+    List<Integer> arr = new ArrayList<>();
+    int p=0;
+    public void recoverTree(TreeNode root) {
+        Inorder(root);
+        Collections.sort(arr);
+        Insert(root);
+    }
+    public void Inorder(TreeNode ans){
+        if(ans==null) return;
+        Inorder(ans.left);
+        arr.add(ans.val);
+        Inorder(ans.right);
+    }
+    private void Insert(TreeNode root){
+        if(root==null) return;
+        Insert(root.left);
+        root.val=arr.get(p);
+        p++;
+        Insert(root.right);
+    }
+}
+
+
+SOLUTION_2
+class Solution {
+    public void recoverTree(TreeNode root) {
+        TreeNode pre=null;
+        TreeNode first=null;
+        TreeNode second=null;
+        
+        Stack<TreeNode> st=new Stack<>();
+        while(root!=null || !st.isEmpty()){
+            while(root!=null){
+                st.push(root);
+                root=root.left;
+            }
+            root=st.pop();
+            if(first==null && (pre==null || pre.val>root.val)){
+                first=pre;
+            }
+            if(first!=null && pre.val>root.val){
+                second=root;
+            }
+            pre=root;
+            root=root.right;
+        }
+        int t=first.val;
+        first.val=second.val;
+        second.val=t;
+    }
+}
