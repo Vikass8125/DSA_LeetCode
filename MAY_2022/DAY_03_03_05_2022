@@ -1,0 +1,99 @@
+581. Shortest Unsorted Continuous Subarray  [MEDIUM]
+Given an integer array nums, you need to find one continuous subarray that if you only sort this subarray in ascending order, then the whole array will be sorted in ascending order.
+
+Return the shortest such subarray and output its length.
+
+ 
+
+Example 1:
+
+Input: nums = [2,6,4,8,10,9,15]
+Output: 5
+Explanation: You need to sort [6, 4, 8, 10, 9] in ascending order to make the whole array sorted in ascending order.
+Example 2:
+
+Input: nums = [1,2,3,4]
+Output: 0
+Example 3:
+
+Input: nums = [1]
+Output: 0
+ 
+
+Constraints:
+
+1 <= nums.length <= 104
+-105 <= nums[i] <= 105
+ 
+
+Follow up: Can you solve it in O(n) time complexity?
+
+MY_SOLUTION
+class Solution {
+    public int findUnsortedSubarray(int[] n) {
+        int k=n.length;
+        //MAKING NEW ARRAY TO STORE THE VALUES
+        int a[]=new int[k];
+        for(int i=0;i<k;i++)
+        {
+            a[i]=n[i];
+        }
+        //SORTING THE ARRAY
+        Arrays.sort(a);
+        int c=-1;
+        
+        // FINDING THE START OF SUBARRAY
+        for(int i=0;i<k;i++)
+        {
+            if(a[i]!=n[i])
+            {
+                c=i;
+                break;
+            }
+        }
+         // FINDING THE END OF SUBARRAY
+        for(int i=k-1;i>=0;i--)
+        {
+            if(a[i]!=n[i])
+            {
+                return i-c+1;
+            }
+        }
+        return 0;
+    }
+}
+
+
+
+ANOTHER_SOLUTION
+Algorithm
+
+In this approach, we make use of an idea based on selection sort. We can traverse over the given numsnums array choosing the elements nums[i]nums[i]. 
+For every such element chosen, we try to determine its correct position in the sorted array. 
+For this, we compare nums[i]nums[i] with every nums[j]nums[j], such that i < j < ni<j<n. 
+Here, nn refers to the length of numsnums array.
+
+If any nums[j]nums[j] happens to be lesser than nums[i]nums[i], it means both nums[i]nums[i] and nums[j]nums[j] aren't at their correct position for the sorted array. 
+Thus, we need to swap the two elements to bring them at their correct positions. 
+Here, instead of swapping, we just note the position of nums[i]nums[i](given by ii) and nums[j]nums[j](given by jj).
+These two elements now mark the boundary of the unsorted subarray(atleast for the time being).
+
+Thus, out of all the nums[i]nums[i] chosen, we determine the leftmost nums[i]nums[i] which isn't at its correct position. 
+This marks the left boundary of the smallest unsorted subarray(ll). 
+Similarly, out of all the nums[j]nums[j]'s considered for all nums[i]nums[i]'s we determine the rightmost nums[j]nums[j] which isn't at its correct position. 
+This marks the right boundary of the smallest unsorted subarray(rr).
+
+public class Solution {
+    public int findUnsortedSubarray(int[] nums) {
+        int[] snums = nums.clone();
+        Arrays.sort(snums);
+        int start = snums.length, end = 0;
+        for (int i = 0; i < snums.length; i++) {
+            if (snums[i] != nums[i]) {
+                start = Math.min(start, i);
+                end = Math.max(end, i);
+            }
+        }
+        return (end - start >= 0 ? end - start + 1 : 0);
+    }
+}
