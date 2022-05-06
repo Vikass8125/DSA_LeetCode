@@ -1,0 +1,78 @@
+1209. Remove All Adjacent Duplicates in String II  [MEDIUM]
+You are given a string s and an integer k, a k duplicate removal consists of choosing k adjacent and equal letters from s and removing them, causing the left and the right side of the deleted substring to concatenate together.
+
+We repeatedly make k duplicate removals on s until we no longer can.
+
+Return the final string after all such duplicate removals have been made. It is guaranteed that the answer is unique.
+
+ 
+
+Example 1:
+
+Input: s = "abcd", k = 2
+Output: "abcd"
+Explanation: There's nothing to delete.
+Example 2:
+
+Input: s = "deeedbbcccbdaa", k = 3
+Output: "aa"
+Explanation: 
+First delete "eee" and "ccc", get "ddbbbdaa"
+Then delete "bbb", get "dddaa"
+Finally delete "ddd", get "aa"
+Example 3:
+
+Input: s = "pbbcggttciiippooaais", k = 2
+Output: "ps"
+ 
+
+Constraints:
+
+1 <= s.length <= 105
+2 <= k <= 104
+s only contains lower case English letters.
+
+
+SOLUTION
+
+https://www.youtube.com/watch?v=RJpy4A7LJrs
+
+We are asked to remove all the characters for every has character has k duplicate characters adjacent to it. We need to check the previously visited character and one of the possible approach for that is by using a Stack.
+
+Approach :
+
+Create a Stack of type int[ ] such that it stores index of the character and its adjacent occurance count.
+Iterate through the String. If the character at the top element's index is equal to the current character, then increase the count of the top element
+Else add a new int array to stack with elements as {current Index,1}.
+Now if the top element's count is equals to k, we need to pop it
+At last iterate through the stack and build the resultant string.
+public String removeDuplicates(String s, int k) 
+    {
+        Stack<int[]> stack = new Stack();
+        for(int i=0;i<s.length();i++)
+        {
+            if(stack.size()>0 && s.charAt(stack.peek()[0])==s.charAt(i))
+            {
+                stack.peek()[1]++;
+            }
+            else
+            {
+                stack.push(new int[]{i,1});
+            }
+            
+            if(stack.peek()[1]==k)
+                stack.pop();
+        }
+        
+        StringBuilder sb = new StringBuilder();
+        while(stack.size()>0)
+        {
+            int top[] = stack.pop();
+            while(top[1]-->0)
+            {
+                sb.append(s.charAt(top[0]));
+            }
+        }
+        
+        return sb.reverse().toString();
+    }
