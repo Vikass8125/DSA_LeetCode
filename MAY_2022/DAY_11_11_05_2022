@@ -1,0 +1,101 @@
+1641. Count Sorted Vowel Strings  [MEDIUM]
+Given an integer n, return the number of strings of length n that consist only of vowels (a, e, i, o, u) and are lexicographically sorted.
+
+A string s is lexicographically sorted if for all valid i, s[i] is the same as or comes before s[i+1] in the alphabet.
+
+ 
+
+Example 1:
+
+Input: n = 1
+Output: 5
+Explanation: The 5 sorted strings that consist of vowels only are ["a","e","i","o","u"].
+Example 2:
+
+Input: n = 2
+Output: 15
+Explanation: The 15 sorted strings that consist of vowels only are
+["aa","ae","ai","ao","au","ee","ei","eo","eu","ii","io","iu","oo","ou","uu"].
+Note that "ea" is not a valid string since 'e' comes after 'a' in the alphabet.
+Example 3:
+
+Input: n = 33
+Output: 66045
+ 
+
+Constraints:
+
+1 <= n <= 50 
+
+
+
+MY_SOLUTION
+Time Complexity - O(n)
+Space Complexity - O(1)
+
+On carefully observing the sequence getting formed you will notice a pattern here:
+
+For n = 1 : a , e , i, o, u
+String starting with a = 1, e = 1, i = 1, o = 1, u = 1 : Total = 5
+
+For n = 2 : aa, ae, ai, ao, au, ee, ei, eo, eu, ii, io, iu, oo, ou, uu
+String starting with a = 5, e = 4, i = 3, o = 2, u = 1 : Total = 15
+
+For n = 3 : aaa, aae, aai, aao, aau, aee, aei, aeo, aeu, aii, aio, aiu, aoo, aou, auu, eee, eei, eeo,eeu,eii, eio, eiu, eoo, eou, euu, iii, iio, iiu, ioo, iou, iuu, ooo, oou, ouu, uuu : Total = 35
+
+On carefully observing :
+For n = 2 : All the sequence formed count is equal to sum of previous sequences (i.e. n = 1) starting with a, e, i, o, u
+a = a + e + i + o + u (1 + 1 + 1 + 1+ 1) = 5
+e = e + i + o +u (1 + 1+ 1+ 1) = 4
+i = i + o + u (1 + 1 + 1) = 3
+o = o + u ( 1 + 1) = 2
+u = u (1) = 1
+Total = a + e + i + o + u = 5 + 4 + 3 + 2 + 1 = 15
+
+For n = 3: All the sequence formed count is equal to sum of previous sequences (i.e. n = 2) starting with a, e, i, o, u
+a = a + e + i + o + u (5 + 4 + 3 + 2+ 1) = 15
+e = e + i + o +u (4 + 3+ 2+ 1) = 10
+i = i + o + u (3 + 2 + 1) = 6
+o = o + u ( 2 + 1) = 3
+u = u (1) = 1
+Total = a + e + i + o + u = 15 + 10 + 6 + 3 + 1 = 35
+
+
+class Solution {
+   
+    int a=1, e=1, i=1, o=1, u=1;
+    public int countVowelStrings(int n) { 
+    	for(int j=1; j<n; j++){
+        	incrementCount();
+        }
+    	return a+e+i+o+u;
+    }
+
+    private void incrementCount() {
+		a = a+e+i+o+u;
+		e = e+i+o+u;
+		i = i+o+u;
+		o = o+u;
+	}
+
+}
+
+
+ANOTHER_SOLUTION
+Mathematical Explanation:
+The process we count valid results can be considered as to count combinations when sampling n elements with replacement from the set S = { a, e, i, o, u }. Note, we only consider the combinations of the selected elements.
+
+For example, if n = 3, { a, a, e } and { e, a, a } are considered as the same case, because once the elements are determined, their order is determined by the rule of lexicographically sorting. That's why we only need to consider the combination results rather than the permutation.
+
+To count the combination results of sampling n elements with replacement from a set S, where |S| = m, we have the formula: Result = C(m + n - 1, n)
+
+For this question, we have:
+result = C( |S| + n - 1, n) = C(5 + n - 1, n) = C(n + 4, n) = C(n + 4, 4)
+
+Since the max value of n is 50, the maximum cumulative product is 54 * 53 * 52 * 51 = 7,590,024, which is within the valid range of int, so we can directly write our code as follows:
+
+public int countVowelStrings(int n) {
+  return (n + 4) * (n + 3) * (n + 2) * (n + 1) / 24;
+}
+
+ 
