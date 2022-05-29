@@ -1,0 +1,94 @@
+318. Maximum Product of Word Lengths  [MEDIUM]
+Given a string array words, return the maximum value of length(word[i]) * length(word[j]) where the two words do not share common letters. If no such two words exist, return 0.
+
+ 
+
+Example 1:
+
+Input: words = ["abcw","baz","foo","bar","xtfn","abcdef"]
+Output: 16
+Explanation: The two words can be "abcw", "xtfn".
+Example 2:
+
+Input: words = ["a","ab","abc","d","cd","bcd","abcd"]
+Output: 4
+Explanation: The two words can be "ab", "cd".
+Example 3:
+
+Input: words = ["a","aa","aaa","aaaa"]
+Output: 0
+Explanation: No such pair of words.
+ 
+
+Constraints:
+
+2 <= words.length <= 1000
+1 <= words[i].length <= 1000
+words[i] consists only of lowercase English letters.
+
+
+
+SOLUTION
+======================================================================
+To easily understand the solution, we will quickly revise the Left shift operator (<<)
+It shifts the bits of the number to the left.
+For example: Suppose int a = 5, then in binary (32- bit integer number),
+a = 0000 0000 0000 0000 0000 0000 0000 0101
+If we do , say, a = a << 1, we are shifting a by 1 bit towards the left, i.e., a becomes 10
+a = 0000 0000 0000 0000 0000 0000 0000 1010
+As per the question, we need to ensure that the two strings should not have any common character. We also try to use minimum possible space. Because each word can contain only lower case letters (maximum 26 characters),all the characters of each word can easily fit in the 32-bit space of an integer.
+Hence, we convert our strings into integers such that bit 0 of the integer represents the letter ‘a’ , bit 1 represents ‘b’ , ………, bit 25 represents ‘z’.
+
+How do we convert each string to an integer?
+
+Example: Consider the string s = ”abcw”
+
+We will iterate through each character one by one. Set the bit position of that character as 1. Then, keep taking ORs of all the intermediate values to get the final integer.
+
+bits = bits | 1 << ( s.charAt(i) - 'a');
+
+‘a’---> 0000 0000 0000 0000 0000 0000 0000 0001
+(Explanation: s.charAt(i) - 'a' = ‘a’ - ‘a’ = 0. We use 1 << ( s.charAt(i) - 'a') because, we need to set 1 at the position ( s.charAt(i) - 'a'), hence we do shift the number 1 by 0 bits to the left, so we get the above binary)
+Then, bits = bits OR (0000 0000 0000 0000 0000 0000 0000 0001)
+This gives bits as 0000 0000 0000 0000 0000 0000 0000 0001 (or 1 in decimal notation)
+
+‘b’---> 0000 0000 0000 0000 0000 0000 0000 0010
+(Explanation: s.charAt(i) - 'a' = ‘b’ - ‘a’ = 1. We use 1 << ( s.charAt(i) - 'a') because, we need to set 1 at the position ( s.charAt(i) - 'a'), hence we do shift the number 1 by 1 bit to the left, so we get the above binary)
+Then, bits = bits OR (0000 0000 0000 0000 0000 0000 0000 0010)
+bits variable becomes 0000 0000 0000 0000 0000 0000 0000 0011 (or 3 in decimal notation)
+
+‘c’---> 0000 0000 0000 0000 0000 0000 0000 0100
+(Explanation: s.charAt(i) - 'a' = ‘c’ - ‘a’ = 2. We use 1 << ( s.charAt(i) - 'a') because, we need to set 1 at the position ( s.charAt(i) - 'a'), hence we do shift the number 1 by 2 bits to the left, so we get the above binary)
+Then, bits = bits OR (0000 0000 0000 0000 0000 0000 0000 0100)
+bits variable becomes 0000 0000 0000 0000 0000 0000 0000 0111 (or 7 in decimal notation)
+
+‘w’---> 0000 0000 0100 0000 0000 0000 0000 0000
+(Explanation: s.charAt(i) - 'a' = ‘w’ - ‘a’ = 22. We use 1 << ( s.charAt(i) - 'a') because, we need to set 1 at the position ( s.charAt(i) - 'a'), hence we do shift the number 1 by 22 bits to the left, so we get the above binary)
+Then, bits = bits OR (0000 0000 0100 0000 0000 0000 0000 0000)
+bits variable becomes 0000 0000 0100 0000 0000 0000 0000 0111 (or 4194311 in decimal notation)
+
+======================================================================
+
+
+
+class Solution {
+    public int maxProduct(String[] words) {
+        int[] bits = new int[words.length];
+    
+for(int i=0; i<words.length; i++) {
+    for(int j=0; j<words[i].length(); j++) {
+        bits[i] = bits[i] | 1 << (words[i].charAt(j) - 'a');
+    }
+}
+
+int result = 0;
+for(int i=0; i<bits.length; i++) {
+    for(int j=i+1; j<bits.length; j++) {
+        if((bits[i] & bits[j]) == 0) {
+            result = Math.max(words[i].length() * words[j].length(), result);
+        }
+    }
+}
+return result;
+    }
+}
