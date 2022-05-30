@@ -1,0 +1,159 @@
+29. Divide Two Integers  [MEDIUM]
+Given two integers dividend and divisor, divide two integers without using multiplication, division, and mod operator.
+
+The integer division should truncate toward zero, which means losing its fractional part. For example, 8.345 would be truncated to 8, and -2.7335 would be truncated to -2.
+
+Return the quotient after dividing dividend by divisor.
+
+Note: Assume we are dealing with an environment that could only store integers within the 32-bit signed integer range: [−231, 231 − 1]. For this problem, if the quotient is strictly greater than 231 - 1, then return 231 - 1, and if the quotient is strictly less than -231, then return -231.
+
+ 
+
+Example 1:
+
+Input: dividend = 10, divisor = 3
+Output: 3
+Explanation: 10/3 = 3.33333.. which is truncated to 3.
+Example 2:
+
+Input: dividend = 7, divisor = -3
+Output: -2
+Explanation: 7/-3 = -2.33333.. which is truncated to -2.
+ 
+
+Constraints:
+
+-231 <= dividend, divisor <= 231 - 1
+divisor != 0
+
+
+SOLUTION
+
+//https://www.youtube.com/watch?v=m4L_5qG4vG8
+
+
+class Solution {
+    public int divide(int dividend, int divisor) {
+        if(dividend == 1<<31 && divisor == -1) return Integer.MAX_VALUE;
+        boolean sign = (dividend >= 0) == (divisor >= 0) ? true : false;
+        dividend = Math.abs(dividend);
+        divisor = Math.abs(divisor);
+        int result = 0;
+        while(dividend - divisor >=0){
+            int count = 0;
+            while(dividend - (divisor << 1 << count) >= 0){
+                count++;
+            }
+            
+            result += 1 << count;
+            dividend -= divisor << count;
+        }
+        return sign ? result: -result;
+        
+    }
+}
+
+
+ANOTHER_SOLUTION
+Java: A proper approach
+So a lot of the topics in this discussion are useless because they either do exactly what the problem tells you not to 
+do and say "look at me I can cheat" or work around the problem by typecasting or some other bs. 
+I will attempt to explain how you can implement this algorithm using only type int. I am open to questions, comments, concerns and improvements.
+
+Note: This problem and its solution are somewhat peculiar in that they're less about practicing your algorithms than coming up with
+an interesting approach to a dull problem using what tools you have.
+
+Approach
+So you can't (or at least the problem description tells you not to) use any math operations that would seem useful in this situation... thats a shame.
+
+Brute-force
+From a brute-force perspective, we can make a loop where we increment some counter by one and increment 
+value $d$ by divisor until $d > $ dividend; then the answer we are looking for is simply the value of counter 
+right before $d > $ dividend. However, the runtime for this approach is linear, and so the solution won't submit 
+be accepted with a Time Limit Exceeded message.
+
+But wait... if we can't use multiplication or division to solve this problem, how can we achieve better than linear 
+runtime (linear in the size of divisor that is)?
+
+The trick
+Turns out you can actually use integer multiplication and division ... as long as you realize that bitwise shifting 
+by 1 left or right is identically integer multiplication or division by 2 respectively and consequently accept that 
+bitwise shifting is indeed allowed as part of the solution
+
+Note: I actually kind of just lied; bitwise operations only behave as I just described for int values $\geq 0$, so 
+well work around this by making both the dividend and that divisor positive and applying the proper sign at the end.
+
+Now, there are a couple of different directions we can go once we embrace the power of division by two. 
+The solution I've chosen to role with here is simply long division... you know the long division that you learned in 
+elementary school but don't remember any more... just done in base two. Apparently this has a name, and it's called binary division. 
+If you can't be bothered to remember/figure out exactly how it works, which is totally fair IMO, then the pseudo code is illustrated reasonably clearly here.
+
+Why couldn't they have restrained the dividend range by one more?
+I don't want to spend a lot of time here, but there are some annoying and subtle problems that come with allowing the dividend to be Int.MIN_VALUE for example:
+
+    Math.abs(Integer.MIN_VALUE) = Integer.MIN_VALUE
+Thus you need to be really careful dealing with this edge case, and I jerry-rigged my code so that I dealt with the consequences as I found them. 
+It would have been so much nicer if LeetCode had just instead had the minimum allowed value be Integer.MIN_VALUE + 1
+
+Runtime
+Its $O(log_2N)$ where $N$ is the size of the dividend: There only as many iterations as the number of bits in $N$. Note that in practice, 
+we are restricting the inputs ot type int, which means that there is a maximum size of $N$, so in that sense the runtime is actually constant. 
+I'm tired so someone else can come up with a better way to say this.
+
+Ramblings
+If you squint at the solution, you might be able to argue that binary long division is essentially"binary-searching" for the answer... but I think that's a stretch.
+
+Again, feel free to yell at me about the ways the code could be clearer... Looking back over it, it definitely doesn't read easy.
+
+Code
+class Solution {
+    public int divide(int dividend, int divisor) {
+        
+        //Edge cases:
+        // min integer value breaks things...
+        boolean minValFlag = false;
+        if(dividend == Integer.MIN_VALUE) {
+            if(divisor == -1) return Integer.MAX_VALUE;
+            else if(divisor == 1) return Integer.MIN_VALUE;
+            // do the first iteration of binary division manually below
+            else minValFlag = true;
+        }
+        if(divisor == Integer.MIN_VALUE) return minValFlag ? 1 : 0;
+        
+        //Determine the sign of the result (we know at this point neither is 0)
+        boolean isNegative = dividend < 0 ^ divisor < 0;
+        
+        //make both dividend and divisor positive
+        dividend = Math.abs(dividend);
+        divisor = Math.abs(divisor);
+        
+        //find the number of significant bits in the dividend
+        int n = 1, dvdn = 1;
+        while(dvdn < dividend && dvdn != Integer.MIN_VALUE) {
+            dvdn <<=1;
+            n++;
+        }
+        
+        //Approach: do long division in binary
+        int quotient = 0, remainder = 0;
+        
+        //deal with min-value annoyance
+        if(minValFlag) {
+            n = 31;
+            remainder = 1;
+        }
+        
+        for(n-- ; n >= 0; n--) {
+            remainder <<= 1;
+            remainder += (dividend >> n ) & 1;
+            if(remainder >= divisor || remainder == Integer.MIN_VALUE) {
+                remainder -= divisor;
+                quotient += 1 << n;
+            }
+            //System.out.println(String.format("n is: %d %nremainder is: %d %nquotient is: %d %n",n,remainder,quotient));
+        }
+        
+        //return statement
+        return isNegative ? 0 - quotient : quotient;
+    }
+}
