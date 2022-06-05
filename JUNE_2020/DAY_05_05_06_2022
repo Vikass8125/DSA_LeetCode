@@ -1,0 +1,252 @@
+52. N-Queens II  [MEDIUM]
+The n-queens puzzle is the problem of placing n queens on an n x n chessboard such that no two queens attack each other.
+
+Given an integer n, return the number of distinct solutions to the n-queens puzzle.
+
+ 
+
+Example 1:
+
+
+Input: n = 4
+Output: 2
+Explanation: There are two distinct solutions to the 4-queens puzzle as shown.
+Example 2:
+
+Input: n = 1
+Output: 1
+ 
+
+Constraints:
+
+1 <= n <= 9
+
+
+
+
+MY_SOLUTION
+
+
+JUST RETURN THE SIZE OF THE LIST OF LISTS THAT CONTAINS THE BOARD (I.E. N-QUEENS)
+
+
+class Solution {
+    List<List<String>> result;
+    public int totalNQueens(int n) {
+      return (solveNQueens(n)).size();
+    }
+    
+    public List<List<String>> solveNQueens(int n) {
+        result = new ArrayList<>();
+        char[][] board = new char[n][n];
+        
+        // FILLED IT AS EMPTY CELLS
+        for(int i = 0; i < n; i++){
+            for(int j = 0; j < n; j++){
+                board[i][j] = '.';
+            }
+        }
+        List<int[]> queens = new ArrayList<>();
+        dfs(board,0,queens);
+        return result;
+    }
+    
+    private void dfs(char[][] board, int r, List<int[]> queens){
+        //chech if all queens are placed
+        if(queens.size() == board.length){
+            //construct output
+            List<String> rows = new ArrayList<>();
+            for(char[] row : board){
+                rows.add(new String(row));
+            }
+            result.add(rows);
+        }
+        
+        //Try adding the queen
+        for(int c = 0; c < board.length; c++){
+            if(canAddQueen(r,c,queens)){
+                board[r][c] = 'Q';
+                queens.add(new int[]{r,c});
+                dfs(board,r+1,queens);
+                //Backtracking
+                board[r][c] = '.';
+                queens.remove(queens.size()-1);
+                
+            }
+        }
+    }
+    
+    private boolean canAddQueen(int r, int c, List<int[]> queens){
+        for(int[] q : queens){
+            int dx = Math.abs(r-q[0]);
+            int dy = Math.abs(c-q[1]);
+            if(dx == 0 || dy == 0 || dx == dy) return false;
+        }
+        return true;
+    }
+}
+
+
+ANOTHER_SOLUTION
+
+Idea:
+(Note: This problem is an easier duplicate to the previous problem, 51: N-Queens, except that it doesn't require us to return the actual boards, just the count.)
+
+A naive approach here would attempt every possible combination of locations, but there are (N^2)! / (N^2 - N)! different combinations, 
+which is up to ~1e17 when N = 9. Instead, we need to make sure we only attempt to place queens where it's feasible to do so, based on the instructions. 
+This would seem to call for a depth first search (DFS) approach with a recursive helper function (place), 
+so that we only pursue workable combinations without wasting time on known dead-ends.
+
+First, we should consider how the queens will be placed. Since each row can only have one queen, our basic process will be to place a queen and then 
+recurse to the next row. On each row, we'll have to iterate through the possible options, check the cell for validity, then place the queen on the board.
+
+Rather than store the whole board, we can save on space complexity if we only keep track of the different axes of attack in which a queen might be placed. 
+Since a queen has four axes of attack, we'll need to check the three remaining axes (other than the horizontal row, 
+which our iteration will naturally take care of) for validity.
+
+There are N possible columns and 2 * N - 1 possible left-downward diagonals and right-downward diagonals. With a constraint of 1 <= N <= 9, 
+each of the two diagonal states represents up to 17 bits' worth of data and the vertical state up to 9 bits, so we can use bit manipulation to 
+store these states efficiently.
+
+So for each recursive call to place a queen, we should pass along the board state in the form of only three integers (vert, ldiag, rdiag). 
+We can then use bitmasks to check for cell validity before attempting to recurse to the next row.
+
+If we successfully reach the end of the board without failing, we should increment our answer counter (ans).
+
+Time Complexity: O(N!) which represents the maximum number of queens placed
+Space Complexity: O(N) for the recursion stack
+
+
+class Solution {
+    int ans;
+    
+    public int totalNQueens(int N) {
+        ans = 0;
+        place(0,0,0,0,N);
+        return ans;
+    }
+    
+    private void place(int i, int vert, int ldiag, int rdiag, int N) {
+        if (i == N) ans++;
+        else for (int j = 0; j < N; j++) {
+            int vmask = 1 << j, lmask = 1 << (i+j), rmask = 1 << (N-i-1+j);
+            if ((vert & vmask) + (ldiag & lmask) + (rdiag & rmask) > 0) continue;
+            place(i+1, vert | vmask, ldiag | lmask, rdiag | rmask, N);
+        }
+    }
+}
+
+
+
+ANOTHER_SOLUTION
+class Solution {
+    public int cnt=0;
+    public int totalNQueens(int n) {
+        char Board[][]=new char[n][n];
+        for(int i=0;i<n;i++)
+        {
+            for (int j = 0; j < n; j++) 
+            {
+                Board[i][j] = '.';
+            }
+        }
+        placeQueen(n,Board,0);
+        return cnt;
+    }
+    public void placeQueen(int n, char Board[][],int row)
+    {
+        //Base Case
+        if(row==n)
+        {
+            cnt++;
+            return;
+        }
+         for(int col=0;col<n;col++)
+         {
+             if(canPlaceQueen(n,Board,row, col))
+             {
+                 Board[row][col]='Q';
+                 placeQueen(n,Board,row+1);
+                 Board[row][col]='.';
+             }
+         }
+        
+    }
+    public Boolean canPlaceQueen(int n,char Board[][],int row, int col)
+    {
+       // check all rows for the current column
+        for (int i = 0; i < row; i++) 
+        {
+            if (Board[i][col] == 'Q') {
+                return false;
+            }
+        }
+
+        //check for 45 degree positions
+        for (int i = row - 1, j = col + 1; i >= 0 && j < n; i--, j++) {
+            if (Board[i][j] == 'Q') {
+                return false;
+            }
+        }
+        //check for 135 positions
+        for (int i = row - 1, j = col - 1; i >= 0 && j >= 0; i--, j--) {
+            if (Board[i][j] == 'Q') {
+                return false;
+            }
+        }
+        return true;
+
+    }
+}
+
+ANOTHER_SOLUTION
+
+//https://leetcode.com/problems/n-queens-ii/discuss/2111857/N-Queens-1-andand-N-Queens-2-oror-Almost-Same-Solution
+
+class Solution {
+    public int totalNQueens(int n) {
+        char board[][] = new char[n][n];
+        for(char i[] : board)
+            Arrays.fill(i, '.');
+        return dfs(0, board);
+    }
+    public int dfs(int col, char board[][]){
+        if(col == board.length) return 1;
+        int count = 0;
+        for(int row = 0; row < board.length; row++){
+            if(isSafe(board, row, col)){
+                board[row][col] = 'Q';
+                count += dfs(col + 1, board);
+                board[row][col] = '.';
+            }
+        }
+        return count;
+    }
+    public boolean isSafe(char board[][], int row, int col){
+        int dupRow = row;
+        int dupCol = col;
+        
+        while(row >= 0 && col >= 0){
+            if(board[row][col] == 'Q') return false;
+            row--;
+            col--;
+        }
+        
+        row = dupRow;
+        col = dupCol;
+        while(col >= 0){
+            if(board[row][col] == 'Q') return false;
+            col--;
+        }
+        
+        row = dupRow;
+        col = dupCol;
+        while(col >= 0 && row < board.length){
+            if(board[row][col] == 'Q') return false;
+            row++;
+            col--;
+        }
+        return true;
+    }
+}
+
