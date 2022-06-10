@@ -1,0 +1,122 @@
+3. Longest Substring Without Repeating Characters [MEDIUM]
+
+
+Given a string s, find the length of the longest substring without repeating characters.
+
+ 
+
+Example 1:
+
+Input: s = "abcabcbb"
+Output: 3
+Explanation: The answer is "abc", with the length of 3.
+Example 2:
+
+Input: s = "bbbbb"
+Output: 1
+Explanation: The answer is "b", with the length of 1.
+Example 3:
+
+Input: s = "pwwkew"
+Output: 3
+Explanation: The answer is "wke", with the length of 3.
+Notice that the answer must be a substring, "pwke" is a subsequence and not a substring.
+
+
+MY_SOLUTION
+class Solution {
+    public int lengthOfLongestSubstring(String s) {
+        int ans = 0;
+        int i = -1;
+        int j = -1;
+        
+        HashMap<Character, Integer> map = new HashMap<>();
+        
+        while(true){
+            boolean f1 = false;
+            boolean f2 = false;
+            
+            // Acquire
+            
+            while(i < s.length() - 1){
+                f1 = true;
+                i++;
+                char ch = s.charAt(i);
+                map.put(ch, map.getOrDefault(ch,0)+1);
+                
+                if(map.get(ch) == 2){
+                    break;
+                }
+                else{
+                    int len = i - j;
+                    if(len > ans){
+                        ans = len;
+                    }
+                }
+            }
+            
+            
+            // Release
+            while(j < i){
+                f2 = true;
+                j++;
+                char ch = s.charAt(j);
+                map.put(ch, map.get(ch) - 1);
+                if(map.get(ch) == 1){
+                    break;
+                }
+            }
+            if(f1 == false && f2 == false){
+                break;
+            }
+        }
+        return ans;
+    }
+}
+
+ANOTHER-SOLUTION
+public int lengthOfLongestSubstring(String s) {
+        int left = 0; // start of window
+        int right = 0; // end of window (initially the same as start so we can grab the first char)
+        int result = 0; // var to store the length of the longest substring we have found so far
+        HashSet<Character> chars = new HashSet(); // hashset to track the chars in the current substring
+		// the right hand side of the window must not go over the bounds of the string
+        while(right < s.length()) {
+            // use the right hand side of the window to get the char, it is initialised to 0 so will pick the first character first
+            if(!chars.contains(s.charAt(right))) {
+                chars.add(s.charAt(right));
+				// if the current set of unique chars is greater in size than the result, that's our longest substring
+                result = Math.max(result, chars.size());
+				// increment right to increase the window size and grab a new char
+                right++;
+            } else {
+			// once we encounter a char which is already in the hashset we need create a new window starting from left + 1, and reset right to equal left to initialise a new window
+                left ++;
+                right = left;
+				// reset our tracker
+                chars.clear();
+            }
+        }
+        return result;
+    }
+    
+    ANOTHER_SOLUTION
+    
+    public int lengthOfLongestSubstring(String s) {
+        int result = 0;
+        Set<Character> charSet = new HashSet();
+        int windowStart = 0;
+        for(int windowEnd =0; windowEnd<s.length(); windowEnd++){
+			//if the character at right pointer is duplicate, keep removing 
+			//character at left pointer until the duplicate character is removed. 
+            while(charSet.contains(s.charAt(windowEnd))){
+                charSet.remove(s.charAt(windowStart));
+                windowStart++;
+            }
+			//add the character at the right pointer to the set
+            charSet.add(s.charAt(windowEnd));
+			//check if the current substring length is maximum
+            result = Math.max(result, windowEnd-windowStart+1);
+        }
+        return result;
+    }
