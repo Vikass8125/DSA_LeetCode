@@ -1,0 +1,92 @@
+1658. Minimum Operations to Reduce X to Zero  [MEDIUM]
+You are given an integer array nums and an integer x. In one operation, you can either remove the leftmost or the rightmost element from the array nums and subtract its value from x. Note that this modifies the array for future operations.
+
+Return the minimum number of operations to reduce x to exactly 0 if it is possible, otherwise, return -1.
+
+ 
+
+Example 1:
+
+Input: nums = [1,1,4,2,3], x = 5
+Output: 2
+Explanation: The optimal solution is to remove the last two elements to reduce x to zero.
+Example 2:
+
+Input: nums = [5,6,7,8,9], x = 4
+Output: -1
+Example 3:
+
+Input: nums = [3,2,20,1,1,3], x = 10
+Output: 5
+Explanation: The optimal solution is to remove the last three elements and the first two elements (5 operations in total) to reduce x to zero.
+ 
+
+Constraints:
+
+1 <= nums.length <= 105
+1 <= nums[i] <= 104
+1 <= x <= 109
+
+
+MY_SOLUTION
+
+https://leetcode.com/problems/minimum-operations-to-reduce-x-to-zero/discuss/2136570/Change-Your-Perspective-or-JAVA-Explanation
+
+Sum up the nums array
+Set 2 pointers left and right to 0. Initialize an int cur to represent the sum from nums[0] to nums[left-1] and from nums[right+1] to nums[last]. 
+Initialize an int min to record the minimum length that sums up to x
+While (right < nums.length)
+  Calculate cur.
+  If cur is smaller than x, move left to left.
+  If cur is equal to x, update the min.
+  
+  class Solution {
+    public int minOperations(int[] nums, int x) {
+        int sum = 0;
+        for(int num : nums){
+            sum = sum + num;
+        }
+        
+        int maxLen = -1;
+        int curSum = 0;
+        int left = 0;
+        
+        for(int right = 0; right < nums.length; right++){
+            curSum = curSum + nums[right];
+            while( left <= right && curSum > sum - x){
+                curSum = curSum - nums[left++];
+            }
+            if(curSum == sum - x){
+                maxLen = Math.max(maxLen, right - left + 1);
+            }
+        }
+        return maxLen == -1 ? -1 : nums.length - maxLen;
+    }
+}
+
+
+ANOTHER_SOLUTION
+ Find the longest subarray sum equals to a target value
+  public int minOperations(int[] nums, int x) {
+        int total = 0;
+        for (int num : nums) {
+            total += num;
+        }
+        int n = nums.length;
+        int maxi = -1;
+        int left = 0;
+        int current = 0;
+
+        for (int right = 0; right < n; right++) {
+            current += nums[right]; // sum([left ,..., right]) = total - x
+            while (current > total - x && left <= right) { 
+                current -= nums[left];
+                left += 1; // if larger, move to left
+            }
+            if (current == total - x) { // check they are equal
+                maxi = Math.max(maxi, right - left + 1);
+            }
+        }
+        return maxi != -1 ? n - maxi : -1;
+    }
+    
