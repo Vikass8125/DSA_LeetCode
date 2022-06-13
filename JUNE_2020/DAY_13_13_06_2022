@@ -1,0 +1,182 @@
+120. Triangle  [MEDIUM]
+
+Given a triangle array, return the minimum path sum from top to bottom.
+
+For each step, you may move to an adjacent number of the row below. More formally, if you are on index i on the current row, you may move to either index i or index i + 1 on the next row.
+
+ 
+
+Example 1:
+
+Input: triangle = [[2],[3,4],[6,5,7],[4,1,8,3]]
+Output: 11
+Explanation: The triangle looks like:
+   2
+  3 4
+ 6 5 7
+4 1 8 3
+The minimum path sum from top to bottom is 2 + 3 + 5 + 1 = 11 (underlined above).
+Example 2:
+
+Input: triangle = [[-10]]
+Output: -10
+ 
+
+Constraints:
+
+1 <= triangle.length <= 200
+triangle[0].length == 1
+triangle[i].length == triangle[i - 1].length + 1
+-104 <= triangle[i][j] <= 104
+
+
+
+SOLUTION
+Approach
+
+The only way to find out which path is the shortest is to try all the paths and return the minimum. Recursion is helpful for solving such problems. We start from the initial position (top of the triangle), then choose between two paths. We can go to the same column or one ahead (column + 1). In terms of row, we have no choice but to move on to the next row (row + 1). Hence the two choices are,
+
+go to triangle[row + 1][col]
+go to triangle[row + 1][col + 1]
+This forms a recursive structure and the base case is when we pass the last row, where the answer will always be 0. After implementing this you will realize that some rows and columns are recursed over multiple times. To optimize this, we can store answers for the positions we have already computed. This is where we enter Dynamic Programming territory. Finally, we can observe that we only need row + 1 to compute answers for the current row. So, the space can also be optimized to linear.
+
+Note that for the dp table, in solution 3, I have tried an ArrayList. This is because due to the structure of the triangle the N by N space of table will waste some memory. Swapping Array and ArrayList for one another will not improve asymptotic complexity, but Arrays are initialized slightly faster and used slightly more space in my test runs. The final choice is upto you.
+
+Solutions
+N = number of rows = maximum number of columns
+
+1. Recursion
+Time complexity: O(2^N)
+Space complexity: O(N)
+
+class Solution {
+    public int minimumTotal(List<List<Integer>> triangle) {
+        // start from the top of the triangle
+        return recurse(triangle, 0, 0);
+    }
+    
+    private int recurse(List<List<Integer>> triangle, int row, int col) {
+        // base case
+        if (row == triangle.size())
+            return 0;
+        
+        // either go to [row + 1, col] or [row + 1, col + 1]
+        int remain = Math.min(recurse(triangle, row + 1, col),
+                              recurse(triangle, row + 1, col + 1));
+        
+        // combine answer with current value
+        return triangle.get(row).get(col) + remain;
+    }
+}
+2. Memoization
+Time complexity: O(N^2)
+Space complexity: O(N^2)
+
+class Solution {
+    public int minimumTotal(List<List<Integer>> triangle) {
+        // create dp table
+        int[][] memo = new int[triangle.size()][triangle.get(triangle.size() - 1).size()];
+        for (int[] row: memo)
+            Arrays.fill(row, Integer.MAX_VALUE);
+        
+        // start from the top of the triangle
+        return recurse(triangle, 0, 0, memo);
+    }
+    
+    private int recurse(List<List<Integer>> triangle, int row, int col, int[][] memo) {
+        // base case
+        if (row == triangle.size())
+            return 0;
+        
+        // check dp table
+        if (memo[row][col] != Integer.MAX_VALUE)
+            return memo[row][col];
+        
+        // either go to [row + 1, col] or [row + 1, col + 1]
+        int remain = Math.min(recurse(triangle, row + 1, col, memo),
+                              recurse(triangle, row + 1, col + 1, memo));
+        
+        // combine answer with current value
+        memo[row][col] = triangle.get(row).get(col) + remain;
+        return memo[row][col];
+    }
+}
+3. Tabulation
+Time complexity: O(N^2)
+Space complexity: O(N^2)
+
+class Solution {
+    public int minimumTotal(List<List<Integer>> triangle) {
+        // create dp table by copying the input triangle
+        List<List<Integer>> table = new ArrayList<>();
+        for (List<Integer> row: triangle) 
+            table.add(new ArrayList<>(row));
+        
+        // iterate over the entire triangle from bottom to top
+        for (int row = triangle.size() - 2; row >= 0; row--) {
+            for (int col = 0; col < triangle.get(row).size(); col++) {
+                // either go to [row + 1, col] or [row + 1, col + 1]
+                int remain = Math.min(table.get(row + 1).get(col),
+                                      table.get(row + 1).get(col + 1));
+                
+                // combine answer with current value
+                table.get(row).set(col, triangle.get(row).get(col) + remain);
+            }
+        }
+        
+        // return answer for the top of the triangle
+        return table.get(0).get(0);
+    }
+}
+4. Tabulation With Optimized Space
+Time complexity: O(N^2)
+Space complexity: O(N)
+
+class Solution {
+    public int minimumTotal(List<List<Integer>> triangle) {
+        // create dp table with size of the largest column (which is number of rows)
+        int[] table = new int[triangle.size() + 1];
+        Arrays.fill(table, 0);
+                
+        // iterate over the entire triangle from bottom to top
+        for (int row = triangle.size() - 1; row >= 0; row--) {
+            for (int col = 0; col <= row; col++) {
+                // either go to [row + 1, col] or [row + 1, col + 1]
+                int remain = Math.min(table[col],
+                                      table[col + 1]);
+                
+                // combine answer with current value
+                table[col] = triangle.get(row).get(col) + remain;
+            }
+        }
+        
+        return table[0];
+    }
+}
+
+
+
+ANOTHER_solution
+Taking the example given in question, we can see the indices have a pattern to follow, at each level its left and right child are previous_index, previous_index+1, this can be understood in seconds once u jot it down on paper.
+
+Finally, you can think of it as a tree and find the path with minium value, the only important fact being that two or more nodes at the same level will encounter same children on the next node which would mean multiple computations so you can just save those results to be used again next time without going through the whole recursive process again.
+
+Translated to code, it looks like this.
+
+class Solution {
+    Integer[][]c;
+    public int minimumTotal(List<List<Integer>> triangle) {
+        c=new Integer[triangle.size()][triangle.size()];
+        return triangle.get(0).get(0)
++dfs(0,triangle,1);        
+    }
+    public int dfs(int index,List<List<Integer>> triangle,int level){
+        if(level==triangle.size()) return 0;
+        if(c[level][index]!=null) return c[level][index];
+        int left=triangle.get(level).get(index)+dfs(index,triangle,level+1);
+        int right=triangle.get(level).get(index+1)+dfs(index+1,triangle,level+1);
+        return c[level][index]=Math.min(left,right);
+    }
+}
+
+
