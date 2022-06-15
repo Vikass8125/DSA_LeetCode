@@ -1,0 +1,98 @@
+1048. Longest String Chain [MEDIUM]
+
+You are given an array of words where each word consists of lowercase English letters.
+
+wordA is a predecessor of wordB if and only if we can insert exactly one letter anywhere in wordA without changing the order of the other characters to make it equal to wordB.
+
+For example, "abc" is a predecessor of "abac", while "cba" is not a predecessor of "bcad".
+A word chain is a sequence of words [word1, word2, ..., wordk] with k >= 1, where word1 is a predecessor of word2, word2 is a predecessor of word3, and so on. A single word is trivially a word chain with k == 1.
+
+Return the length of the longest possible word chain with words chosen from the given list of words.
+
+ 
+
+Example 1:
+
+Input: words = ["a","b","ba","bca","bda","bdca"]
+Output: 4
+Explanation: One of the longest word chains is ["a","ba","bda","bdca"].
+Example 2:
+
+Input: words = ["xbc","pcxbcf","xb","cxbc","pcxbc"]
+Output: 5
+Explanation: All the words can be put in a word chain ["xb", "xbc", "cxbc", "pcxbc", "pcxbcf"].
+Example 3:
+
+Input: words = ["abcd","dbqca"]
+Output: 1
+Explanation: The trivial word chain ["abcd"] is one of the longest word chains.
+["abcd","dbqca"] is not a valid word chain because the ordering of the letters is changed.
+ 
+
+Constraints:
+
+1 <= words.length <= 1000
+1 <= words[i].length <= 16
+words[i] only consists of lowercase English letters.
+
+
+MY_SOLUTION
+
+**Overview:
+
+Create a map with the count of each occurence of the substring present in word array as we proceed through the word array.
+We sort it because we need increasing order of each word length for this algorithm to work. We identify single letter words as parents and find what 
+children we have or what children have these single letters as parents. Also, we keep a track of the maximum we see everytime to return it ultimately.
+**Example walkthrough:
+
+For the first example, we have words = ["a","b","ba","bca","bda","bdca"]. Let's identify this with first letter "a" (let's call it parent). Now I need to 
+
+check what is the next one, "b" (call it parent, as it is a single letter). Add both to the HashMap. Now, next we have "ba". We check if we have a parent, 
+either "b" or "a" and if yes, we call it child and store it by adding 1. Similarly we traverse through all and we will have in our HashMap this structure.
+map after all traversals {a=1, bca=3, b=1, bda=3, bdca=4, ba=2}
+As you can see, we have identified which child is what level to the parent, i.e. single letter. Also, everytime, we do this, let's keep a count of the max level of 
+child we have seen through the loop and ultimately return that.
+
+
+//https://www.youtube.com/watch?v=pXG3uE_KqZM
+
+
+// https://leetcode.com/problems/longest-string-chain/discuss/2153004/Explaining-Three-Approaches-or-JAVA
+
+class Solution {
+    
+    // TIME : O(NLOGN) + O(N*LENGTH*LENGTH)
+    // SPACE: O(N*LENGTH)
+    public int longestStrChain(String[] words) {
+        if(words.length == 0 || words == null) return 0;
+       
+        int result =  0;
+        // Sort according to length.
+        Arrays.sort(words, (a,b) -> a.length() - b.length());
+        Map<String, Integer> memo = new HashMap<>();
+        
+        // Iterate on the words
+        //TIME: N*LENGTH*LENGTH
+        for(String word  : words){
+            // Put current word in the map with default value
+            memo.put(word, 1);
+            for(int i = 0; i < word.length(); i++){
+                StringBuilder current = new StringBuilder(word);
+                String next = current.deleteCharAt(i).toString();
+                // Check if the value in the map is already present
+                if(memo.containsKey(next)){
+                    //Update the value in the map with Maximum poaaible value
+                    
+                    memo.put(word, Math.max(memo.get(word),memo.get(next) + 1));
+                }
+            }
+            result = Math.max(result,memo.get(word));
+        }
+        
+        
+        
+        
+        return result;
+        
+    }
+}
