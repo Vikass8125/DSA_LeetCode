@@ -1,0 +1,124 @@
+1268. Search Suggestions System [MEDIUM]
+You are given an array of strings products and a string searchWord.
+
+Design a system that suggests at most three product names from products after each character of searchWord is typed. Suggested products should have common prefix with searchWord. If there are more than three products with a common prefix return the three lexicographically minimums products.
+
+Return a list of lists of the suggested products after each character of searchWord is typed.
+
+ 
+
+Example 1:
+
+Input: products = ["mobile","mouse","moneypot","monitor","mousepad"], searchWord = "mouse"
+Output: [
+["mobile","moneypot","monitor"],
+["mobile","moneypot","monitor"],
+["mouse","mousepad"],
+["mouse","mousepad"],
+["mouse","mousepad"]
+]
+Explanation: products sorted lexicographically = ["mobile","moneypot","monitor","mouse","mousepad"]
+After typing m and mo all products match and we show user ["mobile","moneypot","monitor"]
+After typing mou, mous and mouse the system suggests ["mouse","mousepad"]
+Example 2:
+
+Input: products = ["havana"], searchWord = "havana"
+Output: [["havana"],["havana"],["havana"],["havana"],["havana"],["havana"]]
+Example 3:
+
+Input: products = ["bags","baggage","banner","box","cloths"], searchWord = "bags"
+Output: [["baggage","bags","banner"],["baggage","bags","banner"],["baggage","bags"],["bags"]]
+ 
+
+Constraints:
+
+1 <= products.length <= 1000
+1 <= products[i].length <= 3000
+1 <= sum(products[i].length) <= 2 * 104
+All the strings of products are unique.
+products[i] consists of lowercase English letters.
+1 <= searchWord.length <= 1000
+searchWord consists of lowercase English letters.
+
+
+
+ MY_SOLUTION
+ 
+ // https://www.youtube.com/watch?v=D4T2N0yAr20
+ 
+ 
+ class Solution {
+    public List<List<String>> suggestedProducts(String[] products, String searchWord) {
+        //To print the first 3 strings once common letter is found
+        Arrays.sort(products);
+        int left = 0;
+        int right = products.length - 1;
+        
+        List<List<String>> result = new ArrayList<List<String>>();
+        
+        for(int i = 0; i < searchWord.length(); i++){
+            //Check if all strings moving forward include this character
+            char ch = searchWord.charAt(i);
+            //Left bound, removes strings not included from left side
+            while(left <= right && (i >= products[left].length() || products[left].charAt(i) != ch)){
+                left++;
+                
+            } 
+            //Right bound, removes strings not included from right side
+            while(right >= left && (i >= products[right].length() || products[right].charAt(i) != ch)){
+                right--;
+            }
+            
+            List<String> tempAns = new ArrayList<String>();
+            int tempLeft = left;
+            int count = 3;
+            
+            //Add the first 3 (or less) strings from left bound
+            while(tempLeft <= right && count > 0){
+                tempAns.add(products[tempLeft]);
+                tempLeft++;
+                count--;
+            }
+            
+            result.add(tempAns);
+        } 
+        return result;
+        
+        
+    }
+}
+
+
+ANOTHER_SOLUTION
+
+I found much more intuitive to iterate through every substring (0, k) of S asking each word in the product array if it starts with the 
+substring, if it does, I add it to a PriorityQueue which is comparing lexographhically, that way you just need to poll() 3 times to find the most accurate results.
+
+
+
+
+
+class Solution {
+public List<List<String>> suggestedProducts(String[] products, String searchWord) {
+  PriorityQueue<String> pq = new PriorityQueue<>(3, (s1,s2) -> s1.compareTo(s2)); 
+  List<List<String>> list = new ArrayList<>();
+  
+  for(int i = 1; i<=searchWord.length(); i++){
+    String temp = searchWord.substring(0, i);
+    for(String s : products){
+      if(s.startsWith(temp)){
+        pq.offer(s);
+      }
+    }
+    List<String> temp_list = new ArrayList<>();
+    for(int j = 0; j<3; j++){
+      if(pq.peek() != null){
+        temp_list.add(pq.poll());
+      }
+    }
+    pq.clear();
+    list.add(temp_list);
+  }
+  return list;
+  }
+}
