@@ -1,0 +1,82 @@
+215. Kth Largest Element in an Array  [MEDIUM]
+Given an integer array nums and an integer k, return the kth largest element in the array.
+
+Note that it is the kth largest element in the sorted order, not the kth distinct element.
+
+ 
+
+Example 1:
+
+Input: nums = [3,2,1,5,6,4], k = 2
+Output: 5
+Example 2:
+
+Input: nums = [3,2,3,1,2,4,5,5,6], k = 4
+Output: 4
+ 
+
+Constraints:
+
+1 <= k <= nums.length <= 104
+-104 <= nums[i] <= 104
+
+
+MY_SOLUTION
+
+
+Sort the array first
+
+Second step to get kth largest element from the array
+
+class Solution {
+    public int findKthLargest(int[] nums, int k) {
+       
+        Arrays.sort(nums);
+        return nums[nums.length - k];
+       
+    }
+}
+
+Approach 1-
+1.naive approach which comes into mind is to sort the entire array and then just return the element present at kth index -> arr[nums.length-k]
+2. above algo takes o(nlogn) time.
+3. so, what is the problem in above approach and how can we make it faster.
+for ex- input array is of size 1000 and k=1. i.e. we just want largest. but as per above approach we will first sort the entire array and then 
+we will return largest. we can optimize above algo if we just maintain sorted order k elements. not the entire array.
+4. Now question is how can we just sort k elements only. for this refer approach 2
+
+
+
+Approach 2-
+
+We can make use of Heap as it can give smallest/largest element in o(1) time.
+Since we want k elements and kth largest. we can maintain minHeap of size k. why minHeap? we will understand it on 4th point.
+Now iterate over each element of array and add element to heap. if heap size reaches size k remove heap top element(which would be minimum of 
+current k elements in heap).
+So by above logic minimum elements will get removed one by one till we are left with (nums.length - k + 1)th minimum element. which is our kth max element.
+For example -
+if arr = [1,2,3,4,5,6,7,8,9,10,11] and k=4.
+after heap has first four elements, it start removing lowest element. ie. it will first remove 1 and add 5. then 2 and add 6. then 3 remove and add 7. 
+once loop finished top element of heap will be 8 which is the answer.
+Complexity - on average o(nlogk). and memory - o(k). since at most k elements will be present in heap at a time. in case of k=n. it will be o(nlogn) 
+and o(n) in worst case.
+
+
+
+class Solution {
+    public int findKthLargest(int[] nums, int k) {
+  
+
+        PriorityQueue<Integer> minHeap = new PriorityQueue<>();
+        
+        for(int num : nums){
+            minHeap.add(num);
+            if(minHeap.size() > k){
+                minHeap.poll();
+            }
+            
+        }
+        return minHeap.poll();
+       
+    }
+}
