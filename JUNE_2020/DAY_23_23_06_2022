@@ -1,0 +1,103 @@
+630. Course Schedule III  [HARD]
+
+There are n different online courses numbered from 1 to n. You are given an array courses where courses[i] = [durationi, lastDayi] indicate that the ith course should be taken continuously for durationi days and must be finished before or on lastDayi.
+
+You will start on the 1st day and you cannot take two or more courses simultaneously.
+
+Return the maximum number of courses that you can take.
+
+ 
+
+Example 1:
+
+Input: courses = [[100,200],[200,1300],[1000,1250],[2000,3200]]
+Output: 3
+Explanation: 
+There are totally 4 courses, but you can take 3 courses at most:
+First, take the 1st course, it costs 100 days so you will finish it on the 100th day, and ready to take the next course on the 101st day.
+Second, take the 3rd course, it costs 1000 days so you will finish it on the 1100th day, and ready to take the next course on the 1101st day. 
+Third, take the 2nd course, it costs 200 days so you will finish it on the 1300th day. 
+The 4th course cannot be taken now, since you will finish it on the 3300th day, which exceeds the closed date.
+Example 2:
+
+Input: courses = [[1,2]]
+Output: 1
+Example 3:
+
+Input: courses = [[3,2],[4,3]]
+Output: 0
+ 
+
+Constraints:
+
+1 <= courses.length <= 104
+1 <= durationi, lastDayi <= 104
+
+
+SOLUTION
+// https://www.youtube.com/watch?v=ey8FxYsFAMU
+
+Java Solution Using PriorityQueue.
+Sort courses by last day in ascending order.
+Max Heap to track the max duration courses using Priority Queue.
+Time + duration and put duration to max heap.
+If pass the last day, remove the courses takes longest time.
+Heap size is the max courses number we take.
+Time complexity: O(n.logn)
+Space complexity: O(n)
+
+
+class Solution {
+    public int scheduleCourse(int[][] courses) {
+        Arrays.sort(courses,(a,b) -> a[1]-b[1]); // sorting the array based on lastdate of each course
+        
+        PriorityQueue<Integer> maxHeap = new PriorityQueue<>((a,b) -> b - a); // for storing the max course duration till now
+        
+        int time=0; // to count total time spent before the current course 
+        
+        for(int course[]:courses){// going through each of the courses
+            if(time+course[0] <= course[1]){// if total time till now plus current course duration is less than last date of current course
+                maxHeap.offer(course[0]); // add duration to heap
+                time+=course[0];// increment total time
+            }
+            else if(!maxHeap.isEmpty() && maxHeap.peek() >course[0]){ // if our current course duratrion is less than the maximum duration course we had before
+                time+= course[0] - maxHeap.poll(); // replacing our max duration course with current course duration to reduce total time
+                maxHeap.offer(course[0]);// adding current course duration to heap
+            }
+        }
+        
+        return maxHeap.size();// returning the final heap size.  i.e, maximum number of course we could fit into 
+    }
+}
+
+ANOTHER_SOLUTION
+class Solution {
+    public int scheduleCourse(int[][] courses) {
+        Arrays.sort(courses,(a,b) -> a[1]==b[1] ? a[0]-b[0] : a[1]-b[1]);
+        PriorityQueue<Integer> maxHeap = new PriorityQueue<>((a,b) -> b-a);
+        int timeTaken = 0;
+        
+        for(int[] course : courses){
+            
+            // If considering the course : duration <= lastDay
+            if(course[0] <= course[1]){
+                // Check if cirrent course can be completed within the LastDay
+                if(course[0] + timeTaken <= course[1]){
+                    maxHeap.offer(course[0]);
+                    timeTaken += course[0];
+                }
+                else{
+                    // Check if we can swap
+                    if(maxHeap.peek() > course[0]){
+                        timeTaken -= maxHeap.poll();
+                        timeTaken += course[0];
+                        maxHeap.offer(course[0]);
+                    }
+                }
+            }
+        }
+        return maxHeap.size();
+        
+        
+    }
+}
