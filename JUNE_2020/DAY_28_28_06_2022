@@ -1,0 +1,97 @@
+1647. Minimum Deletions to Make Character Frequencies Unique  [MEDIUM]
+A string s is called good if there are no two different characters in s that have the same frequency.
+
+Given a string s, return the minimum number of characters you need to delete to make s good.
+
+The frequency of a character in a string is the number of times it appears in the string. For example, in the string "aab", the frequency of 'a' is 2, while the frequency of 'b' is 1.
+
+ 
+
+Example 1:
+
+Input: s = "aab"
+Output: 0
+Explanation: s is already good.
+Example 2:
+
+Input: s = "aaabbbcc"
+Output: 2
+Explanation: You can delete two 'b's resulting in the good string "aaabcc".
+Another way it to delete one 'b' and one 'c' resulting in the good string "aaabbc".
+Example 3:
+
+Input: s = "ceabaacb"
+Output: 2
+Explanation: You can delete both 'c's resulting in the good string "eabaab".
+Note that we only care about characters that are still in the string at the end (i.e. frequency of 0 is ignored).
+ 
+
+Constraints:
+
+1 <= s.length <= 105
+s contains only lowercase English letters.
+
+
+MY_SOLUTION
+Algorithm
+
+Store the frequency for each character in the given string s in a frequency array called frequency. 
+We store the frequency for a character c at index c - 'a'. Thus, we will need 26 indices (from 0 to 25) to store the frequencies of the characters.
+Initialize the variable deleteCount to 0, which stores the count of characters that need to be deleted. 
+Also, initialize a HashSet seenFrequencies that stores the frequencies that have been occupied.
+Iterate over the characters from a to z as 0 to 25, for each character:
+Keep decrementing its frequency until it becomes a number that is not present in set seenFrequencies or it becomes zero. 
+Every time we decrement the frequency we increment the variable deleteCount to mark the deletion of the character.
+When the frequency becomes unique (or zero) insert it into the set seenFrequencies.
+Return deleteCount.
+
+class Solution {
+    public int minDeletions(String s) {
+        int[] frequency = new int[26];
+        int size = s.length();
+        for(int i = 0; i < size; i++){
+            frequency[s.charAt(i) - 'a']++;
+        }
+        
+        
+        int deleteCount = 0;
+        HashSet<Integer> presentFreq = new HashSet<>();
+        
+        for(int i = 0; i < 26; i++){
+            while(frequency[i] > 0 && presentFreq.contains(frequency[i])){
+                frequency[i]--;
+                deleteCount++;
+            
+            }
+            presentFreq.add(frequency[i]);
+            
+        }
+        return deleteCount;
+    }
+}
+
+
+================================================================================================================================================
+class Solution {
+    private int N = 26;
+    public int minDeletions(String s) {
+        int[] array = new int[N];
+        for (char ch : s.toCharArray()) {
+            array[ch - 'a']++;
+        }
+        int ans = 0;
+        Set<Integer> set = new HashSet<>();
+        for (int i : array) {
+            if (i == 0) continue;
+            while (set.contains(i)) {
+                i--;
+                ans++;
+            }
+            if (i != 0) {
+                set.add(i);
+            }
+        }
+        return ans;
+    }
+}
+
