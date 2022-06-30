@@ -1,0 +1,158 @@
+462. Minimum Moves to Equal Array Elements II [MEDIUM]
+Given an integer array nums of size n, return the minimum number of moves required to make all array elements equal.
+
+In one move, you can increment or decrement an element of the array by 1.
+
+Test cases are designed so that the answer will fit in a 32-bit integer.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,3]
+Output: 2
+Explanation:
+Only two moves are needed (remember each move increments or decrements one element):
+[1,2,3]  =>  [2,2,3]  =>  [2,2,2]
+Example 2:
+
+Input: nums = [1,10,2,9]
+Output: 16
+ 
+
+Constraints:
+
+n == nums.length
+1 <= nums.length <= 105
+-109 <= nums[i] <= 109
+
+
+MY_SOLUTION
+
+Intuition:
+We want to increment/decrement all values in the list to reach a single point, the meeting point. 
+Most people look at this question and start by deciding the closest value to all of these values must be the average. 
+This is wrong as the average minimizes the maximum distance needed to reach the same value for each point.
+
+e.g (2,2,2,10) = Average= 4
+
+In this case, the amount that minimizes the maximum distance needed for any one of these values to reach the same point is 4, with the point being 6. 
+Using 6 as our meeting point we get a minimum moves amount of 16, however using 2, we can get a minimum moves amount of 8. 
+In this question, we are instead optimizing for the minimum SUM of the distances to reach a point, and for that, we would need the median.
+
+Proof
+The proof is as followed, assume we have a sorted list of values (e.g [1,....102]).
+The meeting point must be between the minimum and maximum of this list by definition, so we can ignore the first and last value. 
+Then we can continue this process and are left with the median value.
+
+Now the question is simply to find the amount to increment each value, we can sum up the absolute differences of each value and the median and 
+return that as the minimum number of moves.
+
+Implementation:
+Sort the array to find the median in the list
+Find the difference between all values and the median in the list
+Add the absolute value of these differences to our minMovesCount
+
+Time Complexity - O(nlog(n)) - The time complexity of this solution is bounded by the time to sort the list which at 
+minimum has a complexity of O(nlog(n)) a lower bound of sorting algorithms.
+
+Space Complexity - O(1) - The space used for this solution doesn't depend on the size of the input array nums
+
+
+
+class Solution {
+    public int minMoves2(int[] nums) {
+        //Approach -1
+        /*
+         Arrays.sort(nums);
+        
+        int start = 0;
+        int end = nums.length - 1;
+        int mid = start + (end-start)/2;
+        int ele = nums[mid];
+        int moves = 0;
+        
+        for(int i = 0; i < nums.length; i++){
+            moves += Math.abs(nums[i]-ele);
+
+        }
+        return moves;
+        
+        */
+        
+        //Approach -2
+        Arrays.sort(nums);
+        
+        int start = 0;
+        int end = nums.length-1;
+        
+        int count = 0;
+        
+        while(start < end){
+            count += nums[end] - nums[start];
+            start++;
+            end--;
+        }
+        return count;
+        
+    }
+}
+
+
+===================================================================================================================================================
+Approach 1: Sorting the array
+
+This is fairly straight forward. If we simply sort the nums array, we can obtain the median by simply accessing the middle element. 
+This allows us to find the median in O(nlogn) time. Keep in mind that if the array is of even length, we can just pick either of the two middle values as our median.
+
+Approach 2: Quick Select
+
+The sorting method is inefficient because it sorts the entire array. All we really need to do is put the median element where it's supposed to be; 
+we don't care about where the other elements end up. Sound familiar? Well turns out we can do exactly that using quick select. 
+In quick select, we'll just select the middle element; n/2 and retrieve the value at that position. 
+This allows us to find the median element in O(n) time on average.
+
+If you're unfamiliar with quick select, I highly recommend reading this guide that I wrote which explains the entire
+process in detail, including explanations for time complexity.
+
+
+Approach 2: Quick Select
+
+Time complexity: O(n) average case (read this Guide for Quick Select)
+Space complexity: O(logn)
+
+class Solution {
+    public int minMoves2(int[] nums) {
+        int operations = 0, mid = quickSelect(nums, 0, nums.length-1, nums.length/2);
+        for (int num: nums) operations += Math.abs(mid - num);
+        return operations;
+    }
+    
+    private int quickSelect(int[] nums, int left, int right, int k) {
+        if (left == right) return nums[left];
+
+        int pIndex = new Random().nextInt(right - left + 1) + left;
+        pIndex = partition(nums, left, right, pIndex);
+
+        if (pIndex == k) return nums[k];
+        else if (pIndex < k) return quickSelect(nums, pIndex+1, right, k);
+        return quickSelect(nums, left, pIndex-1, k);
+    }
+
+    private int partition(int[] nums, int left, int right, int pIndex) {
+        int pivot = nums[pIndex];
+        swap(nums, pIndex, right);
+        pIndex = left;
+
+        for (int i=left; i<=right; i++) 
+            if (nums[i] <= pivot) swap(nums, i, pIndex++);
+
+        return pIndex - 1;
+    }
+
+    private void swap(int[] nums, int x, int y) {
+        int temp = nums[x];
+        nums[x] = nums[y];
+        nums[y] = temp;
+    }
+}
