@@ -1,0 +1,119 @@
+1465. Maximum Area of a Piece of Cake After Horizontal and Vertical Cuts  [MEDIUM]
+
+You are given a rectangular cake of size h x w and two arrays of integers horizontalCuts and verticalCuts where:
+
+horizontalCuts[i] is the distance from the top of the rectangular cake to the ith horizontal cut and similarly, and
+verticalCuts[j] is the distance from the left of the rectangular cake to the jth vertical cut.
+Return the maximum area of a piece of cake after you cut at each horizontal and vertical position provided in the arrays horizontalCuts and verticalCuts. Since the answer can be a large number, return this modulo 109 + 7.
+
+ 
+
+Example 1:
+
+
+Input: h = 5, w = 4, horizontalCuts = [1,2,4], verticalCuts = [1,3]
+Output: 4 
+Explanation: The figure above represents the given rectangular cake. Red lines are the horizontal and vertical cuts. After you cut the cake, the green piece of cake has the maximum area.
+Example 2:
+
+
+Input: h = 5, w = 4, horizontalCuts = [3,1], verticalCuts = [1]
+Output: 6
+Explanation: The figure above represents the given rectangular cake. Red lines are the horizontal and vertical cuts. After you cut the cake, the green and yellow pieces of cake have the maximum area.
+Example 3:
+
+Input: h = 5, w = 4, horizontalCuts = [3], verticalCuts = [3]
+Output: 9
+ 
+
+Constraints:
+
+2 <= h, w <= 109
+1 <= horizontalCuts.length <= min(h - 1, 105)
+1 <= verticalCuts.length <= min(w - 1, 105)
+1 <= horizontalCuts[i] < h
+1 <= verticalCuts[i] < w
+All the elements in horizontalCuts are distinct.
+All the elements in verticalCuts are distinct.
+
+
+MY_SOLUTION
+//https://www.youtube.com/watch?v=x1wpxxzpiFY
+
+ /* Idea is to maximize the height and width for maximizing area of Rectange 
+           We have to sort both the arrays.
+           
+           -> Find max diff between hor[i] - hor[i-1] for max width
+           -> Find max diff between ver[i] - ver[i-1] for max height
+           -> Multiply maxWidth * maxHeight => maxArea
+        
+           Example: hor = [2, 4, 7]  ver = [3, 5, 8] 
+                    Consider corner case also:
+                    i. Corners  => [0, 2, 4, 7, h]   [0, 3, 5, 8, w]
+           
+                    Sometimes, it may be possible that the corners (which itselfs are cuts)
+                    also can have larger area:
+                    
+                    eg: [0, 12, 14, 17, h] 
+                        => { 12-0 or h-17 } can be more than { 14-12 or 17-14 }
+        */
+        
+        // EDGE CASE
+        The first cut and last cut also need to be taken into account for maxHeight and maxWidth.
+        Lets take only horizontal cuts into consideration
+
+        Given h=4, horizontalCuts = [2,3]
+        If we only consider the diff, we get 1 to be maxHeight. But from the diagram, we can see the maxHeight is 2 i.e. horizontalCuts[0]-0
+
+        0 | | | | | | |
+        1 | | | | | | |
+        2 | | | | | | |
+        . . . . . . . . . . . . . . . . . . . . . . . . .
+        3 | | | | | | |
+        . . . . . . . . . . . . . . . . . . . . . . . . .
+        4 | | | | | | |
+
+        We can think along similar lines for the last cut and the vertical cuts.
+        
+        
+        
+        Sort the horizontalCuts and verticalCuts array
+        First we will see the horizontal cuts, to start get the max between the first cut and the difference of the height and the last element
+        Loop through the remaining elements from index 1 to the length and get the maxHeight computed.
+        Do the same for vertical cuts and compute the maxWidth
+        return the product of maxHeight and maxWidth
+        Since the test cases are huge we want to convert the area to long data type and the result needs to be the % of 1000000007
+
+===============================================================================================================================================================
+class Solution {
+    public int maxArea(int h, int w, int[] horizontalCuts, int[] verticalCuts) {
+        // T.C -> O(HLOGH + VLOGV)
+        //SORT THE BOTH ARRAYS
+        
+        Arrays.sort(horizontalCuts);
+        Arrays.sort(verticalCuts);
+        
+        int hLen = horizontalCuts.length;
+        int vLen = verticalCuts.length;
+        
+        // Edge Cases
+        int maxHeight = Math.max(horizontalCuts[0]- 0, h - horizontalCuts[hLen - 1]);
+            
+        for(int i = 1; i < hLen ; i++){
+            maxHeight = Math.max(maxHeight, horizontalCuts[i] - horizontalCuts[i-1]);
+        }
+        
+        // Edge Cases
+        int maxWidth = Math.max(verticalCuts[0]- 0, w - verticalCuts[vLen - 1]);
+        
+        for(int j = 1; j < vLen ; j++){
+            maxWidth = Math.max(maxWidth, verticalCuts[j] - verticalCuts[j-1]);
+        }
+        
+        long ans = 1L * maxHeight * maxWidth;
+        
+        return  (int) (ans % 1000000007);
+        
+        
+    }
+}
