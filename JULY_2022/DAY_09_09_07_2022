@@ -1,0 +1,500 @@
+1696. Jump Game VI  [MEDIUM]
+You are given a 0-indexed integer array nums and an integer k.
+
+You are initially standing at index 0. In one move, you can jump at most k steps forward without going outside the boundaries of the array. 
+That is, you can jump from index i to any index in the range [i + 1, min(n - 1, i + k)] inclusive.
+
+You want to reach the last index of the array (index n - 1). Your score is the sum of all nums[j] for each index j you visited in the array.
+
+Return the maximum score you can get.
+
+ 
+
+Example 1:
+
+Input: nums = [1,-1,-2,4,-7,3], k = 2
+Output: 7
+Explanation: You can choose your jumps forming the subsequence [1,-1,4,3] (underlined above). The sum is 7.
+Example 2:
+
+Input: nums = [10,-5,-2,4,0,3], k = 3
+Output: 17
+Explanation: You can choose your jumps forming the subsequence [10,4,3] (underlined above). The sum is 17.
+Example 3:
+
+Input: nums = [1,-5,-20,4,-1,3,-6,-3], k = 2
+Output: 0
+ 
+
+Constraints:
+
+1 <= nums.length, k <= 105
+-104 <= nums[i] <= 104
+
+
+MY_SOLUTION
+
+
+//TC: O(N)
+//SC: O(K)
+
+class Solution {
+    public int maxResult(int[] nums, int k) {
+        int n = nums.length;
+        
+        Deque<Integer> dq = new ArrayDeque<>();
+        
+        dq.offerLast(0);
+        
+        for(int i=1;i<n;i++){
+            
+            nums[i] = nums[i] + nums[dq.peekFirst()];
+            
+            while(!dq.isEmpty() && nums[i]>=nums[dq.peekLast()]){
+                dq.pollLast();
+            }
+            
+            dq.offerLast(i);
+            
+            if(i - dq.peekFirst() >=k){
+                dq.pollFirst();
+            }
+            
+        }
+        return nums[n-1];
+    }
+}
+==========================================================================================
+//TC: O(N)
+//SC: O(K)
+
+class Solution {
+    public int maxResult(int[] nums, int k) {
+        int n = nums.length;
+        
+        Deque<Integer> dq = new ArrayDeque<>();
+        
+        dq.offerLast(0);
+        
+        for(int i=1;i<n;i++){
+            
+            nums[i] = nums[i] + nums[dq.peekFirst()];
+            
+            while(!dq.isEmpty() && nums[i]>=nums[dq.peekLast()]){
+                dq.pollLast();
+            }
+            
+            dq.offerLast(i);
+            
+            if(i - dq.peekFirst() >=k){
+                dq.pollFirst();
+            }
+            
+        }
+        return nums[n-1];
+    }
+}
+========================================================================================
+//DP APPROACH
+
+Let's start our discussion from the most obvious initial thought looking at this problem. 
+We need to try out all possible combinations for each index and it's k neighbours and pick the best out of them. 
+Let's start from the initial thought and step by step try to improvise our solution and reach the accepted solutions
+
+BruteForce (Time Limited Exceed)
+In this approach we try out the above thought and try to process all the nodes with their k neighbours and get the max score.
+
+private int maxResult(int[] nums, int i, int k) {
+        if(i >= nums.length - 1) return nums[nums.length - 1];
+        
+        int max = Integer.MIN_VALUE;
+        
+        for(int j = i + 1; j <= Math.min(i + k, nums.length); j++) // Mininum of i + k, nums.length to prevent unnecessary calls for out of bounds. 
+            max = Math.max(max, maxResult( nums, j , k));
+        
+        return max;
+    }
+Time Complexity - O(k^n) - As at each node we have k next nodes to be processed. So k,k,k.....n times gives k^n.
+
+Recursive + Memoization -- Top-Down DP (Time Limit Exceed)
+As it might be evident that we are recalculating many of the nodes again and again while their solution would remain the same as from a given node 
+the maximum score to reach end would be same. e.g. 1,2,3,4,5,6,7 k - 3, so when we are at Node 1 - we process Node 2,3,4 and get the maximum value.
+When we move to node Node 2 - we process Node 3,4,5 So if we see we are again processing the Node 3, 4 which is not required at all.
+So, this calls for introducing a memory to store the already processed nodes and just provide a lookup of O(1).
+
+public int maxResult(int[] nums, int k) {
+        int[] mem = new int[nums.length]; // Lookup table to score max score for given node
+        
+        for(int i = 0; i < mem.length; i++)
+            mem[i] = Integer.MIN_VALUE;
+        
+        return maxResult(mem, nums, 0, k);
+    }
+    
+    private int maxResult(int[] mem, int[] nums, int i, int k) {
+        if(i >= nums.length - 1) return nums[nums.length - 1];
+        
+        if(mem[i] != Integer.MIN_VALUE) return mem[i];
+        
+        int max = Integer.MIN_VALUE;
+        
+        for(int j = i + 1; j <= Math.min(i + k, nums.length); j++)
+            max = Math.max(max, maxResult(mem, nums, j , k));
+        
+        mem[i] = nums[i] + max;
+        
+        return mem[i];
+    }
+Time Complexity - O(k^n) - As at each node we have k next nodes to be processed. So k,k,k.....n times gives k^n. 
+Even though the lookup prevents further re-processing of already processed nodes(which can make it little faster).
+
+DP + Sliding Window -- Optimized using Priority Queue (Accepted) 170ms ✅
+If we closely look at the problem we can understand that we need to get the maximum score within a given window ( k steps) preceeding current node(inclusive) and 
+it would give us the maximum score for the current node. At a given node we only need the nearest k nodes data to process. 
+For this we use a priority queue(PQ) to fetch maximum score in O(1) with overall cost of O(nlog(n)) for interal sorting of PQ. 
+Also, once we have moved forward we need to remove the element which is beyond the k step window( even if it is the maximum scoring).
+
+To clear the last statement, we might have some values in Priority Queue which are outside of K step window but when we process a node we make sure we 
+are using the score of the node within the acceptable window.
+
+public int maxResult(int[] nums, int k) {
+        PriorityQueue<Pair<Integer, Integer>> pq = new PriorityQueue<>(k,
+                Comparator.comparing(o -> -o.getValue())) {{
+            offer(new Pair<>(0, nums[0]));
+        }};
+
+        int max = nums[0], ans;
+        for (int i = 1; i < nums.length; i++) {
+            while (pq.peek().getKey() < i - k) { // We just compare the top node and see if it is outside of window or not.
+                pq.poll();
+            }
+
+            max = nums[i] + pq.peek().getValue();
+            pq.offer(new Pair<>(i, max));
+        }
+
+        return max;
+    }
+Time Complexity - O(nlog(n)) - Although it seem that we have multiple while loops but if we think about we are only processing the nodes atmost twice 
+once for processing that and second time while removing from the window. So, overall complexity depends on the sorting in PQ which is O(nlog(n)) due to internal heap.
+
+DP + Sliding Window -- Deque (Accepted) 70ms ✅
+Although the above PQ based solution is accepted, we can improve the overall complexity if we can handle getting maximum value for the window without the need 
+to sort them. This can be achieved by maintaining the maximum score element at the front of the queue always.
+
+Once the front element is out of window we can simply remove the element. Also, if we see once we get a score greater than the previous elements in the 
+window we don't need th earlier elements as the current would be always selected for future elements due to it's score greater than earlier ones and also 
+it is latest processed so would remain in the window for the last.
+
+Seems easy ...right? Let's see the code.
+
+public int maxResult(int[] nums, int k) {
+        Deque<Pair<Integer, Integer>> deque = new LinkedList<>() {{
+            offer(new Pair<>(0, nums[0]));
+        }};
+        int max = nums[0];
+
+        for (int i = 1; i < nums.length; i++) {
+            while (!deque.isEmpty() && deque.peekFirst().getKey() < i - k) {
+                deque.pollFirst();
+            }
+
+            max = nums[i] + (deque.isEmpty() ? 0 : deque.peekFirst().getValue());
+
+            while (!deque.isEmpty() && deque.peekLast().getValue() <= max) {
+                deque.pollLast();
+            }
+
+            deque.offerLast(new Pair<>(i, max));
+        }
+
+        return max;
+    }
+Time Complexity - O(n) - At initial glance it might seem that we have multiple loops that might lead to complexity greater than O(n); however, if we take 
+a close look, we can see that each node would be processed maximum of 2 times. Once while the processing of itself and the second time either while removing 
+out of window elements of the onces which are less than the current maximum score.
+
+
+===========================================================================================================================================
+Idea:
+For this problem, we can see that there are many possible paths from one end of nums to the other, but that they cross back over each other countless times. 
+There may be multiple ways to get to a given element in the middle of nums, but there should only be one best way to get from there to the end of nums.
+
+When we find ourselves potentially solving the same subproblem over and over again, it's time for a dynamic programming (DP) approach. 
+In a normal DP approach, we would create a DP array to store the best solution from each element to the end, but since we're only going to be iterating through 
+nums once, we can use an in-place DP approach and modify the elements of nums as we iterate through.
+
+(Note: If you choose not to modify your inputs, you can make a separate DP array to store these values. This will increase the space complexity to O(N).)
+
+Now, if we consider being located at a particular element in nums, and all the elements ahead of us having been modified to equal the best value to the end of 
+nums, then the best value for the current location will be its own value plus the best value it can reach in a jump of up to k distance.
+
+One option here would be to use a priority queue to keep track of the best results ahead, then we could just take the top value in the priority 
+queue (while remembering to first remove any entries that are farther than k distance away). But a priority queue isn't terribly efficient for our purposes.
+
+Instead, we can use a double-ended queue (deq) to good effect here. Since we'll need to remove elements from the front end of deq if they're outside the 
+jump window, we should use indexes for the deq entries.
+
+When we go to push an index onto deq, we should consider that any indexes at the end of deq which represent lower values will never be used, as they will 
+always be surpassed by the newer value until they fall outside the jump window. Before pushing the new index onto deq then, we should remove from the end 
+of deq any indexes representing lower values.
+
+This consequently means that deq will always be sorted from high to low values, which is precisely what we wanted. At every iteration (i) then, after 
+removing out-of-window indexes, the top entry will represent the value we want to add to nums[i] to equal the best result from i to the end of nums.
+
+We can continue this iteration down to i = 0, then return nums[0] as the finished result.
+
+Time Complexity: O(N) where N is the length of nums
+Space Complexity: O(K) for deq
+or O(N) if we use a separate DP array rather than modifying nums
+Implementation:
+For Java, the ArrayDeque() implementation is much slower than using an int array with the same length as nums and then using a sliding window with 
+pointers (a, b) to represent the current first and last element of deq. This will push the space complexity to O(N).
+
+The same applies to C++ and their implementation of deque(), though to a lesser degree.
+
+class Solution {
+    public int maxResult(int[] nums, int k) {
+        int n = nums.length, a = 0, b = 0;
+        int[] deq = new int[n];
+        deq[0] = n - 1;
+        for (int i = n - 2; i >= 0; i--) {
+            if (deq[a] - i > k) a++;
+            nums[i] += nums[deq[a]];
+            while (b >= a && nums[deq[b]] <= nums[i]) b--;
+            deq[++b] = i;
+        }
+        return nums[0];
+    }
+}
+
+
+=====================================================================================================
+
+class Solution {
+    public int maxResult(int[] nums, int k) {
+        LinkedList<Integer> list = new LinkedList<>(); // for storing indices
+        list.add(0);
+        for(int i=1; i<nums.length; i++){
+			//checking if the value lies between the range of last k values, if not "bye-bye"
+            if(list.getFirst() < i-k) list.removeFirst();
+			// setting nums[i] equal to curr. value and curr. max value
+            nums[i] += nums[list.getFirst()];
+			//if index not between last k values, remove it.
+            while(!list.isEmpty() && nums[list.getLast()] <= nums[i]) list.removeLast();
+            list.addLast(i);
+        }
+        return nums[nums.length-1];
+    }
+}
+============================================================================================================
+RECURSIVE APROACH
+Throws TLE.
+
+class Solution {
+    
+    private int MIN = Integer.MIN_VALUE / 2;
+    
+    public int maxResult(int[] nums, int k) {
+        return solve(nums, k, 0, dp);
+    }
+    
+    private int solve(int[] nums, int k, int index){
+        
+        if(index >= nums.length) return 0;
+        if(index == nums.length - 1) return nums[index];
+        int maximumScore = MIN;
+        
+
+        for(int i = index + 1; i <= Math.min(nums.length - 1, index + k); i++)
+            maximumScore = Math.max(maximumScore, solve(nums, k, i) + nums[index]);
+        
+        return maximumScore;
+    }
+}
+MEMOIZED APROACH
+Throws TLE.
+
+class Solution {
+    
+    private int MIN = Integer.MIN_VALUE / 2;
+    
+    public int maxResult(int[] nums, int k) {
+        int[] dp = new int[nums.length];
+        Arrays.fill(dp, MIN);
+        return solve(nums, k, 0, dp);
+    }
+    
+    private int solve(int[] nums, int k, int index, int[] dp){
+        
+        if(index >= nums.length) return 0;
+        if(index == nums.length - 1) return nums[index];
+        
+        if(dp[index] != MIN) return dp[index];
+        int maximumScore = MIN;
+        
+
+        for(int i = index + 1; i <= Math.min(nums.length - 1, index + k); i++)
+            maximumScore = Math.max(maximumScore, solve(nums, k, i, dp) + nums[index]);
+        
+        return dp[index] = maximumScore;
+    }
+}
+TABULATED APROACH
+Throws TLE.
+
+class Solution {
+    
+    private int MIN = Integer.MIN_VALUE / 2;
+    
+    public int maxResult(int[] nums, int k) {
+        
+        int n = nums.length;
+        int[] dp = new int[nums.length];
+        
+        dp[n - 1] = nums[n - 1];
+        
+        for(int index = n - 2; index >= 0; index--){
+            int maximumScore = MIN;
+
+            for(int i = index + 1; i <= Math.min(n - 1, index + k); i++)
+                maximumScore = Math.max(maximumScore, dp[i] + nums[index]);
+
+            dp[index] = maximumScore;
+        }
+        
+        return dp[0];
+    }
+}
+OPTIMIZEDAPROACH 🫡
+
+class Solution {
+    
+    public int maxResult(int[] nums, int k) {
+        if(nums.length == 1){
+            return nums[0];
+        }
+
+        PriorityQueue<int[]> pq = new PriorityQueue<>((a,b)-> b[0]-a[0]);
+        pq.add(new int[]{nums[nums.length-1], nums.length-1});
+        
+
+        for(int i = nums.length-2; i > 0; i--){
+
+            while(pq.peek()[1] > i+k){
+                pq.remove();
+            }
+
+            int nextMax = pq.peek()[0];
+            pq.add(new int[]{nextMax+nums[i], i});
+        }
+        
+
+        while(pq.peek()[1] > k){
+            pq.remove();
+        }
+
+        return pq.peek()[0]+nums[0];
+    }
+}
+=============================================================================================
+class Solution {
+    
+    public int maxResult(int[] nums, int k) {
+        
+        /* 
+            We will use bottom up approach. That will also take O(n*K)
+            Will further optimize by using sorted previous k elements for computation. O(n*logk)
+        */
+                
+        int n = nums.length;
+        int dp[] = new int[n];
+        
+        dp[0] = nums[0];  // Base Case for the dp (for 1st pos, only that value can be max)
+        
+        // Create Priority Queue which have smaller values first
+        
+        PriorityQueue<int[]> pq = new PriorityQueue<>((int a[], int b[]) -> b[0] - a[0]); 
+        pq.add(new int[]{nums[0], 0});
+        
+        /*
+            We have stored below values in Priority Queue
+            - arr[0] (value)
+            - arr[1] (index)        
+
+            Every time a new arr[] is entered in Priority queue,
+
+            - Comparison is made based on 0th index arr[0]  (which is the value)
+              Thus, element with less value is stored ahead in queue
+
+            - During fetching, we check if its 1st index arr[1] (which is the index of value) < i-k
+              Thus, the index of fetched value will be in range of [i] and [i-k]
+        */
+        
+        
+        for (int i=1; i<n; i++) {
+            
+            // Check if the peeked value is in range of last k values, use it. Otherwise, remove it.
+            
+            while (!pq.isEmpty() && pq.peek()[1] < i-k) {
+                pq.remove();  // remove till we get index between last k values.
+            }
+            
+            // Set dp[i] = Curr. Value + Max (last k index values)
+            dp[i] = nums[i] + pq.peek()[0];
+            
+            // Add curr index and its value for further dp[i+1] ...  calculations
+            pq.add(new int[]{dp[i], i});
+            
+        }
+        
+         return dp[n-1];
+    }
+}
+
+===============================================================================================================
+Maximum score at an index i comes from choosing the maximum of scores at last k indices.
+So the solution goes like this: for each index i from 0 to n - 1, score[i] = nums[i] + maximum of last k score values.
+
+TreeSet
+
+public int maxResult(int[] nums, int k) {
+    int n = nums.length;
+    if(n == 1) return nums[0];
+    int[] dist = new int[n];
+    TreeSet<int[]> set = new TreeSet<>((a, b) -> a[0] == b[0] ? a[1] - b[1] : a[0] - b[0]);
+    set.add(new int[] { dist[0] = nums[0], 0 });
+    for(int i = 1; i < n; i++) {
+        set.add(new int[] { dist[i] = set.last()[0] + nums[i], i });
+        if(i - k >= 0) set.remove(new int[] { dist[i - k], i - k });
+    }
+    return dist[n - 1];
+}
+PriorityQueue
+
+public int maxResult(int[] nums, int k) {
+    int n = nums.length, res = nums[0];
+    PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> b[0] - a[0]);
+    pq.add(new int[] { nums[0], 0 });
+    for(int i = 1; i < n; i++) {
+        while(pq.peek()[1] < i - k) pq.poll();
+        pq.add(new int[] { res = pq.peek()[0] + nums[i], i });
+    }
+    return res;
+}
+Deque
+
+We use use a deque to calculate sliding window maximum efficiently.
+
+public int maxResult(int[] nums, int k) {
+    Deque<Integer> deque = new ArrayDeque<>();
+    deque.add(0);
+    for(int i = 1; i < nums.length; i++) {
+        nums[i] += nums[deque.peek()];
+        if(i - k == deque.peek()) deque.poll();
+        while(!deque.isEmpty() && nums[deque.peekLast()] <= nums[i]) deque.pollLast();
+        deque.add(i);
+    }
+    return nums[nums.length - 1];
+}
+
