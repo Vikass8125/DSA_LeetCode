@@ -1,0 +1,271 @@
+746. Min Cost Climbing Stairs  [EASY]
+You are given an integer array cost where cost[i] is the cost of ith step on a staircase. Once you pay the cost, you can either climb one or two steps.
+
+You can either start from the step with index 0, or the step with index 1.
+
+Return the minimum cost to reach the top of the floor.
+
+ 
+
+Example 1:
+
+Input: cost = [10,15,20]
+Output: 15
+Explanation: You will start at index 1.
+- Pay 15 and climb two steps to reach the top.
+The total cost is 15.
+Example 2:
+
+Input: cost = [1,100,1,1,1,100,1,1,100,1]
+Output: 6
+Explanation: You will start at index 0.
+- Pay 1 and climb two steps to reach index 2.
+- Pay 1 and climb two steps to reach index 4.
+- Pay 1 and climb two steps to reach index 6.
+- Pay 1 and climb one step to reach index 7.
+- Pay 1 and climb two steps to reach index 9.
+- Pay 1 and climb one step to reach the top.
+The total cost is 6.
+ 
+
+Constraints:
+
+2 <= cost.length <= 1000
+0 <= cost[i] <= 999
+
+
+MY_SOLUTION
+
+We start at either step 0 or step 1. The target is to reach either last or second last step, whichever is minimum.
+
+Step 1 - Identify a recurrence relation between subproblems. In this problem,
+Recurrence Relation:
+mincost(i) = cost[i]+min(mincost(i-1), mincost(i-2))
+Base cases:
+mincost(0) = cost[0]
+mincost(1) = cost[1]
+
+Step 2 - Covert the recurrence relation to recursion
+
+// Recursive Top Down - O(2^n) Time Limit Exceeded
+public int minCostClimbingStairs(int[] cost) {
+	int n = cost.length;
+	return Math.min(minCost(cost, n-1), minCost(cost, n-2));
+}
+private int minCost(int[] cost, int n) {
+	if (n < 0) return 0;
+	if (n==0 || n==1) return cost[n];
+	return cost[n] + Math.min(minCost(cost, n-1), minCost(cost, n-2));
+}
+Step 3 - Optimization 1 - Top Down DP - Add memoization to recursion - From exponential to linear.
+
+// Top Down Memoization - O(n) 1ms
+int[] dp;
+public int minCostClimbingStairs(int[] cost) {
+	int n = cost.length;
+	dp = new int[n];
+	return Math.min(minCost(cost, n-1), minCost(cost, n-2));
+}
+private int minCost(int[] cost, int n) {
+	if (n < 0) return 0;
+	if (n==0 || n==1) return cost[n];
+	if (dp[n] != 0) return dp[n];
+	dp[n] = cost[n] + Math.min(minCost(cost, n-1), minCost(cost, n-2));
+	return dp[n];
+}
+Step 4 - Optimization 2 -Bottom Up DP - Convert recursion to iteration - Getting rid of recursive stack
+
+// Bottom up tabulation - O(n) 1ms
+public int minCostClimbingStairs(int[] cost) {
+	int n = cost.length;
+	int[] dp = new int[n];
+	for (int i=0; i<n; i++) {
+		if (i<2) dp[i] = cost[i];
+		else dp[i] = cost[i] + Math.min(dp[i-1], dp[i-2]);
+	}
+	return Math.min(dp[n-1], dp[n-2]);
+}
+Step 5 - Optimization 3 - Fine Tuning - Reduce O(n) space to O(1).
+
+// Bottom up computation - O(n) time, O(1) space
+public int minCostClimbingStairs(int[] cost) {
+	int n = cost.length;
+	int first = cost[0];
+	int second = cost[1];
+	if (n<=2) return Math.min(first, second);
+	for (int i=2; i<n; i++) {
+		int curr = cost[i] + Math.min(first, second);
+		first = second;
+		second = curr;
+	}
+	return Math.min(first, second);
+}
+=========================================================================================
+class Solution {
+    public int minCostClimbingStairs(int[] cost) {
+        //RECURSION
+        int len = cost.length;
+        return Math.min(minCost(cost,len - 1), minCost(cost, len - 2));
+        
+    }
+    public int minCost(int[] cost, int len){
+        if(len < 0) return 0;
+        if(len == 0 || len == 1) return cost[len];
+        return cost[len] + Math.min(minCost(cost,len - 1), minCost(cost, len - 2));
+    }
+}
+
+===================================================================================================
+class Solution {
+    int[] dp;
+    public int minCostClimbingStairs(int[] cost) {
+        //RECURSION + MEMOIZATION
+        int len = cost.length;
+        dp = new int[len];
+        return Math.min(minCost(cost,len - 1), minCost(cost, len - 2));
+        
+    }
+    public int minCost(int[] cost, int len){
+        if(len < 0) return 0;
+        if(len == 0 || len == 1) return cost[len];
+        if(dp[len] != 0) return dp[len];
+        dp[len] = cost[len] + Math.min(minCost(cost,len - 1), minCost(cost, len - 2));
+        return dp[len]; 
+    }
+    
+}
+
+=======================================================================================================
+
+class Solution {
+    public int minCostClimbingStairs(int[] cost) {
+        //RECURSION -> ITERATIVE
+        int len = cost.length;
+        int[] dp = new int[len];
+        
+        for(int i = 0; i < len; i++){
+            if(i < 2) dp[i] = cost[i];
+            else dp[i] = cost[i] + Math.min(dp[i-1], dp[i-2]);
+        }
+        return Math.min(dp[len-1], dp[len-2]);
+        
+    }
+}
+
+===============================================================================================================
+
+Idea:
+This is an introduction to a top-down dynamic programming (DP) approach solution. We can think of this as the build-up of a number of smaller subproblems, starting at the end.
+
+At each step, we can consider the answer to be the combined cost of the current step, plus the lesser result of the total cost of each of the solutions starting at the next two steps. This means that, thinking backwards, we can solve for the smallest problem first, and then build down from there.
+
+For the last two steps, the answer is clearly their individual cost. For the third to last step, it's that step's cost, plus the lower of the last two steps. Now that we know that, we can store that data for later use at lower steps. Normally, this would call for a DP array, but in this case, we could simply store the values in-place.
+
+(Note: If we choose to not modify the input, we could create a DP array to store this information at the expense of O(N) extra space.)
+
+So we should iterate downward from the end, starting at the third step from the end, and update the values in cost[i] with the best total cost from cost[i] to the end. Then, once we reach the bottom of the steps, we can choose the best result of cost[0] and cost[1] and return our answer.
+
+Time Complexity: O(N) where N is the length of cost
+Space Complexity: O(1)
+or O(N) if we use a separate DP array
+
+class Solution {
+    public int minCostClimbingStairs(int[] cost) {
+        for (int i = cost.length - 3; i >= 0; i--)
+            cost[i] += Math.min(cost[i+1], cost[i+2]);
+        return Math.min(cost[0], cost[1]);
+    }
+}
+
+=================================================================================================================
+Problem
+On a staircase, the i-th step has some non-negative cost cost[i] assigned (0 indexed).
+
+Once you pay the cost, you can either climb one or two steps. You need to find minimum cost to reach the top of the floor, and you can either start from the step with index 0, or the step with index 1.
+
+Note:
+
+cost will have a length in the range [2, 1000].
+Every cost[i] will be an integer in the range [0, 999].
+Example:
+
+// notice the top is at stair n (not the last element)
+Input: cost = [10, 15, 20]
+Output: 15
+
+Input: cost = [0, 0, 0, 0]
+Output: 0
+
+Input: cost = [0, 1, 2, 0]
+Output: 1
+
+Input: cost = [1, 100, 1, 1, 1, 100, 1, 1, 100, 1]
+Output: 6
+Analysis
+Recursion
+Check out the comment.
+
+// the top stair is at position n, not the last element at (n - 1)
+// If n == 0 or n == 1, the cost is 0 because we can reach the top without cost.
+// Define: opt(i) is minimum cost to reach step i; opt(n) is our solution.
+// Recurrence: opt(i) = min{ opt(i - 2) + cost[i - 2], opt(i - 1) + cost[i - 1] }
+// Initialization: opt(0) = 0, opt(1) = 0 (two starting points)
+// Caveat: when i == 1, no need to consider starting from 0 -> 1, since cost[0] + cost[1] must be greater than cost[1] only.
+public int minCostClimbingStairs(int[] cost) {
+  int n = cost.length;
+  // if (n == 0 || n == 1) return 0; // this check is unnecessary, consider why?
+  return minCost(n, cost); // i = 0...n
+}
+
+private int minCost(int i, int[] cost) {
+  if (i == 0 || i == 1) { // base case: two starting points
+    return 0; // notice: 0 instead of cost[i], consider why? The cost is added in the recurrence
+  }
+  int f1 = minCost(i - 2, cost) + cost[i - 2];
+  int f2 = minCost(i - 1, cost) + cost[i - 1];
+  return Math.min(f1, f2);
+}
+Time: O(2^N)
+Space: O(N)
+
+DP (bottom-up)
+public int minCostClimbingStairs(int[] cost) {
+  int n = cost.length;
+  int[] opt = new int[n + 1];
+  opt[0] = 0; // init
+  opt[1] = 0;
+  for (int i = 2; i <= n; ++i) {
+    opt[i] = Math.min(opt[i - 1] + cost[i - 1], opt[i - 2] + cost[i - 2]);
+  }
+  return opt[n];
+}
+Time: O(N)
+Space: O(N)
+
+Optimized Space Complexity:
+
+Note: f1 is corresponding with cost[i - 2]!
+
+public int minCostClimbingStairs(int[] cost) {
+  int n = cost.length;
+  int f1 = 0, f2 = 0; // init
+  for (int i = 2; i <= n; ++i) {
+    int temp = Math.min(f1 + cost[i - 2], f2 + cost[i - 1]); // [i - 2] is before
+    f1 = f2;
+    f2 = temp;
+  }
+  return f2;
+}
+Time: O(N)
+Space: O(1)
+=================================================================================================================
+public int minCostClimbingStairs(int[] cost) {
+	int n = cost.length;
+    int[] dp = new int[n+1];
+    dp[0] = 0;
+    dp[1] = 0;
+    for(int i = 2; i <= n; i++){
+		dp[i] = Math.min(dp[i-1] + cost[i-1], dp[i-2] + cost[i-2]);
+     }
+     return dp[n];
+}
