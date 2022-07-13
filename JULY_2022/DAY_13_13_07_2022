@@ -1,0 +1,208 @@
+102. Binary Tree Level Order Traversal [MEDIUM]
+Given the root of a binary tree, return the level order traversal of its nodes' values. (i.e., from left to right, level by level).
+
+ 
+
+Example 1:
+
+
+Input: root = [3,9,20,null,null,15,7]
+Output: [[3],[9,20],[15,7]]
+Example 2:
+
+Input: root = [1]
+Output: [[1]]
+Example 3:
+
+Input: root = []
+Output: []
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [0, 2000].
+-1000 <= Node.val <= 1000
+
+MY_SOLUTION
+
+
+
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode() {}
+ *     TreeNode(int val) { this.val = val; }
+ *     TreeNode(int val, TreeNode left, TreeNode right) {
+ *         this.val = val;
+ *         this.left = left;
+ *         this.right = right;
+ *     }
+ * }
+ */
+class Solution {
+    public List<List<Integer>> levelOrder(TreeNode root) {
+        List<List<Integer>> ans = new ArrayList<>();
+        if (root == null) return ans;
+        Deque<TreeNode> queue = new ArrayDeque<>();
+        queue.add(root);
+        while (!queue.isEmpty()) {
+            int qlen = queue.size();
+            List<Integer> row = new ArrayList<>();
+            for (int i = 0; i < qlen; i++) {
+                TreeNode curr = queue.poll();
+                row.add(curr.val);
+                if (curr.left != null) queue.add(curr.left);
+                if (curr.right != null) queue.add(curr.right);
+            }
+            ans.add(row);
+        }
+        return ans;
+        
+        
+    }
+}
+
+======================
+public class Solution {
+    public List<List<Integer>> levelOrder(TreeNode root) {
+       List<List<Integer>> result = new ArrayList<List<Integer>>();
+       
+       if(root == null){
+          return result;
+       }
+       
+       Queue<TreeNode> queue = new LinkedList<TreeNode>();
+       queue.offer(root);
+       
+       int curL = 0;
+       while(!queue.isEmpty()){
+           List<Integer> levelRs = new ArrayList<Integer>(); 
+           curL = queue.size();
+           for(int i=0;i<curL;i++){
+               TreeNode peek = queue.poll();
+               levelRs.add(peek.val);
+               if(peek.left!=null){
+                   queue.offer(peek.left);
+               }
+               if(peek.right!=null){
+                   queue.offer(peek.right);
+               }
+           }
+           result.add(levelRs);
+       }
+       
+       return result;
+    }  
+}
+
+=================================
+Idea:
+A binary tree level order traversal generally recommends a breadth first search (BFS) approach with the use of a queue data structure. 
+When we process a node (curr), we'll push the node's children onto the end of the queue in the order in which we want to 
+traverse (in this case, left to right). In this way, we'll have finished putting the next row in the queue at the same time we finish iterating through this row.
+
+To help us keep track of the rows, we just nest the main loop inside another loop. At the beginning of the outer loop, we capture the 
+queue length, which will tell us how long the row is. Then we can iterate through that many nodes, popping them off the queue's front one 
+at a time, then process any end-of-row instructions. In the case of this problem, that will mean pushing the current row array (row) onto our answer array (ans).
+
+We'll continue this process until the queue is empty, at which point we will have reached the end of the binary tree, and can return ans.
+class Solution {
+    public List<List<Integer>> levelOrder(TreeNode root) {
+        List<List<Integer>> ans = new ArrayList<>();
+        if (root == null) return ans;
+        Deque<TreeNode> queue = new ArrayDeque<>();
+        queue.add(root);
+        while (!queue.isEmpty()) {
+            int qlen = queue.size();
+            List<Integer> row = new ArrayList<>();
+            for (int i = 0; i < qlen; i++) {
+                TreeNode curr = queue.poll();
+                row.add(curr.val);
+                if (curr.left != null) queue.add(curr.left);
+                if (curr.right != null) queue.add(curr.right);
+            }
+            ans.add(row);
+        }
+        return ans;
+    }
+}
+
+Time Complexity: O(N) where N is the number of nodes in the binary tree
+Space Complexity: O(N) for our answer array
+
+===============================
+DFS recursive:
+
+public List<List<Integer>> levelOrder(TreeNode root) {
+		List<List<Integer>> res = new ArrayList<>();
+		if (root == null)
+			return res;
+		levelOrderHelper(res, root, 0);
+		return res;
+	}
+	
+	public void levelOrderHelper(List<List<Integer>> res, TreeNode root, int level) {
+		if (root == null)
+			return;
+		List<Integer> curr;
+		if (level >= res.size()) {
+			curr = new ArrayList<>();
+			curr.add(root.val);
+			res.add(curr);
+		} else {
+			curr = res.get(level); 
+			curr.add(root.val); 
+			//res.add(curr); // No need to add the curr into the res, because the res.get(index) method does not remove the index element
+		}
+		levelOrderHelper(res, root.left, level + 1);
+		levelOrderHelper(res, root.right, level + 1);
+	}
+BFS iterative:
+
+public List<List<Integer>> levelOrder(TreeNode root) {
+		List<List<Integer>> res = new ArrayList<>();
+		if (root == null)
+			return res;
+		Queue<TreeNode> q = new LinkedList<>();
+		q.add(root);
+		while(!q.isEmpty()) {
+			int levelSize = q.size();
+			List<Integer> currLevel = new ArrayList<>();
+			for(int i = 0; i < levelSize; i++) {
+				TreeNode currNode = q.poll();
+				currLevel.add(currNode.val);
+				if (currNode.left != null)
+					q.add(currNode.left);
+				if (currNode.right != null)
+					q.add(currNode.right);
+			}
+			res.add(currLevel);
+		}
+		return res;
+	}
+  
+  ==================
+  class Solution {
+    public List<List<Integer>> levelOrder(TreeNode root) {
+		List<List<Integer>> output = new ArrayList<>();
+		levelOrderHelper(output, root, 0);
+		return output;
+	}
+	
+	public void levelOrderHelper(List<List<Integer>> output, TreeNode root, int level) {
+		if (root == null) {
+            return;
+        } else {
+            if (level >= output.size()) {
+                output.add(new ArrayList<>());
+            }   
+            output.get(level).add(root.val);
+            levelOrderHelper(output, root.left, level + 1);
+            levelOrderHelper(output, root.right, level + 1);
+        }
+	}
+}
+====================
