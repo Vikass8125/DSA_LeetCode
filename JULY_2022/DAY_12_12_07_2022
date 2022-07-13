@@ -1,0 +1,722 @@
+473. Matchsticks to Square  [MEDIUM]
+
+You are given an integer array matchsticks where matchsticks[i] is the length of the ith matchstick. 
+You want to use all the matchsticks to make one square. You should not break any stick, but you can link them up, and each matchstick must be used exactly one time.
+
+Return true if you can make this square and false otherwise.
+
+ 
+
+Example 1:
+
+
+Input: matchsticks = [1,1,2,2,2]
+Output: true
+Explanation: You can form a square with length 2, one side of the square came two sticks with length 1.
+Example 2:
+
+Input: matchsticks = [3,3,3,3,4]
+Output: false
+Explanation: You cannot find a way to form a square with all the matchsticks.
+ 
+
+Constraints:
+
+1 <= matchsticks.length <= 15
+1 <= matchsticks[i] <= 10^8
+
+MY_SOLUTION
+
+HINT:
+
+Treat the matchsticks as an array. Can we split the array into 4 equal halves?
+===
+Every matchstick can belong to either of the 4 sides. We don't know which one. Maybe try out all options!
+===
+For every matchstick, we have to try out each of the 4 options i.e. which side it can belong to. We can make use of recursion for this.
+===
+We don't really need to keep track of which matchsticks belong to a particular side during recursion. 
+We just need to keep track of the length of each of the 4 sides.
+===
+When all matchsticks have been used we simply need to see the length of all 4 sides. If they're equal, we have a square on our hands!
+
+=================================================================================
+
+**Intuition**
+Suppose we have 1,1,1,1,2,2,2,2,3,3,3,3 as our set of matchsticks. 
+In this case a square of side 66 can be formed and we have 4 matchsticks each of 1, 2 and 3 and so we can have each square side formed by 3 + 2 + 1 = 6.
+We know that we will have 44 different subsets. The sum of elements of these subsets would be 1/4 SUMMATION (arr). 
+If the sum if not divisible by 44, that implies that 44 subsets of equal value are not possible and we don't need to do any further processing on this.
+
+The only question that remains now for us to solve is:
+what subset a particular element belongs to?
+
+If we are able to figure that out, then there's nothing else left to do.
+But, since we can't say which of the 44 subsets would contain a particular element, we try out all the options.
+
+Approach 1: Depth First Search
+It is possible that a matchstick can be a part of any of the 4 sides of the resulting square, but which one of these choices leads to an actual square is something we don't know.
+
+This means that for every matchstick in our given array, we have 44 different options each representing the side of the square or subset that this matchstick can be a part of.
+
+We try out all of them and keep on doing this recursively until we exhaust all of the possibilities or until we find an arrangement of our matchsticks such that they form the square.
+
+Algorithm
+
+As discussed previously, we will follow a recursive, depth first approach to solve this problem. 
+So, we have a function that takes the current matchstick index we are to process and also the number of sides of the square that are completely formed till now.
+
+If all of the matchsticks have been used up and 4 sides have been completely formed, that implies our square is completely formed. 
+This is the base case for the recursion.
+
+For the current matchstick we have 4 different options. 
+This matchstick at indexindex can be a part of any of the sides of the square. We try out the 4 options by recursing on them.
+
+If any of these recursive calls returns True, then we return from there, else we return False
+import java.util.HashMap;
+import java.util.Collections;
+
+class Solution {
+    public List<Integer> nums;
+    public int[] sums;
+    public int possibleSquareSide;
+
+    public Solution() {
+        this.sums = new int[4];
+    }
+
+    // Depth First Search function.
+    public boolean dfs(int index) {
+
+        // If we have exhausted all our matchsticks, check if all sides of the square are of equal length
+        if (index == this.nums.size()) {
+            return sums[0] == sums[1] && sums[1] == sums[2] && sums[2] == sums[3];
+        }
+
+        // Get current matchstick.
+        int element = this.nums.get(index);
+
+        // Try adding it to each of the 4 sides (if possible)
+        for(int i = 0; i < 4; i++) {
+            if (this.sums[i] + element <= this.possibleSquareSide) {
+                this.sums[i] += element;
+                if (this.dfs(index + 1)) {
+                    return true;
+                }
+                this.sums[i] -= element;
+            }
+        }
+
+        return false;
+    }
+
+    public boolean makesquare(int[] nums) {
+        // Empty matchsticks.
+        if (nums == null || nums.length == 0) {
+            return false;
+        }
+
+        // Find the perimeter of the square (if at all possible)
+        int L = nums.length;
+        int perimeter = 0;
+        for(int i = 0; i < L; i++) {
+            perimeter += nums[i];
+        }
+
+        this.possibleSquareSide =  perimeter / 4;
+        if (this.possibleSquareSide * 4 != perimeter) {
+            return false;
+        }
+
+        // Convert the array of primitive int to ArrayList (for sorting).
+        this.nums = Arrays.stream(nums).boxed().collect(Collectors.toList());
+        Collections.sort(this.nums, Collections.reverseOrder());
+        return this.dfs(0);
+    }
+}
+===========================================
+Implementation Details
+
+This solution is very slow as is. However, we can speed it up considerably by a small trick and that is to sort our matchsticks sizes 
+in reverse order before processing them recursively.
+
+The reason for this is that if there is no solution, trying a longer matchstick first will get to negative conclusion earlier.
+
+e.g. [8,4,4,4][8,4,4,4]. In this case we can have a square of size 5 but the largest side 8 doesn't fit in 
+anywhere i.e. cannot be a part of any of the sides (because we can't break matchsticks according to the question) and hence we can simply return 
+False without even considering the remaining matchsticks.
+
+Complexity Analysis
+
+Time Complexity : O(4^N)because we have a total of NN sticks and for each one of those matchsticks, we have 4
+different possibilities for the subsets they might belong to or the side of the square they might be a part of.
+
+Space Complexity : O(N). For recursive solutions, the space complexity is the stack space occupied by all the recursive calls. 
+The deepest recursive call here would be of size NN and hence the space complexity is O(N). 
+There is no additional space other than the recursion stack in this solution.
+=============================
+Approach 2: Dynamic Programming
+In any dynamic programming problem, what's important is that our problem must be breakable into smaller subproblems and also, these subproblems show some sort of overlap which we can save upon by caching or memoization.
+
+Suppose we have 3,3,4,4,5,5 as our matchsticks that have been used already to construct some of the sides of our square (Note: not all the sides may be completely constructed at all times.)
+
+If the square side is 88, then there are many possibilities for how the sides can be constructed using the matchsticks above. We can have
+
+  (4, 4), (3, 5), (3, 5) -----------> 3 sides fully constructed.
+  (3, 4), (3, 5), (4), (5) ---------> 0 sides completely constructed.
+  (3, 3), (4, 4), (5), (5) ---------> 1 side completely constructed.
+As we can see above, there are multiple ways to use the same set of matchsticks and land up in completely different recursion states.
+
+This means that if we just keep track of what all matchsticks have been used and which all are remaining, it won't properly define the 
+state of recursion we are in or what subproblem we are solving.
+
+A single set of used matchsticks can represent multiple different unrelated subproblems and that is just not right.
+
+We also need to keep track of number of sides of the square that have been completely formed till now.
+
+Also, an important thing to note in the example we just considered was that if the matchsticks being used are [3,3,4,4,5,5][3,3,4,4,5,5] and 
+the side of the square is 8, then we will always consider that arrangement that forms the most number of complete sides over that arrangement that 
+leads to incomplete sides. Hence, the optimal arrangement here is (4, 4), (3, 5), (3, 5)(4,4),(3,5),(3,5) with 3 complete sides of the square.
+
+Note: Not all subproblems have been shown in this figure. The thing we wanted to point out was overlapping subproblems.
+
+We know that the overall sum of these matchsticks can be split equally into 4 halves. The only thing we don't know is 
+if 4 equal halves can be carved out of the given set of matchsticks. For that also we need to keep track of the number of sides completely 
+formed at any point in time. If we end up forming 4 equal sides successfully then naturally we would have used up all of the matchsticks 
+each being used exactly once and we would have formed a square.
+
+Let us first look at the pseudo-code for this problem before looking at the exact implementation details for the same.
+
+let square_side = sum(matchsticks) / 4
+func recurse(matchsticks_used, sides_formed) {
+    if sides_formed == 4, then {
+        Square Formed!!
+    }
+    for match in matchsticks available, do {
+          add match to matchsticks_used
+          let result = recurse(matchsticks_used, sides_formed)
+          if result == True, then {
+              return True
+          }
+          remove match from matchsticks_used
+    }
+    return False
+}
+This is the overall structure of our dynamic programming solution. Of-course, a lot of implementation details are missing here that we will address now.
+
+
+Implementation Details
+
+It is very clear from the pseudo-code above that the state of a recursion is defined by two variables matchsticks_used and sides_formed. 
+Hence, these are the two variables that will be used to memoize or cache the results for that specific subproblem.
+
+The question however is how do we actually store all the matchsticks that have been used? We want a memory efficient solution for this.
+
+If we look at the question's constraints, we find that the max number of matchsticks we can have are 1515. 
+That's a pretty small number and we can make use of this constraint.
+
+All we need to store is which of the matchsticks from the original list have been used. We can use a Bit-Map for this
+
+We will use NN number of bits, one for each of the matchsticks (NN is at max 15 according to the question's constraints). 
+Initially we will start with a bit mask of all 1s and then as we keep on using the matchsticks, we will keep on setting their corresponding bits to 0.
+
+This way, we just have to hash an integer value which represents our bit-map and the max value for this mask would be 2^{15}
+Do we really need to see if all 4 sides have been completely formed ?
+
+Another implementation trick that helps optimize this solution is that we don't really need to see if 4 sides have been completely formed.
+
+This is because, we already know that the sum of all the matchsticks is divisible by 4. 
+So, if 3 equal sides have been formed by using some of the matchsticks, then the remaining matchsticks would definitely form the remaining side of our square.
+
+Hence, we only need to check if 3 sides of our square can be formed or not.
+import java.util.HashMap;
+
+class Solution {
+
+    // The memoization cache to be used during recursion.
+    public HashMap<Pair<Integer, Integer>, Boolean> memo;
+
+    // Array containing our matchsticks.
+    public int[] nums;
+
+    // Possible side of our square depending on the total sum of all the matchsticks. 
+    public int possibleSquareSide;
+
+    // Default constructor to initialise our memo cache.
+    public Solution() {
+        this.memo = new HashMap<Pair<Integer, Integer>, Boolean>();
+    }
+
+    // Main DP function.
+    public boolean recurse(Integer mask, Integer sidesDone) {
+        int total = 0;
+        int L = this.nums.length;
+
+        // The memo key for this recursion
+        Pair<Integer, Integer> memoKey = new Pair(mask, sidesDone);
+
+        // Find out the sum of matchsticks used till now.
+        for(int i = L - 1; i >= 0; i--) {
+            if ((mask&(1 << i)) == 0) {
+                total += this.nums[L - 1 - i];
+            }
+        }
+
+        // If the sum if divisible by our square's side, then we increment our number of complete sides formed variable.
+        if (total > 0 && total % this.possibleSquareSide == 0) {
+            sidesDone++;
+        }
+
+        // Base case.
+        if (sidesDone == 3) {
+            return true;
+        }
+
+
+        // Return precomputed results
+        if (this.memo.containsKey(memoKey)) {
+            return this.memo.get(memoKey);
+        }
+
+        boolean ans = false;
+        int c = total / this.possibleSquareSide;
+
+        // Remaining vlength in the current partially formed side.
+        int rem = this.possibleSquareSide * (c + 1) - total;
+
+        // Try out all remaining options (that are valid)
+        for(int i = L - 1; i >= 0; i--) {
+            if (this.nums[L - 1 - i] <= rem && (mask&(1 << i)) > 0) {
+                if (this.recurse(mask ^ (1 << i), sidesDone)) {
+                    ans = true;
+                    break;
+                }
+            }
+        }
+
+        // Cache the computed results.
+        this.memo.put(memoKey, ans);
+        return ans;
+    }
+
+    public boolean makesquare(int[] nums) {
+
+        // Empty matchsticks.
+        if (nums == null || nums.length == 0) {
+            return false;
+        }
+
+        // Find the perimeter of the square (if at all possible)
+        int L = nums.length;
+        int perimeter = 0;
+        for(int i = 0; i < L; i++) {
+            perimeter += nums[i];
+        }
+
+        int possibleSquareSide =  perimeter / 4;
+        if (possibleSquareSide * 4 != perimeter) {
+            return false;
+        }
+
+        this.nums = nums;
+        this.possibleSquareSide = possibleSquareSide;
+        return this.recurse((1 << L) - 1, 0);
+    }
+}
+
+Complexity Analysis
+
+Time Complexity : O(N * 2^N). At max 2^Nunique bit masks are possible and during every recursive call, we iterate our original 
+matchsticks array to sum up the values of matchsticks used to update the sides_formed variable.
+
+Space Complexity : O(N + 2^N) because N is the stack space taken up by recursion and 4 * 2^N = O(2^N) is the max possible size of our cache for memoization.
+
+The size of the cache is defined by the two variables sides_formed and mask. 
+The number of different values that sides_formed can take = 4 and number of unique values of mask = 2^N
+
+=====================================
+
+class Solution {
+    public boolean makesquare(int[] matchsticks) {
+        
+        int total = 0;
+        
+        for (int i : matchsticks) {
+            total += i;
+        }
+        
+        if (total % 4 != 0) return false; // if we cant make 4 equals sides then theres no way to make a square
+        // sort the array and place the largest sides first. required optimization to not TLE
+        Arrays.sort(matchsticks); 
+        return match(matchsticks, matchsticks.length - 1, 0, 0, 0, 0, total / 4);
+    }
+    
+    public boolean match(int[] matchsticks, int index, int top, int bottom, int left, int right, int target) {
+        
+        if (top == target && bottom == target && left == target && right == target) return true;
+
+        if (top > target || bottom > target || left > target || right > target) return false;
+                        
+        int val = matchsticks[index];
+        
+        boolean t = match(matchsticks, index - 1, top + val, bottom, left, right, target);
+        if (t) return true;
+        boolean b = match(matchsticks, index - 1, top, bottom + val, left, right, target);
+        if (b) return true;
+        boolean l = match(matchsticks, index - 1, top, bottom, left + val, right, target);
+        if (l) return true;
+        boolean r = match(matchsticks, index - 1, top, bottom, left, right + val, target);
+        if (r) return true;
+        
+        return false;
+    }
+}
+java
+dfs
+recursion
+easy-understanding
+sorting
+top down
+Comments: 8
+BestMost VotesNewest to OldestOldest to Newest
+Type comment here... (Markdown is supported)
+
+Preview
+
+Post
+nitrr80journey's avatar
+nitrr80journey
+116
+17 hours ago
+
+Read More
+In Depth Walkthrough with Complete Though Process & Observations With Ups and Downs
+Groundwork to a Solution [This habite should be cultivated]
+
+/*
+    Complete thought process [Questions, Answers & Some Observations]
+    ------------------------------------------------------------------------------
+    
+    Q:1 Will sum(all_matchsticks_length) % 4 == 0 directly give us the answer?
+    A:1 Absolutely NOT. Though it might help us to move further to construct a square
+       from matchsticks.
+       
+       NOTE: Sum of all matchsticks doesn't give any information about the exact configuration(s)
+       of sides.
+       
+       Analyse test cases like:
+       ------------------------
+            TS:1 matchsticks : [3,3,3,3,4]  sum(all_ms_length) % 4 => 16 % 4 == 0 [True]
+            TS:2 matchsticks : [2,3,2,4,7,5,1] sum(all_ms_length) % 4 => 24 % 4 == 0 [True]
+            
+            But we CANNOT construct a square using above matchsticks for above given testcases.
+            
+            TS:3 matchsticks : [1,1,2,2,2]   sum(all_ms_length) % 4 => 8 % 4 == 0 [True]
+            
+            We can construct a square with side length 2.
+            
+            ^<--<---
+            |      |
+            ^      V 
+            |      |
+            <--<---V
+       
+    Q:2 How sum(all_matchsticks_length) % 4 == 0 can help us, wheather we should move further or NOT?
+    A:2 As we know that, in a square sum of all its side always even and multiple of 4.
+       Since all of its side length is equal and has four equal sides.
+       
+       So therefore, I can say this condition sum(all_matchsticks_length) % 4 == 0 must be hold. Then only
+       we move further. We CANNOT construct square otherwise at all.
+       
+       Obs#1 Condition sum(all_matchsticks_length) % 4 == 0 must be hold. [Concluded from Q1 & 2]
+       
+    Q:3 What would be the side length of our required Square?
+    A:3 sum(all_matchsticks_length) / 4 [If sum(all_matchsticks_length) % 4 equal to zero].
+    
+        Since we want to use all matchsticks [Exactly once] so therefore, constructing a sqaure with largest
+        possible side length(From all matchsticks) gives us guaranteed that all matchsticks is going to
+        be used optimally.
+        
+        Obs#2 Taken from second test case of first question, Although first Obs#1 holds but
+        if largest matchstick in the given sequence of matchsticks  is greater than the 
+        required side length of the square, then it is alos NOT possible to form a valid square.
+        
+     -- Enough Questions & Answers Man!!! --
+     
+     Q:4 What would be the approach, once you know the required side length of the square?
+     A:4 Try to construct the Square by picking a matchstick one by one.
+     
+                            If we pick a matchstick [Two Choices] 
+                                         /\
+                                     ___/  \___
+                                    /          \
+                                   /            \
+                                  /              \
+                                 /                \
+                Either it is the part          Or NOT part of any sides 
+                of the either of                then directly returns false [NOT possible to make a Square]
+                    four sides.                         => Doesn't require any function call.
+                        |
+                        V
+                We've to try it by placing
+                in each side.
+                
+                
+            NOTE: If the side of the squaer is L, current picked matchstick length is 'a' and if try
+            to place it for leftmost side then required remaining length for this side is (L - a).
+            
+            Q: What would be the Time & Space Complexity of above approach?
+            A: Since for each match stick -> we've four sides and for each one of the side
+               We've two more choice [Either goes to any side or NOT (if not directly return false)]
+                        => If not belongs to any side [NOT required any calls. so therefore can be omitted]
+                        
+              Hence time complexity would be : _4x1 _4x1 _4x1 .... Nx1 => 4^N
+              
+              TC : O(4^N)
+              SC : O(N) for implicit recursive call stack space.
+        
+        *** WARNING BEWARE ***
+        
+        Obs#3 If Obs#1 & Obs#2 holds & assuming possible to form a square with the given length of matchsticks
+              then it doesn't matter which one you choose the first, second and so on.
+              
+              NOTE: This last observation SUCKS me because of wrong assumption I implemented the entire
+                    approach greedly and got two wrong submissions.
+                    
+                    At the same time => Somehow sorting[In Decreasing] the elements can helps us to minimize the search.
+                    Came into My mind
+                    
+                    In which first submission : 158 / 195 [Testcases Passed]
+                    and second submission[Greedy + Backtracking] : 172 / 195 [Testcases Passed]
+                    
+                    After two wrong submissions [Left the question for 7-8 Hours & Solved some other DP Ques.]
+*/
+class Solution {
+    
+    private static final int SIDE_COUNT = 4;
+    
+    //sides[0] => Initially holds the required Square's side length. Similarly rest indices.
+    private boolean canFormSquare(int[] sticks, int stickIdx, int[] sides) {
+        //Once we process all the available stciks. Check the content of sides[] array.
+        if(stickIdx == -1) {
+            if(sides[0] == 0 && sides[1] == 0 && sides[2] == 0 && sides[3] == 0) return true;
+            return false;
+        }
+
+        //Q:4 Implementation [Try each stick to : Either of the four sides]
+        for(int currentSide = 0; currentSide < SIDE_COUNT; currentSide += 1) {
+            if(sticks[stickIdx] <= sides[currentSide]) {
+                sides[currentSide] -= sticks[stickIdx]; //(L - a) according to explanation.
+                boolean canForm = canFormSquare(sticks, stickIdx - 1, sides);
+                if(canForm) return true;
+                sides[currentSide] += sticks[stickIdx]; //Reset so that we can try to place other sticks.
+            }
+        }
+        return false;   //If current matchstick can't fit into any sides.
+    }
+    
+    public boolean makesquare(int[] matchsticks) {
+        int lengthSum = 0, maxStick = 0;
+        for(int matchS : matchsticks) {
+            lengthSum += matchS;
+            maxStick = Math.max(maxStick, matchS);
+        }
+        // Obs#1           &             Obs#2
+        if(lengthSum % 4 != 0 || maxStick > lengthSum / 4) return false;
+        int sqSide = lengthSum / 4;
+        int[] sideLengths = new int[]{sqSide, sqSide, sqSide, sqSide};
+        //return canFormSquare(matchsticks, 0, sideLengths, matchsticks.length); W/T Sorting TLE
+        Arrays.sort(matchsticks); //Process Larger Sticks first.
+        return canFormSquare(matchsticks, matchsticks.length - 1, sideLengths); 
+    }
+}
+/*
+**If you found it helpful then please upvote my solution**
+
+Test Cases
+----------
+[1,1,2,2,2]
+[3,3,3,3,4]
+[1,1,1,1,1,1,1,1,1,1,1,1,1,300]
+[2,3,2,4,7,5,1]
+[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]   => Second Wrong Submission
+[5,5,5,5,4,4,4,4,3,3,3,3]       => First Wrong Submission
+[1,1,1,1,1,1,1,1,1,1,70,70,101,102,103] => Backtracking TLE [Processing W/T Sorting]
+*/
+
+===============================
+Idea:
+(Edit: The code has been slightly reworked to be a more straightforward backtracking solution.)
+
+At first glance, this problem seems rather straightforward: find the total length of the matchsticks in M, figure out how long each side of the 
+square must be, then find every combination of matchsticks that can add up to side. If four unique sets of matchsticks each add up to side, then we can return true.
+
+The fact that the constraint upon the only imput is so low would seem to suggest that an O(2^N) solution is appropriate. 
+There are, however, a few things we can do to optimize this process. The first key realization is that we can, in fact, use a greedy approach.
+
+Consider the case of M = [1,1,1,2,2,2,3]. In this case, we can easily see that the total is 12 and thus side = 3. 
+If we were to start iterating through M to find multiples of 3, we'd first group together the first three elements and then also 
+find the last element, but be unable to make two more 3s from the middle elements of M. 
+This would perhaps suggest that a greedy approach will not work, because it's readily apparent that we need to save the 1s to pair up with the 2s to make 
+three of the four sides.
+
+But that also suggests the solution, which is that we can use a greedy approach if we iterate through M in descending order. 
+That way, each 2 will naturally seek out its matching 1 before we could ever attempt to match the 1s together in a less efficient manner.
+
+That means that we can just use a recursive backtracking helper (btrack) to help find the side groups in M. 
+But first, we can take care of some edge cases: If the total sum of M is not divisble by 4, or if any single matchstick in M is longer than the 
+calculated side, then a solution is impossible and we should return false.
+
+As for our recursive helper, it will need to iterate through the sorted M multiple times, attempting to build up groups that match side. 
+We'll also keep track of how many groups we've found (done), and whenever we find a match, start btrack back at the beginning with done incremented.
+
+(Note: When incrementing done and starting the recursive helper over, we can start at index 1 instead of 
+index 0 because M[0] will always be a part of the first grouping.)
+
+Once we've finished 3 groups, we can go ahead and return true, because we know that the remaining pieces must add up to side. 
+If at any point we reach the end of M without finishing the current group, however, we should return false.
+
+When attempting to add a piece to the current group, we can obviously skip pieces that are larger than the remaining space, as well 
+as pieces that have already been used. Normally, this would require some kind of additional array or set to keep track of the used
+pieces, but we can use an in-place approach with M and just replace the used values with a value larger than side. 
+This will simplify the check to skip elements to just one conditional.
+
+(Note: If you don't want to modify the input, you could use a single integer and bit manipulation to achieve the same result in O(1) space. 
+Sorting M will still take O(N) space if you don't want to modify M, however, and in any case, we'll be using O(N) space for the recursion stack.)
+
+If an attempted piece turns out to be unsuccessfully and we're returned back up the recursion stack, we should remember to backtrack the 
+current index (i) of M to its previous value (num).
+
+Time Complexity: O(2^N) where N is the length of M for the attempted combinations of elements in M
+Space Complexity: O(N) for the recursion stack
+Implementation:
+Java makes it more complicated to reverse sort a primitive array, so we can just use a simple sort and then iterate through M backwards instead.
+
+class Solution {
+    public boolean makesquare(int[] M) {
+        Arrays.sort(M);
+        int total = 0;
+        for (int i = 0; i < M.length; i++)
+            total += M[i];
+        side = total / 4;
+        if ((float)total / 4 > side || M[M.length-1] > side)
+            return false;
+        return btrack(M.length-1, side, 0, M);
+    }
+    private int side;
+    private boolean btrack(int i, int space, int done, int[] M) {
+        if (done == 3)
+            return true;
+        for (; i >= 0; i--) {
+            int num = M[i];
+            boolean res;
+            if (num > space)
+                continue;
+            M[i] = side + 1;
+            if (num == space)
+                res = btrack(M.length-2, side, done+1, M);
+            else
+                res = btrack(i-1, space-num, done, M);
+            if (res)
+                return true;
+            M[i] = num;
+            while (i > 0 && M[i-1] == num)
+                i--;
+        }
+        return false;
+    }
+}
+=======================================
+class Solution {
+    
+    public boolean makesquare(int[] matchsticks) {
+        
+        
+        /*  Approach:
+        
+            We will use DFS to search for all combinations where my sticks can form a square
+        
+        */
+        
+        
+        // If no. of matchsticks are less than 4, then cannot form square.
+        
+        if (matchsticks == null || matchsticks.length < 4) {
+            return false;
+        }
+        
+        // Calculate sum of length of every sticks.
+        
+        int sum = 0;
+        for (int stick : matchsticks)    sum = sum + stick;
+        
+        // Every side of square should have same length, so overall sum should be multiple of 4
+        
+        if (sum % 4 != 0) {
+            return false;
+        }
+        
+        /*  DFS:
+            
+            - We will send the current length of 4 sides of the squares to DFS. 
+              ( Intially we send length of all sides of squares as 0 )
+
+            - We will send array matchsticks and sum/4 of matchsticks to DFS
+              ( It will remain static always in DFS and just used for checking purpose)
+
+            - We will send currIndex of array to DFS.
+              ( Initially 0 -> arr[0].  Everytime, we use A[currIndex] and increment for further DFS)
+              
+              Whenever, 
+            
+        */
+        
+        int side1 = 0, side2 = 0, side3 = 0, side4 = 0, currIndex = 0;
+        
+        int oneSideLen = sum/4;
+        
+        return dfs (side1, side2, side3, side4, matchsticks, currIndex, oneSideLen);
+        
+    }
+    
+    
+    // DFS function to return if len of 4 sides are equal and sum up to total_sum/4 when arr ends.
+    
+    public boolean dfs (int s1, int s2, int s3, int s4, int arr[], int k, int len) {
+        
+        // If any of the side is more than Side Length of square needed, return false.
+        
+        if (s1 > len || s2 > len || s3 > len || s4 > len) {
+            return false;
+        }
+        
+        // If match sticks completed, i.e. index k crosses from 0 to n-1 and reaches n.
+        
+        if (k == arr.length) {
+            
+            /* Either all sides are equal (then it automatically sums upto len. as every element is used)
+               Then return true, else false (not possile as arr completes and sides are not equal)
+            */
+            
+            return s1 == s2 && s2 == s3 && s3 == s4;
+            
+        }
+        
+        
+        // Call recursive DFS by adding curr element to sides one by one. 
+        // If any combination is true, return true.
+        
+        return (dfs (s1 + arr[k], s2         , s3         , s4         , arr, k + 1, len) ||
+                dfs (s1         , s2 + arr[k], s3         , s4         , arr, k + 1, len) ||
+                dfs (s1         , s2         , s3 + arr[k], s4         , arr, k + 1, len) ||
+                dfs (s1         , s2         , s3         , s4 + arr[k], arr, k + 1, len));
+    }
+    
+    
+}
+
+
+
+
+
+
