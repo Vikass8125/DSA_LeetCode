@@ -1,0 +1,230 @@
+105. Construct Binary Tree from Preorder and Inorder Traversal [MEDIUM]
+Given two integer arrays preorder and inorder where preorder is the preorder traversal of a binary tree and inorder is the inorder traversal 
+of the same tree, construct and return the binary tree.
+
+ 
+
+Example 1:
+
+
+Input: preorder = [3,9,20,15,7], inorder = [9,3,15,20,7]
+Output: [3,9,20,null,null,15,7]
+Example 2:
+
+Input: preorder = [-1], inorder = [-1]
+Output: [-1]
+ 
+
+Constraints:
+
+1 <= preorder.length <= 3000
+inorder.length == preorder.length
+-3000 <= preorder[i], inorder[i] <= 3000
+preorder and inorder consist of unique values.
+Each value of inorder also appears in preorder.
+preorder is guaranteed to be the preorder traversal of the tree.
+inorder is guaranteed to be the inorder traversal of the tree.
+
+MY_SOLUTION
+
+Intuition:
+
+Inorder traversal is a special traversal that helps us to identify a node and its left and right subtree. 
+Preorder traversal always gives us the root node as the first element. 
+Using these properties we can construct the unique binary tree.
+
+
+Here 10 (first element of preorder) is the root element. So we can find its index in the inorder traversal(say elem). 
+The left subtree of the root will be present to the left side of in order whereas the right subtree of root will be present on the right
+side of elem in the inorder traversal: 
+
+We can define a recursive function that creates one node at a time. First, we create the root node, and then we can take the help of recursion to create its
+left and right subtrees. In order to make recursion work, we need to provide the correct inorder and preorder traversal of the subtree for every recursive call.
+To make more efficient function calls we can use variables (inStart, inEnd) and (preStart and preEnd) in order to point to the start and end of the inorder 
+and preorder traversal respectively, and avoid copying of arrays. 
+
+Next, we need to figure out how we are going to search the root index in the inorder traversal. For this, we have two options: Linear Search and Hashmaps. 
+We will choose the second one because it will return us the index in constant time. 
+Before making the first recursive call, we will simply add all the (value, index) pairs to a map and pass it to our recursive function.
+
+If n is the size of the Inorder traversal/Preorder traversal. Then our first function call will be 
+Now the main task left is to pass the correct preStart, preEnd, inStart, inEnd to the respective recursive calls for the left and right subtree. 
+We can calculate the number of elements in the left subtree from the root index, say nElems (elem – InStart, where elem is the index of root in inorder traversal).
+As inorder is [left, root, right] and preorder is [root, left, right] the number of elements (nElems) will easily tell us the preorder and inorder traversal 
+of the subtrees according to the following table:
+
+The base case will be when inStart> inEnd or preStart > preEnd, in that case, we can simply return NULL.
+
+Approach:
+
+The algorithm approach can be stated as:
+
+Create a map to store the inorder indexes.
+Call the function constructTree with all 7 parameters as shown above.
+In the recursive function, first check the base case, if (preStart,>preEnd || inStart> inEnd) then return NULL.
+Construct a node (say root) with the root value( first element of preorder). 
+Find the index of the root, say elem from the hashmap.
+Find the number of elements ( say nElem) in the left subtree  = elem – inStart
+ Call recursively for the left subtree with correct values (shown in the above table) and store the answer received in root->left.
+Call recursively for the right subtree with correct values (shown in the above table) and store the answer received in root->right.
+Return root
+
+
+
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode() {}
+ *     TreeNode(int val) { this.val = val; }
+ *     TreeNode(int val, TreeNode left, TreeNode right) {
+ *         this.val = val;
+ *         this.left = left;
+ *         this.right = right;
+ *     }
+ * }
+ */
+class Solution {
+    public TreeNode buildTree(int[] preorder, int[] inorder) {
+        Map<Integer, Integer> inMap = new HashMap<Integer, Integer>();
+        int inLen = inorder.length;
+        int preLen = preorder.length;
+        
+        for(int i = 0; i < inLen; i++){
+            inMap.put(inorder[i], i);
+        }
+        
+        TreeNode root = buildTree(preorder, 0, preLen - 1, inorder, 0 , inLen - 1, inMap);
+        return root;
+    }
+    
+    public TreeNode buildTree(int[] preorder, int preStart, int preEnd, int[] inorder, int inStart, int inEnd, Map<Integer, Integer> inMap){
+        // BASE CONDITION -> IF THERE ARE NO ELEMENTS RETURN NULL
+        if(preStart > preEnd || inStart > inEnd) return null;
+        
+        TreeNode root = new TreeNode(preorder[preStart]);
+        
+        int inRoot = inMap.get(root.val);
+        int numsLeft = inRoot - inStart;
+        
+        root.left = buildTree(preorder, preStart + 1, preStart + numsLeft, inorder, inStart, inRoot - 1, inMap);
+        
+        root.right = buildTree(preorder, preStart + numsLeft + 1, preEnd, inorder, inRoot + 1, inEnd, inMap);
+        
+        return root;
+    }
+}
+
+Time Complexity: O(N)
+
+Assumption: Hashmap returns the answer in constant time.
+
+Space Complexity: O(N)
+
+Reason: We are using an external hashmap of size ‘N’.
+
+================================================================
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode() {}
+ *     TreeNode(int val) { this.val = val; }
+ *     TreeNode(int val, TreeNode left, TreeNode right) {
+ *         this.val = val;
+ *         this.left = left;
+ *         this.right = right;
+ *     }
+ * }
+ */
+class Solution {
+    int preorderIndex;
+    Map<Integer, Integer> inorderIndexMap;
+    public TreeNode buildTree(int[] preorder, int[] inorder) {
+        preorderIndex = 0;
+        // build a hashmap to store value -> its index relations
+        inorderIndexMap = new HashMap<>();
+        for (int i = 0; i < inorder.length; i++) {
+            inorderIndexMap.put(inorder[i], i);
+        }
+
+        return arrayToTree(preorder, 0, preorder.length - 1);
+    }
+
+    private TreeNode arrayToTree(int[] preorder, int left, int right) {
+        // if there are no elements to construct the tree
+        if (left > right) return null;
+
+        // select the preorder_index element as the root and increment it
+        int rootValue = preorder[preorderIndex++];
+        TreeNode root = new TreeNode(rootValue);
+
+        // build left and right subtree
+        // excluding inorderIndexMap[rootValue] element because it's the root
+        root.left = arrayToTree(preorder, left, inorderIndexMap.get(rootValue) - 1);
+        root.right = arrayToTree(preorder, inorderIndexMap.get(rootValue) + 1, right);
+        return root;
+    }
+}
+
+===============================================================================
+class Solution {
+  public TreeNode buildTree(int[] preorder, int[] inorder) {
+    LinkedList<TreeNode> stack = new LinkedList<>();
+    TreeNode fh = new TreeNode();
+    TreeNode w  = fh;
+    
+    for(int p = 0, i = 0; p != preorder.length;){
+      for(; !stack.isEmpty() && stack.getLast().val == inorder[i]; i++)
+        w = stack.pollLast();
+      
+      w = w.right = new TreeNode();
+      
+      while(true){
+        stack.addLast(w);
+        w.val = preorder[p];
+        if(preorder[p++] == inorder[i]) break;
+        w = w.left = new TreeNode();
+      }
+    }
+    
+    return fh.right;
+  }
+}
+
+==============================================================================
+class Solution {
+    int pos=0;
+    
+    int find(int val, int[] ino, int low, int hig){
+        for(;low<=hig;low++){
+            if(val==ino[low])
+                return low;
+        }
+        return -1;
+    }
+    
+    TreeNode build(int[] pre,int[] ino,int low,int hig){
+        int index=find(pre[pos],ino,low, hig);
+        TreeNode node = new TreeNode(pre[pos]);
+        if(low<index){
+            pos++;
+            node.left=build(pre,ino,low,index-1);
+        }
+        if(index<hig){
+            pos++;
+            node.right=build(pre,ino,index+1,hig);
+        }
+        return node;
+    }
+    
+    public TreeNode buildTree(int[] preorder, int[] inorder) {
+        return build(preorder,inorder,0,inorder.length-1);
+    }
+}
+
+=================================================================================
