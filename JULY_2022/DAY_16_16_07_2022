@@ -1,0 +1,390 @@
+576. Out of Boundary Paths  [MEDIUM]
+There is an m x n grid with a ball. The ball is initially at the position [startRow, startColumn]. 
+You are allowed to move the ball to one of the four adjacent cells in the grid (possibly out of the grid crossing the grid boundary).
+You can apply at most maxMove moves to the ball.
+
+Given the five integers m, n, maxMove, startRow, startColumn, return the number of paths to move the ball out of the grid boundary. 
+Since the answer can be very large, return it modulo 109 + 7.
+
+ 
+
+Example 1:
+
+
+Input: m = 2, n = 2, maxMove = 2, startRow = 0, startColumn = 0
+Output: 6
+Example 2:
+
+
+Input: m = 1, n = 3, maxMove = 3, startRow = 0, startColumn = 1
+Output: 12
+ 
+
+Constraints:
+
+1 <= m, n <= 50
+0 <= maxMove <= 50
+0 <= startRow < m
+0 <= startColumn < n
+
+HINTS:
+Is traversing every path feasible? There are many possible paths for a small matrix. Try to optimize it.
+===
+Can we use some space to store the number of paths and update them after every move?
+===
+One obvious thing: the ball will go out of the boundary only by crossing it. 
+Also, there is only one possible way the ball can go out of the boundary from the boundary cell except for corner cells. 
+From the corner cell, the ball can go out in two different ways. Can you use this thing to solve the problem?
+
+MY_SOLUTION
+Approach 1: Brute Force
+Algorithm
+
+In the brute force approach, we try to take one step in every direction and decrement the number of pending moves for each step taken. 
+Whenever we reach out of the boundary while taking the steps, we deduce that one extra path is available to take the ball out.
+
+In order to implement the same, we make use of a recursive function findPaths(m,n,N,i,j) which takes the current number of moves(N) along with the 
+current position(i,j) as some of the parameters and returns the number of moves possible to take the ball out with the current pending moves 
+from the current position. Now, we take a step in every direction and update the corresponding indices involved along with the current number of pending moves.
+
+Further, if we run out of moves at any moment, we return a 0 indicating that the current set of moves doesn't take the ball out of boundary.
+
+class Solution {
+    public int findPaths(int m, int n, int maxMove, int startRow, int startColumn) {
+        //BRUTE FORCE
+        if(startRow == m || startColumn == n || startRow < 0 || startColumn < 0){
+            return 1;
+        }
+        if(maxMove == 0) return 0;
+        
+        return findPaths(m, n, maxMove - 1, startRow - 1, startColumn)
+             + findPaths(m, n, maxMove - 1, startRow + 1, startColumn)
+             + findPaths(m, n, maxMove - 1, startRow, startColumn - 1)
+             + findPaths(m, n, maxMove - 1, startRow, startColumn + 1);
+            
+    }
+}
+
+Complexity Analysis
+
+Time complexity : O(4^n). Size of recursion tree will be 4^n. Here, nn refers to the number of moves allowed.
+
+Space complexity : O(n). The depth of the recursion tree can go upto n.
+
+Approach 2: Recursion with Memoization
+Algorithm
+
+In the brute force approach, while going through the various branches of the recursion tree, we could reach the same position with the same number of moves left.
+
+Thus, a lot of redundant function calls are made with the same set of parameters leading to a useless increase in runtime. 
+We can remove this redundancy by making use of a memoization array, memo. 
+memo[i][j][k]memo[i][j][k] is used to store the number of possible moves leading to a path out of the boundary 
+if the current position is given by the indices (i, j)(i,j) and number of moves left is k.
+
+Thus, now if a function call with some parameters is repeated, the memomemo array will already contain valid values corresponding to that 
+function call resulting in pruning of the search space.
+
+class Solution {
+  int M = 1000000007;
+
+  public int findPaths(int m, int n, int N, int i, int j) {
+    int[][][] memo = new int[m][n][N + 1];
+    for (int[][] l : memo) for (int[] sl : l) Arrays.fill(sl, -1);
+    return findPaths(m, n, N, i, j, memo);
+  }
+
+  public int findPaths(int m, int n, int N, int i, int j, int[][][] memo) {
+    if (i == m || j == n || i < 0 || j < 0) return 1;
+    if (N == 0) return 0;
+    if (memo[i][j][N] >= 0) return memo[i][j][N];
+    memo[i][j][N] = (
+        (findPaths(m, n, N - 1, i - 1, j, memo) + findPaths(m, n, N - 1, i + 1, j, memo)) % M +
+        (findPaths(m, n, N - 1, i, j - 1, memo) + findPaths(m, n, N - 1, i, j + 1, memo)) % M
+    ) % M;
+    return memo[i][j][N];
+  }
+}
+
+Complexity Analysis
+
+Time complexity : O(mnN). We need to fill the memomemo array once with dimensions Nm×n×N. 
+Here, m, n refer to the number of rows and columns of the given grid respectively. N refers to the total number of allowed moves.
+
+Space complexity : O(mnN). memomemo array of size m×n×N is used.
+
+
+
+Approach 3: Dynamic Programming
+Algorithm
+
+The idea behind this approach is that if we can reach some position in xx moves, we can reach all its adjacent positions in x+1x+1 moves.
+Based on this idea, we make use of a 2-D dpdp array to store the number of ways in which a particular position can be reached. dp[i][j] refers 
+to the number of ways the position corresponding to the indices (i,j) can be reached given some particular number of moves.
+
+Now, if the current dpdp array stores the number of ways the various positions can be reached by making use of x−1 moves, in order to determine the 
+number of ways the position (i,j) can be reached by making use of xx moves, we 
+need to update the corresponding dpdp entry as dp[i][j]=dp[i−1][j] + dp[i+1][j] + dp[i][j−1] + dp[i][j+1] 
+taking care of boundary conditions. This happens because we can reach the index (i,j) from any of the four adjacent positions and the total number of ways 
+of reaching the index (i,j) in x moves is the sum of the ways of reaching the adjacent positions in x-1 moves.
+
+But, if we alter the dpdp array, now some of the entries will correspond to x-1 moves and the updated ones will correspond to xx moves. 
+Thus, we need to find a way to tackle this issue. So, instead of updating the dpdp array for the current(x) moves, we make use of a temporary 2-D array temptemp 
+to store the updated results for xx moves, making use of the results obtained for dpdp array corresponding to x-1 moves. 
+After all the entries for all the positions have been considered for xx moves, we update the dpdp array based on temptemp. 
+Thus, dpdp now contains the entries corresponding to xx moves.
+
+Thus, we start off by considering zero move available for which we make an initial entry of dp[x][y] = 1((x,y) is the initial position), since we 
+can reach only this position in zero move. 
+Then, we increase the number of moves to 1 and update all the dpdp entries appropriately. We do so for all the moves 
+possible from 1 to N.
+
+In order to update countcount, which indicates the total number of possible moves which lead an out of boundary path, we need to perform 
+the update only 
+when we reach the boundary. We update the count as count = count + dp[i][j], where (i,j) corresponds to one of the boundaries. 
+But, if (i,j) is simultaneously a part of multiple boundaries, we need to add the dp[i][j] factor multiple times(same as the number of boundaries 
+to which (i,j) belongs).
+
+After we are done with all the NN moves, countcount gives the required result.
+
+class Solution {
+  public int findPaths(int m, int n, int N, int x, int y) {
+    int M = 1000000000 + 7;
+    int dp[][] = new int[m][n];
+    dp[x][y] = 1;
+    int count = 0;
+    for (int moves = 1; moves <= N; moves++) {
+      int[][] temp = new int[m][n];
+      for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+          if (i == m - 1) count = (count + dp[i][j]) % M;
+          if (j == n - 1) count = (count + dp[i][j]) % M;
+          if (i == 0) count = (count + dp[i][j]) % M;
+          if (j == 0) count = (count + dp[i][j]) % M;
+          temp[i][j] = (
+              ((i > 0 ? dp[i - 1][j] : 0) + (i < m - 1 ? dp[i + 1][j] : 0)) % M +
+              ((j > 0 ? dp[i][j - 1] : 0) + (j < n - 1 ? dp[i][j + 1] : 0)) % M
+          ) % M;
+        }
+      }
+      dp = temp;
+    }
+    return count;
+  }
+}
+
+Complexity Analysis
+
+Time complexity : O(Nmn). We need to fill the dp array with dimensions  nm×n N times. 
+Here  nm×n refers to the size of the grid and NN refers to the number of moves available.
+
+Space complexity : O(mn). dp and temp array of size  m×n are used.
+
+======================================================================================================================================
+
+Idea:
+A brute force solution for this problem would be far too long since the number of possible paths is 4^maxMove. 
+As is the case for most problems that contain overlapping paths, this problem can be simplified by combining these overlapping paths with the help of a dynamic programming (DP) approach.
+
+In this instance, we can create a DP matrix in which each cell (dp[d][i][j]) represents the solution where d is the number of moves remaining and i and j are the coordinates of 
+the starting location. We can then build this DP matrix up from d = 1 all the way up to d = maxMove.
+
+To build up dp, we can start by filling in the starting values when d = 1, at which point each of the cells along the edges is a 1 and each corner is a 2. 
+From there, we can iterate through the remaining values for d, and each cell will be the sum of the surrounding four cells from the previous move iteration (d-1), as 
+those cells correspond to the possible previous positions before moving to the current cell.
+
+Since we want to include any path that doesn't take up the full maxMove, the solution (ans) will then be the sum of the cells in dp 
+that correspond to i = startRow and j = startColumn with all possible values for d.
+
+To make things easier by preventing the need for out-of-bounds checks, we can add a buffer row/column on all four sides of the grid representations in dp 
+filled with 0 values.
+
+As we only ever use the previous iteration of d to build the current one, we can save space in this solution by compressing dp into only two 
+2D matrices (dpCurr, dpLast) instead of a 3D matrix of maxMove depth. 
+We can do this by just swapping dpCurr and dpLast between each iteration and overwriting the old values in dpCurr as we iterate through. 
+We can also then keep track of ans as we go.
+
+We should also not forget to use the modulo operation on each cell value equation.
+
+Time Complexity: O(N * M * L) where N and M are the dimensions of the grid and L is the maximum number of moves
+Space Complexity: O(N * M) for the DP matrices
+
+class Solution {
+    public int findPaths(int m, int n, int maxMove, int startRow, int startColumn) {
+        if (maxMove == 0) return 0;
+        int[][] dpCurr = new int[m+2][n+2], dpLast = new int[m+2][n+2];
+        for (int i = 1; i <= m; i++) {
+            dpCurr[i][1]++;
+            dpCurr[i][n]++;
+        }
+        for (int j = 1; j <= n; j++) {
+            dpCurr[1][j]++;
+            dpCurr[m][j]++;
+        }
+        int ans = dpCurr[startRow+1][startColumn+1];
+        for (int d = 1; d < maxMove; d++) {
+            int[][] temp = dpCurr;
+            dpCurr = dpLast;
+            dpLast = temp;
+            for (int i = 1; i <= m; i++)
+                for (int j = 1; j <= n; j++)
+                    dpCurr[i][j] = (int)(((long)dpLast[i-1][j] + dpLast[i+1][j] + dpLast[i][j-1] + dpLast[i][j+1]) % 1000000007L);
+            ans = (ans + dpCurr[startRow+1][startColumn+1]) % 1000000007;
+        }
+        return ans;
+    }
+}
+
+============================================================================================
+
+class Solution {
+    
+    
+    public int findPaths(int m, int n, int maxMove, int startRow, int startColumn) {
+        
+        
+        /*  Approach 1 : Using Recursion (easy to understand) */   
+        
+        /*  Thinking:
+            
+            - Suppose, we are at a cell (x,y) by doing m moves.
+
+              That means we would have reached here from below 4 cells. 
+              Moves would have been m-1 for these.
+
+              - Left   x-1 , y          - Top   x , y-1
+              - Right  x+1 , y          - Down  x , y+1
+
+        */
+        
+        
+        Integer[][][] dp = new Integer[m][n][maxMove+1];   // Default value null.
+        
+        return recHelper (m, n, maxMove, startRow, startColumn, dp);
+        
+    }
+    
+    
+    
+    // Recursion Function to return no. of ways for move m, based on previous 4 moves.
+    
+    private int recHelper (int m, int n, int move, int i, int j, Integer[][][] dp) {
+        
+        int mod = 1000000007;
+        
+        // If the ball passes corners, return 1.
+        
+        if (i < 0 || j < 0 || i >= m || j >= n) {
+            return 1;
+        }
+        
+        // For 0 moves, cannot move balls so return 0
+        
+        if (move <= 0) {
+            return 0;
+        }
+        
+        // If dp already contains value, return it.
+        
+        if (dp[i][j][move] != null) {
+            return dp[i][j][move];
+        }
+        
+        int count = 0;
+        
+        // Count sum of all possibilities of all 4 previous directions moves.
+        
+        count = count % mod + recHelper(m, n, move - 1, i-1, j, dp) % mod;
+        count = count % mod + recHelper(m, n, move - 1, i+1, j, dp) % mod;
+        count = count % mod + recHelper(m, n, move - 1, i, j-1, dp) % mod;
+        count = count % mod + recHelper(m, n, move - 1, i, j+1, dp) % mod;
+        
+        dp[i][j][move] = count % mod;
+        
+        return dp[i][j][move];
+
+    }
+      
+}
+
+============================================================================================================================
+class Solution 
+{
+    int mod=(int)1e9+7;
+    int[][] dir={{ 1, 0 }, { 0, 1 }, { -1, 0 }, { 0, -1 }};
+    public int findPaths(int n, int m, int k, int r, int c) 
+    {
+        int[][][]dpp=new int[n+1][m+1][k+1];
+        for (int[][] dp : dpp)
+            for (int[] d : dp)
+                Arrays.fill(d, -1);
+        
+         return findPaths(n, m, k, r, c, dpp);
+    }
+    public int findPaths(int n, int m, int K, int sr, int sc,int[][][]dp)
+    {
+        if(sr<0||sc<0|| sr == n || sc == m)
+            return 1;
+        if (K == 0)
+            return 0;
+
+        if (dp[sr][sc][K] != -1)
+            return dp[sr][sc][K];
+        int count = 0;
+
+        for (int[] d : dir) {
+            int r = sr + d[0];
+            int c = sc + d[1];
+
+            count = (count + findPaths(n, m, K - 1, r, c, dp)) % mod;
+
+        }
+
+        return dp[sr][sc][K] = count;
+    }
+}
+====================================================================================================================
+Idea of solution: in our table will change only one group of cells for each turn (with odd sum of indexes or even )
+
+Create a table with dimensions +2 (discard boudary cases)
+for Each turn : a). calculate sum all boudary cells b) rearrange table (if shift is odd rearrange all even cells and if shift is even rearrange all odd cells)
+P.S. This solution can be improved ! we can calculate boudary cells according shift
+
+class Solution {
+  long ans;
+  long[][] table;
+  
+    
+  public int findPaths(int m, int n, int maxMove, int startRow, int startColumn) {
+    int shift = (startRow + startColumn) & 1;
+    ans = 0;
+    table = new long[m+2][n+2];
+    table[startRow+1][startColumn+1] = 1;
+    
+    for(; maxMove-- != 0; shift ^= 1){
+      calculateAns();
+      transformTable(shift);
+    }
+    
+    return (int)(ans%1000000007);
+  }
+  
+  private void transformTable(int shift){
+    for(int i = 1; i != table.length - 1; i++, shift ^= 1)
+      for(int j = 1 + shift; j < table[0].length - 1; j+=2){
+        table[i][j] %= 1000000007;
+        table[i-1][j] += table[i][j];
+        table[i+1][j] += table[i][j];
+        table[i][j-1] += table[i][j];
+        table[i][j+1] += table[i][j];
+        table[i][j] = 0;
+      }
+  }
+  
+  private void calculateAns(){
+    for(int i = 1; i < table.length - 1; i++)
+      ans += table[i][1] + table[i][table[0].length - 2];
+    
+    for(int j = 1; j < table[0].length - 1; j++)
+      ans += table[1][j] + table[table.length - 2][j];
+  }
+}
