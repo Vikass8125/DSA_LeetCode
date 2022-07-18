@@ -1,0 +1,270 @@
+1074. Number of Submatrices That Sum to Target [HARD]
+Given a matrix and a target, return the number of non-empty submatrices that sum to target.
+
+A submatrix x1, y1, x2, y2 is the set of all cells matrix[x][y] with x1 <= x <= x2 and y1 <= y <= y2.
+
+Two submatrices (x1, y1, x2, y2) and (x1', y1', x2', y2') are different if they have some coordinate that is different: for example, if x1 != x1'.
+
+ 
+
+Example 1:
+
+
+Input: matrix = [[0,1,0],[1,1,1],[0,1,0]], target = 0
+Output: 4
+Explanation: The four 1x1 submatrices that only contain 0.
+Example 2:
+
+Input: matrix = [[1,-1],[-1,1]], target = 0
+Output: 5
+Explanation: The two 1x2 submatrices, plus the two 2x1 submatrices, plus the 2x2 submatrix.
+Example 3:
+
+Input: matrix = [[904]], target = 0
+Output: 0
+ 
+
+Constraints:
+
+1 <= matrix.length <= 100
+1 <= matrix[0].length <= 100
+-1000 <= matrix[i] <= 1000
+-10^8 <= target <= 10^8
+
+HINT:
+Using a 2D prefix sum, we can query the sum of any submatrix in O(1) time. 
+Now for each (r1, r2), we can find the largest sum of a submatrix that uses every row in [r1, r2] in linear time using a sliding window.
+
+MY_SOLUTION
+
+class Solution {
+    public int numSubmatrixSumTarget(int[][] matrix, int target) {
+        
+        //T.C -> O(M * N ^ 2), S.C -> O(N)
+        // THIS PROBLEM IS EXTENSION OF 560. SUBARRAY SUM EQUALS K
+        
+        int rows = matrix.length;
+        int cols = matrix[0].length;
+        
+        // CALCULATING THE PREFIX SUM
+        for(int row = 0; row < rows; row++){
+            for(int col = 1; col < cols; col++){
+                matrix[row][col] += matrix[row][col - 1];
+            }
+        }
+        
+        int count = 0;
+        
+        for(int col_1 = 0; col_1 < cols; col_1++){
+            for(int col_2 = col_1; col_2 < cols; col_2++){
+                
+                Map<Integer,Integer> map = new HashMap<>();
+                map.put(0, 1);
+                int sum = 0;
+                
+                for(int row = 0; row < rows; row++){
+                    sum += matrix[row][col_2] - (col_1 > 0 ? matrix[row][col_1 - 1] : 0);
+                    count += map.getOrDefault(sum - target, 0);
+                    map.put(sum, map.getOrDefault(sum, 0) + 1);
+                }
+            }
+        }
+        return count;
+        
+    }
+}
+==========================================================================================================
+Idea:
+This problem is essentially a 2-dimensional version of #560. Subarray Sum Equals K (S.S.E.K). 
+By using a prefix sum on each row or each column, we can compress this problem down to either N^2 iterations of the O(M) SSEK, or M^2 iterations of the O(N) SSEK.
+
+In the SSEK solution, we can find the number of subarrays with the target sum by utilizing a result map (res) to store the different values 
+found as we iterate through the array while keeping a running sum (csum). 
+Just as in the case with a prefix sum array, the sum of a subarray between i and j is equal to the sum of the subarray from 0 to j minus the sum of the 
+subarray from 0 to i-1.
+
+Rather than iteratively checking if sum[0,j] - sum[0,i-1] = T for every pair of i, j values, we can flip it around to sum[0,j] - T = sum[0,i-1] and 
+since every earlier sum value has been stored in res, we can simply perform a lookup on sum[0,j] - T to see if there are any matches.
+
+When extrapolating this solution to our 2-dimensional matrix (M), we will need to first prefix sum the rows or columns, 
+(which we can do in-place to avoid extra space, as we will not need the original values again). 
+Then we should iterate through M again in the opposite order of rows/columns where the prefix sums will allow us to treat a group of columns or rows 
+as if it were a 1-dimensional array and apply the SSEK algorithm.
+
+Implementation:
+Python, oddly, has much better performance with the use of a simple dict instead of a defaultdict for res
+
+class Solution {
+    public int numSubmatrixSumTarget(int[][] M, int T) {
+        int xlen = M[0].length, ylen = M.length, ans = 0;
+        Map<Integer, Integer> res = new HashMap<>();
+        for (int[] r : M)
+            for (int j = 1; j < xlen; j++)
+                r[j] += r[j-1];
+        for (int j = 0; j < xlen; j++)
+            for (int k = j; k < xlen; k++) {
+                res.clear();
+                res.put(0,1);
+                int csum = 0;
+                for (int i = 0; i < ylen; i++) {
+                    csum += M[i][k] - (j > 0 ? M[i][j-1] : 0);
+                    ans += res.getOrDefault(csum - T, 0);
+                    res.put(csum, res.getOrDefault(csum, 0) + 1);
+                }
+            }
+        return ans;
+    }
+}
+
+===============================================================================================================
+Explanation
+
+For each row, calculate the prefix sum.
+For each pair of columns,
+calculate the accumulated sum of rows.
+Now this problem is same to, "Find the Subarray with Target Sum".
+class Solution {
+    public int numSubmatrixSumTarget(int[][] matrix, int target) {
+        int row = matrix.length;
+        int col = matrix[0].length;
+        int res = 0;
+        //int[][] sum = new int[row][col];
+        
+        for(int i = 0; i < row; i++){
+            for(int j = 1; j < col; j++){
+                //sum[i][j] =sum[i][j-1] + matrix[i][j-1];
+                matrix[i][j] += matrix[i][j-1];
+            }
+        }
+        
+        for(int start = 0; start < col; start++){
+            for(int end = start; end < col; end++){
+                int subMatrixSum = 0;
+                
+                Map<Integer, Integer> countElm = new HashMap<Integer, Integer>();
+                countElm.put(0,1);
+                
+                for(int k = 0; k < row; k++){
+                    //subMatrixSum += sum[k][end] - sum[k][start];
+                    int prefixSum = start == 0 ? 0:matrix[k][start-1];
+                    subMatrixSum += matrix[k][end] - prefixSum;
+                    
+                    if(countElm.containsKey(subMatrixSum - target))
+                        res += countElm.get(subMatrixSum - target);
+                    
+                    int r = countElm.getOrDefault(subMatrixSum, 0);
+                    countElm.put(subMatrixSum, r+1);
+                }
+            }
+        }
+        
+        return res;
+    }
+}
+
+==========================================================================================================
+class Solution {
+    public int numSubmatrixSumTarget(int[][] matrix, int target) {
+        int ans = 0;
+
+        for(int i = 0; i<matrix[0].length;i++){//left col
+            int[] sum = new int[matrix.length];
+            for(int m = i; m<matrix[0].length;m++){//right col
+                for(int j = 0; j<matrix.length;j++){
+                    sum[j]+=matrix[j][m];//add left to right
+                    if(sum[j]==target)ans++;            
+                }
+                for(int j = 0; j<matrix.length;j++){//up row
+                    int summe=0;    
+                    for(int n = j; n<matrix.length;n++){//down row
+                        summe+=sum[n];add up to down
+                        if(n!=j&&summe==target)ans++;
+                    }
+                }
+            }
+        }
+        
+        return ans;
+
+    }
+}
+
+============================================================================================================
+
+
+
+
+===============================================================================================================
+Explanation
+
+For each row, calculate the prefix sum.
+For each pair of columns,
+calculate the accumulated sum of rows.
+Now this problem is same to, "Find the Subarray with Target Sum".
+class Solution {
+    public int numSubmatrixSumTarget(int[][] matrix, int target) {
+        int row = matrix.length;
+        int col = matrix[0].length;
+        int res = 0;
+        //int[][] sum = new int[row][col];
+        
+        for(int i = 0; i < row; i++){
+            for(int j = 1; j < col; j++){
+                //sum[i][j] =sum[i][j-1] + matrix[i][j-1];
+                matrix[i][j] += matrix[i][j-1];
+            }
+        }
+        
+        for(int start = 0; start < col; start++){
+            for(int end = start; end < col; end++){
+                int subMatrixSum = 0;
+                
+                Map<Integer, Integer> countElm = new HashMap<Integer, Integer>();
+                countElm.put(0,1);
+                
+                for(int k = 0; k < row; k++){
+                    //subMatrixSum += sum[k][end] - sum[k][start];
+                    int prefixSum = start == 0 ? 0:matrix[k][start-1];
+                    subMatrixSum += matrix[k][end] - prefixSum;
+                    
+                    if(countElm.containsKey(subMatrixSum - target))
+                        res += countElm.get(subMatrixSum - target);
+                    
+                    int r = countElm.getOrDefault(subMatrixSum, 0);
+                    countElm.put(subMatrixSum, r+1);
+                }
+            }
+        }
+        
+        return res;
+    }
+}
+
+==========================================================================================================
+class Solution {
+    public int numSubmatrixSumTarget(int[][] matrix, int target) {
+        int ans = 0;
+
+        for(int i = 0; i<matrix[0].length;i++){//left col
+            int[] sum = new int[matrix.length];
+            for(int m = i; m<matrix[0].length;m++){//right col
+                for(int j = 0; j<matrix.length;j++){
+                    sum[j]+=matrix[j][m];//add left to right
+                    if(sum[j]==target)ans++;            
+                }
+                for(int j = 0; j<matrix.length;j++){//up row
+                    int summe=0;    
+                    for(int n = j; n<matrix.length;n++){//down row
+                        summe+=sum[n];add up to down
+                        if(n!=j&&summe==target)ans++;
+                    }
+                }
+            }
+        }
+        
+        return ans;
+
+    }
+}
+
+============================================================================================================
