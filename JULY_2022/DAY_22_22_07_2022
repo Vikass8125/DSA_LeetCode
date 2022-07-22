@@ -1,0 +1,263 @@
+86. Partition List [MEDIUM]
+Given the head of a linked list and a value x, partition it such that all nodes less than x come before nodes greater than or equal to x.
+
+You should preserve the original relative order of the nodes in each of the two partitions.
+
+ 
+
+Example 1:
+
+
+Input: head = [1,4,3,2,5,2], x = 3
+Output: [1,2,2,4,3,5]
+Example 2:
+
+Input: head = [2,1], x = 2
+Output: [1,2]
+ 
+
+Constraints:
+
+The number of nodes in the list is in the range [0, 200].
+-100 <= Node.val <= 100
+-200 <= x <= 200
+
+MY_SOLUTION
+
+/**
+ * Definition for singly-linked list.
+ * public class ListNode {
+ *     int val;
+ *     ListNode next;
+ *     ListNode() {}
+ *     ListNode(int val) { this.val = val; }
+ *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }
+ * }
+ */
+class Solution {
+    public ListNode partition(ListNode head, int x) {
+        
+        // Similar to merge two sorted L.list
+        if(head == null) return null;
+        
+        // Create two pointers
+        ListNode left = new ListNode(0);
+        ListNode right = new ListNode(0);
+        
+        // For L.list linking purpose
+        ListNode leftTail = left; // less than x
+        ListNode rightTail = right; // greater than x
+        
+        while(head != null){
+            if(head.val < x){
+                leftTail.next = head;
+                leftTail = leftTail.next;
+            }
+            else{
+                rightTail.next = head;
+                rightTail = rightTail.next;
+            }
+            head = head.next;
+        }
+        
+        leftTail.next = right.next;
+        rightTail.next = null;
+        
+        return left.next;
+    }
+}
+=========================================================================================
+Let's understand what the problem is saying, first of all.
+
+We have given a list and a value x, we have to partion the list in such that smaller value then x comes to left & greater or equals to right.
+
+So, to do that. One clear thing is coming up in your mind, Why don't we create 2 sublists.
+
+Left dummy linked list
+Right dummy linked list
+I mean yes, we are doing that. You guy's are clever.
+And if you all have think about this as well, Left will have values smaller then x & Right will have value greater or equal to x.
+
+So, let's take an example and solve this problem.
+
+Input: head = [1,4,3,2,5,2], x = 3
+Output: [1,2,2,4,3,5]
+
+Now as you can see when we have seperated the list's as per the questions, our final job is to merge them into one list.
+
+So, to do that what we gonna do is, tecnically left list end i.e. 2 is pointing to null and right list end i.e. 5 pointing to 2. 
+But we want 2 to point to the beginning of right list not null.
+if we do that we will create a infine[never ending] loop. Let's see what am talking about
+
+To, solve this issue what we gonna do is, we want the right list 5 to point to null not to 2. If we do that then, out list will look's like this:
+
+And by doing that we will get our final list, as shown in the question that's what we want.
+
+ANALYSIS:-
+
+Time Complexity :- BigO(N)
+
+Space Complexity :- BigO(1)
+===========================================================================================================
+// USING STACK
+
+class Solution {
+  public ListNode partition(ListNode head, int x) {
+        if (head == null)
+            return head;
+        Stack<ListNode> stack1 = new Stack<>();
+        Stack<ListNode> stack2 = new Stack<>();
+        while (head != null) {
+            if (head.val < x) {
+                stack1.push(head);
+            } else {
+                stack2.push(head);
+            }
+            head = head.next;
+        }
+        head = null;
+        while (!stack2.isEmpty()) {
+            ListNode pop = stack2.pop();
+            pop.next = head;
+            head = pop;
+        }
+        while (!stack1.isEmpty()) {
+            ListNode pop = stack1.pop();
+            pop.next = head;
+            head = pop;
+        }
+        return head;
+    }
+
+}
+
+==================================================================================================================
+
+Idea is to separate the list into two lists: One of smaller node values (before as head) and other for greater than and equal values (after as head). And then merge them like this before -> after
+
+To complete the process in just single traversal, keep track of last node of each of two separated lists, denoted by i(for list with smaller values) and j(for list with greater values).
+
+class Solution {
+    
+    ListNode before, after, i, j;
+    
+    public ListNode partition(ListNode head, int x) {
+        
+        if(head == null) return head;
+        ListNode temp = head;
+        
+        // Traversing all the nodes to make two separate lists
+        while(temp != null){
+            addNode(temp.val, temp.val < x);
+            temp = temp.next;
+        }
+        
+        // Case if the list with smaller values has no items
+        if(i == null) return after;
+        
+        // Else merge the lists
+        else i.next = after;
+        
+        return before;
+    }
+    
+    private void addNode(int val, boolean isLess){
+        
+        // Add node in smaller list (`before`)
+        if(isLess){
+            
+            // Initialize the head of smaller list
+            if(before == null){
+                before = new ListNode(val);
+                i = before;
+            }
+            
+            // Add node at the end of list and move pointer `i` to the last node
+            else{
+                i.next = new ListNode(val);
+                i = i.next;
+            }
+        }
+        
+        // Add node in greater list (`after`)
+        else{
+            
+            // Initialize the head of greater list
+            if(after == null){
+                after = new ListNode(val);
+                j = after;
+            }
+            
+            // Add node at the end of list and move pointer `j` to the last node
+            else{
+                j.next = new ListNode(val);
+                j = j.next;
+            }
+        }
+    }
+}
+=============================================================================================
+First of all, when using recursion, the function callback loop is effectively the first pointer. 
+And the direction to which this pointer moves is determined by how each function call was made. 
+In the simplest case, if head was passed in, head.next is passed in the function call within the current function. 
+Therefore the recursion pointer moves from the end of the linked list to where the very first function call was made.
+
+The tricky part is what to use as the second pointer and how to use it. 
+Either the start of the linked list, the "head", (stored by making an assignment outside of the recursion function), or 
+the end of the linked list, the "tail", (stored when recursion pointer begins to move), can be used as the second pointer. 
+There are also two operations we can do at this pointer: either repeatedly append the node after the pointer, or repeatedly insert the node before the pointer. 
+Appending keeps the order of nodes and inserting reverse the order of nodes. 
+But since the recursion pointer is moving in reverse, in order to keep the order of the original nodes, we have to use inserting to reverse back.
+Now at this point, it would appear that both inserting at the head and inserting at the tail would work. 
+But it turns out inserting at the tail is actually easier, at least as far as I'm concerned. 
+The reason would become apparent after I lay out my implementation.
+
+First, we need to trigger the cascading function call backs. 
+This can be simply done by the recursion function return a value other than the function itself, which naturally is the first line. 
+Next, we need to figure out what needs to be done whenever we encounter a node with val >= x. 
+Sine singly-linked list knows only what's next, inserting a node can only be done by inserting it after a certain node. 
+Since we are inserting the node with val >=x BEFORE the tail to perserve the original order, what we actually store is not the tail itself, but 
+the node right before the tail, call it before_tail.
+Now inserting the node (call it node) requires two steps: 
+1. Connect node to before_tail, by a) node.next=before_tail.next, and b) before_tail.next=node. 
+2. Sewing back the link from which we took node, by... well, actually we can't do this within the function call because we don't know what's before node 
+since only node was passed in, not the previous node. Therefore, this last step has to be done by the function call directly above and this is why the 
+resursion call is head.next=partition(head.next, x), which reconnect the severed link.
+Now setting up the tail is not so simple either. We could just store it the first time we encounter the actual tail. 
+But remember what we need to store is before_tail, not tail itself. 
+However, if the tail has val<2, we don't want node with val>=x inserted before it, we want it inserted after it. 
+So in this case, null is actually new tail and we store the old tail as before_tail. Otherwise, we need to wait one more function call. 
+The good thing though, is that if a lot of nodes adjacent to the tail has val>=x, we don't need to do anything but wait one more function call.
+
+Now why was inserting at the head difficult to implement? 
+At least from my few attempts at implementing such algorithm, it seems the problem was that we can't just wrap an additional function call above the initial one. 
+Now hear me out here, it's actually not that complicated. 
+Remember the last step in inserting a node is sewing back the severed link? 
+If the last recursion call (the one you pass in the original head in as the node) returns with the node that needs to be sewed back on, we can't do this 
+unless we store the node that comes before the original head, which should be the first node that was ever inserted. 
+This means storing two nodes at the same time now. You can of course have the operations done on the node after the node in the resursive function, but 
+that creates much more problem than solved. Trust me, I went down that rabbit whole and it was ugly.
+
+I hope this has been helpful.
+
+class Solution{
+    ListNode before_tail=null;
+    public ListNode partition(ListNode head, int x){
+        if (head == null) return null;
+        head.next = partition(head.next, x);
+        if (before_tail == null) {
+            if (head.val < x) before_tail = head;
+            return head;
+        }
+        else{
+            if (head.val >= x) {
+                ListNode next = head.next;
+                head.next = before_tail.next;
+                before_tail.next = head;
+                return next;
+            }
+            else return head;
+        }
+    }
+}
+===================================================================================================
