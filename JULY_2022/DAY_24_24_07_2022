@@ -1,0 +1,171 @@
+240. Search a 2D Matrix II [MEDIUM]
+Write an efficient algorithm that searches for a value target in an m x n integer matrix matrix. This matrix has the following properties:
+
+Integers in each row are sorted in ascending from left to right.
+Integers in each column are sorted in ascending from top to bottom.
+ 
+
+Example 1:
+
+
+Input: matrix = [[1,4,7,11,15],[2,5,8,12,19],[3,6,9,16,22],[10,13,14,17,24],[18,21,23,26,30]], target = 5
+Output: true
+Example 2:
+
+
+Input: matrix = [[1,4,7,11,15],[2,5,8,12,19],[3,6,9,16,22],[10,13,14,17,24],[18,21,23,26,30]], target = 20
+Output: false
+ 
+
+Constraints:
+
+m == matrix.length
+n == matrix[i].length
+1 <= n, m <= 300
+-109 <= matrix[i][j] <= 109
+All the integers in each row are sorted in ascending order.
+All the integers in each column are sorted in ascending order.
+-109 <= target <= 109
+
+MY_SOLUTION
+class Solution {
+    public boolean searchMatrix(int[][] matrix, int target) {
+         int i = 0, j = matrix[0].length - 1;
+      while(i < matrix.length && j >= 0) {
+        if(matrix[i][j] == target)
+          return true;
+        else if(matrix[i][j] > target)
+          j --;
+        else if(matrix[i][j] < target)
+          i ++;
+      }
+      return false;
+    }
+    
+}
+
+============================================================================
+We start search the matrix from top right corner, initialize the current position to top right corner, 
+if the target is greater than the value in current position, then the target can not be in entire row of current position because the row is sorted, 
+if the target is less than the value in current position, then the target can not in the entire column because the column is sorted too. 
+We can rule out one row or one column each time, so the time complexity is O(m+n).
+
+public class Solution {
+    public boolean searchMatrix(int[][] matrix, int target) {
+        if(matrix == null || matrix.length < 1 || matrix[0].length <1) {
+            return false;
+        }
+        int col = matrix[0].length-1;
+        int row = 0;
+        while(col >= 0 && row <= matrix.length-1) {
+            if(target == matrix[row][col]) {
+                return true;
+            } else if(target < matrix[row][col]) {
+                col--;
+            } else if(target > matrix[row][col]) {
+                row++;
+            }
+        }
+        return false;
+    }
+}
+what we are doing you got the idea,
+
+If value is > then target, then move to left i.e. i++
+
+If value is < then target, then move down i.e. j--
+
+If value is == to target, return true
+
+Else return false
+
+ANALYSIS :-
+
+Time Complexity :- It will be O(row + column) because we are traversing every row & column only once
+
+Space Complexity :- It will be O(1) as we are not using any extra memory OR space
+=====================================================================
+Regular Binary Search - O(m * logn)
+
+class Solution {
+    public boolean searchMatrix(int[][] matrix, int target) {
+        for (int i=0;i<matrix.length;i++){
+                int left  = 0;
+                int right = matrix[i].length-1;
+                while (left <= right){
+                        int cMid = left + (right - left) / 2; // find mid
+                        if (matrix[i][cMid] == target) return true; // if target matches then return true
+                        else if (matrix[i][cMid] < target) left = cMid+1; // if the value is less than target then increment the left pointer
+                        else right = cMid-1; // otherwise decrement the right pointer
+                } 
+        }
+        return false;
+    }
+}
+Modified Binary Search - O(m + n)
+
+class Solution {
+    public boolean searchMatrix(int[][] matrix, int target) {
+        int row = matrix.length;
+        int col = matrix[0].length;
+        
+        int i = 0;
+        int j = col-1;
+        while (i < row && j >= 0){
+            if (matrix[i][j] == target) return true;
+            else if (matrix[i][j] < target) i++; //everything in the previous row will be lesser so increment row pointer
+            else j--;    //everything from the column will be greater so decrement the column pointer
+        }
+        return false;
+    }
+}
+============================================================================
+Two condition provided is
+
+rows are sorted in ascending order
+cols are sorted in ascending order
+We first start with first row and last column element in 2D matrix.
+
+Idea here is we maintain two pointer's.
+i) for row
+ii) for col
+just like any 2D matrix problems
+
+now we compare current Element pointed by rowIndex and colIndex with target, if it matches then return true.
+
+if it does not match then, two possibility, we can go down(rowIndex++) or go left(colIndex--)
+
+we compare if current Element is smaller than the target
+i) if it's smaller, then we go down as all the elemnts on the left side of the current element is smaller(rows in ascending order).
+ii) if not, then we go left, as our solution doesnot lie in current column(because col is sorted in ascending, 
+so all the elements below in current col are greater than current element.)
+
+Time Complexity:
+assuming,
+num of rows = m
+num of cols = n
+
+complexity : O(m+n)
+
+Space complexity: O(1)
+
+class Solution {
+    public boolean searchMatrix(int[][] matrix, int target) {
+        if (matrix.length == 0) return false;
+       
+        int rowIndex = 0;
+        int colIndex = matrix[0].length - 1;
+        
+        while(rowIndex < matrix.length && colIndex >= 0) {
+            if (matrix[rowIndex][colIndex] == target)
+                return true;
+            
+            if(matrix[rowIndex][colIndex] < target)
+                rowIndex++;
+            else
+                colIndex--;
+        }
+        
+        return false;
+    }    
+}
