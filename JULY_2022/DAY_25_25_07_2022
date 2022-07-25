@@ -1,0 +1,253 @@
+34. Find First and Last Position of Element in Sorted Array [MEDIUM]
+Given an array of integers nums sorted in non-decreasing order, find the starting and ending position of a given target value.
+
+If target is not found in the array, return [-1, -1].
+
+You must write an algorithm with O(log n) runtime complexity.
+
+ 
+
+Example 1:
+
+Input: nums = [5,7,7,8,8,10], target = 8
+Output: [3,4]
+Example 2:
+
+Input: nums = [5,7,7,8,8,10], target = 6
+Output: [-1,-1]
+Example 3:
+
+Input: nums = [], target = 0
+Output: [-1,-1]
+ 
+
+Constraints:
+
+0 <= nums.length <= 105
+-109 <= nums[i] <= 109
+nums is a non-decreasing array.
+-109 <= target <= 109
+
+MY_SOLUTION
+class Solution {
+    public int[] searchRange(int[] nums, int target) {
+        //BINARY SEARCH -> SEARCH IN THE LEFT PART AND IN THE RIGHT PART
+        // SO CHECK THE HIGH AND LOW
+        int[] answer = {-1,-1};
+        int start = search(nums,target,true);
+        int end = search(nums,target,false);
+        answer[0] = start;
+        answer[1] = end;
+        return answer;
+    }
+    
+    static int search(int[] nums, int target, boolean firstIndex){
+        int ans = -1;
+        int start = 0;
+        int end = nums.length - 1;
+        while(start <= end){
+            int mid = start + (end-start)/2;
+            
+            if(target < nums[mid]){
+                end = mid - 1;
+                
+            }
+            else if( target > nums[mid]){
+                start = mid + 1;
+            }
+            else{
+                ans = mid;
+                if(firstIndex){
+                    end = mid - 1;
+                }
+                else{
+                    start = mid + 1;
+                }
+                    
+            }
+        }
+        return ans;
+    }
+}
+==========================================================
+Idea:
+This problem is very nearly the definition of a binary search. 
+A binary search allows us to find the insertion index for a target number in a sorted array. It's called a "binary" search because in each step it 
+halves the input array and determines in which half the number belongs. Since a binary search is able to eliminate half the remaining array in each iteration, 
+it can accomplish its objective with a time complexity of O(log N).
+
+In this case, however, we don't just want to find out where the target number (T) would be placed in the nums array (N), we want to additionally 
+find out if T actually exists in N, as well as the starting and end indexes.
+
+The standard implementation of a binary search will find the left-most index in which T could be placed, though many languages have functions for both sides. 
+Rather than having to define two sets of functions here, however, we can, with a little creativity, use a single function to find our answer.
+
+First, we can perform the standard left binary search (find) on T. Next, we can easily check to see if T exists in N already by checking the value stored at 
+the result of that first search (N[Tleft]). If we don't find T at that index, then T does not exist in N and we should return [-1, -1].
+
+Otherwise, we still need to find the right end of the range of T values in N. To do this, we can just use find again, this time with the next integer (T + 1). 
+Since this will find the index after the end of the range of T values, we can just move back one position to find the end of the T range.
+
+Now that we have our range, we can return it.
+
+Time Complexity: O(log N) for the binary search
+Space Complexity: O(1)
+Implementation:
+Python has built-in binary search functions for both sides: bisect_left() and bisect_right().
+
+The built-in function for Java, Arrays.binarySearch() does not find the left-most insertion point, so it's easier to define our own binary search function.
+
+C++ can use the built-in function equal_range(), which returns iterator pointers to the range of T values.
+====
+class Solution {
+    public int[] searchRange(int[] N, int T) {
+        int Tleft = find(T, N, 0);
+        if (Tleft == N.length || N[Tleft] != T) return new int[] {-1, -1};
+        return new int[] {Tleft, find(T+1, N, Tleft) - 1};
+    }
+    public int find(int target, int[] arr, int left) {
+        int right = arr.length - 1;
+        while (left <= right) {
+            int mid = left + right >> 1;
+            if (arr[mid] < target) left = mid + 1;
+            else right = mid - 1;
+        }
+        return left;
+    }
+}
+===================================================================================
+public int[] searchRange(int[] A, int target) {
+	int start = findPosition(A, target, 0, false);
+	if(start == -1) return  new int[]{-1, -1}; // Target not found.
+	int end = findPosition(A, target, start, true); // Only search for end position after start index.
+	return new int[]{start, end};
+}
+
+private int findPosition(int[] A, int target, int start, boolean isLast) {
+	int low = start, high = A.length-1, index = -1;
+	while (low <= high) {
+		int mid = low + ((high - low) >> 1);
+		if(isLast){
+			if (A[mid] <= target) low = mid + 1;
+			else high = mid-1;
+		} else{
+			if (A[mid] < target) low = mid + 1;
+			else high = mid-1;
+		}
+		if(A[mid] == target) index = mid; /** update index */
+	}
+	return index;
+}
+===================================================================
+class Solution {
+    public int[] searchRange(int[] nums, int target) {
+        int[] res=new int[2];
+        res[0]=findSidx(nums,target);
+        res[1]=findEidx(nums,target);
+        return res;
+    }
+    public int findSidx(int[] nums,int target){
+        int left=0;
+        int right=nums.length-1;
+        int idx=-1;
+        while(left<=right){
+            int mid=left+(right-left)/2;
+            if(nums[mid]==target)idx=mid;
+            if(target>nums[mid]){
+                left=mid+1;
+            }
+            else{
+                right=mid-1;
+            }
+        }
+        return idx;
+    }
+    public int findEidx(int[] nums,int target){
+        int left=0;
+        int right=nums.length-1;
+        int idx=-1;
+        while(left<=right){
+            int mid=left+(right-left)/2;
+            if(nums[mid]==target)idx=mid;
+            if(target>=nums[mid]){
+                left=mid+1;
+            }
+            else{
+                right=mid-1;
+            }
+        }
+        return idx;
+    }
+}
+================================================================
+Brute Force Approach:
+
+class Solution {
+    public int[] searchRange(int[] nums, int target) {
+        int[] ans = new int[2];
+        int start = -1;
+        int end = -1;
+        
+        for(int i=0; i<nums.length; i++){
+            if(nums[i]==target){
+                if(start == -1){
+                    start = i; 
+                }
+                end = i;
+            }
+            
+            if(nums[i]>target){
+                break;
+            }
+        }
+        
+        
+        ans[0] = start;
+        ans[1] = end;
+        return ans;
+    }
+}
+Optimal Approach:
+
+class Solution {
+	public int[] searchRange(int[] nums, int target) {
+		int[] ans = new int[2];
+		ans[0] = findFirst(nums, target, 0, nums.length - 1);
+		ans[1] = findLast(nums, target, 0, nums.length - 1);
+		return ans;
+	}
+
+	private int findFirst(int[] nums, int target, int start, int end) {
+		int position = -1;
+		while (start <= end) {
+			int mid = (start + end) / 2;
+            
+			if (nums[mid] >= target) {
+				end = mid - 1;
+			} else {
+				start = mid + 1;
+			}
+			if (nums[mid] == target){
+                position = mid;
+            }
+		}
+		return position;
+	}
+
+	private int findLast(int[] nums, int target, int start, int end) {
+		int position = -1;
+		while (start <= end) {
+			int mid = (start + end) / 2;
+            
+			if (nums[mid] <= target) {
+				start = mid + 1;
+			} else {
+				end = mid - 1;
+			}
+			if (nums[mid] == target){
+                position = mid;
+            }
+		}
+		return position;
+	}
+}
