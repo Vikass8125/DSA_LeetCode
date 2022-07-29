@@ -1,0 +1,269 @@
+890. Find and Replace Pattern [MEDIUM]
+
+Given a list of strings words and a string pattern, return a list of words[i] that match pattern. You may return the answer in any order.
+
+A word matches the pattern if there exists a permutation of letters p so that after replacing every letter x in the pattern with p(x), we get the desired word.
+
+Recall that a permutation of letters is a bijection from letters to letters: every letter maps to another letter, and no two letters map to the same letter.
+
+ 
+
+Example 1:
+
+Input: words = ["abc","deq","mee","aqq","dkd","ccc"], pattern = "abb"
+Output: ["mee","aqq"]
+Explanation: "mee" matches the pattern because there is a permutation {a -> m, b -> e, ...}. 
+"ccc" does not match the pattern because {a -> c, b -> c, ...} is not a permutation, since a and b map to the same letter.
+Example 2:
+
+Input: words = ["a","b","c"], pattern = "a"
+Output: ["a","b","c"]
+ 
+
+Constraints:
+
+1 <= pattern.length <= 20
+1 <= words.length <= 50
+words[i].length == pattern.length
+pattern and words[i] are lowercase English letters.
+
+MY_SOLUTION
+
+Approach 1: Two Maps
+Intuition and Algorithm
+
+If say, the first letter of the pattern is "a", and the first letter of the word is "x", then in the permutation, "a" must map to "x".
+
+We can write this bijection using two maps: a forward map m1 and a backwards map m2.
+
+\text{m1} : m1:"a"→"x" m2:"x"→"a"
+
+Then, if there is a contradiction later, we can catch it via one of the two maps. For example, if the (word, pattern) is ("aa", "xy"), 
+we will catch the mistake in m1 (namely, m1("a")="x"="y"). 
+Similarly, with (word, pattern) = ("ab", "xx"), we will catch the mistake in m2.
+
+class Solution {
+    public List<String> findAndReplacePattern(String[] words, String pattern) {
+        List<String> ans = new ArrayList();
+        for (String word: words)
+            if (match(word, pattern))
+                ans.add(word);
+        return ans;
+    }
+
+    public boolean match(String word, String pattern) {
+        Map<Character, Character> m1 = new HashMap();
+        Map<Character, Character> m2 = new HashMap();
+
+        for (int i = 0; i < word.length(); ++i) {
+            char w = word.charAt(i);
+            char p = pattern.charAt(i);
+            if (!m1.containsKey(w)) m1.put(w, p);
+            if (!m2.containsKey(p)) m2.put(p, w);
+            if (m1.get(w) != p || m2.get(p) != w)
+                return false;
+        }
+
+        return true;
+    }
+}
+
+
+
+Complexity Analysis
+
+Time Complexity: O(N∗K), where NN is the number of words, and K is the length of each word.
+
+Space Complexity: O(N∗K), the space used by the answer.
+
+
+Approach 2: One Map
+Intuition and Algorithm
+
+As in Approach 1, we can have some forward map \text{m1} : m1:L→L, where L is the set of letters.
+
+However, instead of keeping track of the reverse map m2, we could simply make sure that every value m1(x) in the codomain is reached at most once.
+This would guarantee the desired permutation exists.
+
+So our algorithm is this: after defining m1(x) in the same way as Approach 1 (the forward map of the permutation), 
+afterwards we make sure it reaches distinct values.
+
+
+class Solution {
+    public List<String> findAndReplacePattern(String[] words, String pattern) {
+        List<String> ans = new ArrayList();
+        for (String word: words)
+            if (match(word, pattern))
+                ans.add(word);
+        return ans;
+    }
+
+    public boolean match(String word, String pattern) {
+        Map<Character, Character> M = new HashMap();
+        for (int i = 0; i < word.length(); ++i) {
+            char w = word.charAt(i);
+            char p = pattern.charAt(i);
+            if (!M.containsKey(w)) M.put(w, p);
+            if (M.get(w) != p) return false;
+        }
+
+        boolean[] seen = new boolean[26];
+        for (char p: M.values()) {
+            if (seen[p - 'a']) return false;
+            seen[p - 'a'] = true;
+        }
+        return true;
+    }
+}
+
+Complexity Analysis
+
+Time Complexity: O(N∗K), where NN is the number of words, and K is the length of each word.
+
+Space Complexity: O(N∗K), the space used by the answer.
+
+=====================================================================================================================================
+
+class Solution {
+    public List<String> findAndReplacePattern(String[] words, String pattern) {
+        List<String> res = new ArrayList<>();
+        for (String word : words) {
+            if (check(word, pattern)) res.add(word);
+        }
+        return res;
+    }
+    
+    boolean check(String a, String b) {
+        for (int i = 0; i < a.length(); i++) {
+            if (a.indexOf(a.charAt(i)) != b.indexOf(b.charAt(i))) return false;
+        }
+        return true;
+    }
+}
+
+=======================================================================================
+Idea:
+Right away, we can realize that if we can remap characters in an attempt to match the pattern, it doesn't actually matter which characters map to 
+other characters, just that the locations are consistent.
+
+At this point, then, the goal is to make the comparison as easy as possible. To do that, we can reimagine the words as an alphabetic sequence, 
+where the first new character we come across is always masked to "a", the second to "b", and so on. If we apply this same process to the pattern first, 
+then it should be much easier to compare the words to the pattern.
+
+First, we can define a helper function to translate characters for us. We'll have to create a map or array structure (codex) to keep track of the 
+character mapping for a given word. The translate function will then check to see if the character has already been mapped, and if so, return its mapped value. 
+If not, it assigns it the next unused alphabetic value.
+
+We can then easily translate the pattern into a cipher mask which we can then compare to each word in words using another helper function.
+The compare function will clear the codex for each word, then we can compare each character of word to the corresponding character in cipher. 
+If at any time we fail to match, we can quickly return out of the comparison and continue with the next word.
+If the translated word fully matches cipher, it can be added to our answer array (ans).
+
+Then we can return ans once we're done.
+
+Time Complexity: O(N * M) where N is the length of words and M is the length of each word/pattern
+Space Complexity: O(M) for the codex
+or O(N + M) if you count the space of the output (ans)
+
+class Solution {
+    List<String> ans;
+    Map<Character, Character> codex;
+    char[] cipher;
+    
+    public List<String> findAndReplacePattern(String[] words, String pattern) {
+        ans = new ArrayList<>();
+        codex = new HashMap<>();
+        cipher = pattern.toCharArray();
+        for (int i = 0; i < pattern.length(); i++)
+            cipher[i] = translate(cipher[i]);
+        for (String word : words) compare(word);
+        return ans;
+    }
+    private char translate(char c) {
+        if (!codex.containsKey(c))
+            codex.put(c, (char)(97 + codex.size()));
+        return codex.get(c);
+    }
+    private void compare(String word) {
+        codex.clear();
+        for (int i = 0; i < word.length(); i++)
+            if (translate(word.charAt(i)) != cipher[i]) return;
+        ans.add(word);
+    }
+}
+
+=============================================================================
+
+class Solution {
+    public List<String> findAndReplacePattern(String[] words, String pattern) {
+        List<String> res = new ArrayList<>();
+        for (String word : words) {
+            if (check(word, pattern)) res.add(word);
+        }
+        return res;
+    }
+    
+    boolean check(String a, String b) {
+        for (int i = 0; i < a.length(); i++) {
+            if (a.indexOf(a.charAt(i)) != b.indexOf(b.charAt(i))) return false;
+        }
+        return true;
+    }
+}
+
+================================================================================
+
+class Solution {
+    public List<String> findAndReplacePattern(String[] words, String pattern) {
+        List<String> ans = new ArrayList<>();
+        for(String s : words)
+        {
+            if(dsu(s,pattern))
+            {
+                ans.add(s);
+            }
+        }
+        return ans;
+    }
+    
+    public boolean dsu(String s,String t)
+    {
+        int n = s.length();
+        int[] parr = new int[52];
+        int[] size = new int[52];
+        for(int i=0;i<52;i++)
+        {
+            size[i] = 1;
+            parr[i] = i;
+        }
+        
+        for(int i=0;i<n;i++)
+        {
+            char c1 = s.charAt(i);
+            char c2 = t.charAt(i);  
+            int p1 = findPar((c1-'a'),parr);
+            int p2 = findPar((c2-'a'+26),parr);
+            if(p1 == p2)
+            {
+                continue;
+            }
+            else if((c1-'a') == p1 && (c2-'a' + 26) == p2 && size[p1] == 1 && size[p2] == 1)
+            {
+                parr[p2] = p1;
+                size[p1]+= size[p2];
+            }
+            else
+            {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    public int findPar(int u,int[]parr)
+    {
+        return (u == parr[u]) ? u : (parr[u] = findPar(parr[u],parr));
+    }
+}
+
