@@ -1,0 +1,289 @@
+916. Word Subsets [MEDIUM]
+
+You are given two string arrays words1 and words2.
+
+A string b is a subset of string a if every letter in b occurs in a including multiplicity.
+
+For example, "wrr" is a subset of "warrior" but is not a subset of "world".
+A string a from words1 is universal if for every string b in words2, b is a subset of a.
+
+Return an array of all the universal strings in words1. You may return the answer in any order.
+
+ 
+
+Example 1:
+
+Input: words1 = ["amazon","apple","facebook","google","leetcode"], words2 = ["e","o"]
+Output: ["facebook","google","leetcode"]
+Example 2:
+
+Input: words1 = ["amazon","apple","facebook","google","leetcode"], words2 = ["l","e"]
+Output: ["apple","google","leetcode"]
+ 
+
+Constraints:
+
+1 <= words1.length, words2.length <= 104
+1 <= words1[i].length, words2[i].length <= 10
+words1[i] and words2[i] consist only of lowercase English letters.
+All the strings of words1 are unique.
+
+MY_SOLUTION
+
+Approach 1: Reduce to Single Word in B
+Intuition
+
+If b is a subset of a, then say a is a superset of b. Also, say N "a" (word) is the count of the number of "a"'s in the word.
+
+When we check whether a word wordA in A is a superset of wordB, we are individually checking the counts of letters: that for each letter, 
+we have N letter (wordA)≥N letter (wordB).
+Now, if we check whether a word wordA is a superset of all words wordB i, we will check for each letter and each i,
+that N letter (wordA)≥N letter (wordB i). 
+This is the same as checking N letter (wordA)≥ i max(N letter(wordB i)).
+
+For example, when checking whether "warrior" is a superset of words B = ["wrr", "wa", "or"], we can combine these words in B to 
+form a "maximum" word "arrow", that has the maximum count of every letter in each word in B.
+
+Algorithm
+
+Reduce B to a single word bmax as described above, then compare the counts of letters between words a in A, and bmax.
+
+
+Complexity Analysis
+
+Time Complexity: O(A + B) is the total amount of information in A and B respectively.
+
+Space Complexity: O(A.length+B.length).
+=================================================================================================
+
+Explanation and Idea:
+1 A=["amz"] and B=["zma"] then result:"amz"
+2. Order doesn't matter.
+3. All words consist of lowercase letter.
+
+eg : A = ["amazon","apple","facebook","google","leetcode"], B = ["ec","oc","ceo"]
+
+BruteForce: check for every word with complete B array.
+amazon -> check ec present , then check oc , then ceo if any of these false discard amazon.
+similar check apple,facebook.. with every word of B
+Time:O(A.lengthB.lengthmaxWordlength) . lets move to optimised approch.
+
+Optimal Approch:
+
+eg : A = ["amazon","apple","facebook","google","leetcode"], B = ["eec","oco","ceo"]
+we know that order doesn't matter and all word of B are subset of word in A then only that word is considered. 
+Having this in mind lets make a common word through B and just check that word as a subset in A.
+
+  B = ["eec","oco","ceo"]
+  word :  eecoo (order doesn't matter => cooee or oeoec)
+  this word fulfill all requirement of every word in B. 
+  How to make it : just use a character maximum frequency time in one word.
+-> we can make a frequency map. instead of using Hashmap we can use array of 26(as all are lowercase) to store frequency.
+you have rough idea now what we are going to do. Code will clear All your doubt.
+
+Code:
+
+class Solution {
+    public List<String> wordSubsets(String[] A, String[] B) {
+       List<String> result=new ArrayList<>();
+        int[] target=new int[26];
+        
+        for(String word:B){
+            int[] temp=new int[26];
+            for(char ch:word.toCharArray()){
+                temp[ch-'a']++;
+                target[ch-'a']=Math.max(target[ch-'a'],temp[ch-'a']);
+            }
+        }
+        
+        for(String word:A){
+            int[] source=new int[26];
+            for(char ch:word.toCharArray()){
+                source[ch-'a']++;
+            }
+            
+            if(subset(source,target)){
+                result.add(word);
+            }
+        }
+        
+        return result;
+    }
+    
+    private boolean subset(int[] parent,int[] child){
+        for(int i=0;i<26;i++){
+            if(parent[i]<child[i]) return false;
+        }
+        return true;
+    }
+}
+Complexity:
+Time:O(A+B) and Space:O (1) [ Big O notation 26 is constant space ]
+=============================================================================
+Approch :
+
+we know that order doesn't matter and all word of B are subset of word in A then only that word is considered. Having this in mind lets make a common word through B and just check that word as a subset in A.
+we can make a frequency map. instead of using Hashmap we can use array of 26(as all are lowercase) to store frequency.
+Time Compexity : O(A + B)
+Space Compexity : O(1) -> constant
+
+class Solution {
+public:
+    vector<string> wordSubsets(vector<string>& A, vector<string>& B) {
+        vector<int>freq(26,0);           //create the frequency count of elements of B.
+        for(auto x:B){
+            vector<int>temp(26,0);
+            for(auto y:x){
+                temp[y-'a']++;
+                freq[y-'a'] = max(freq[y-'a'],temp[y-'a']); 
+            }
+        }
+        vector<string>res;
+        for(auto x:A){
+            vector<int>temp(26,0);
+            for(auto y:x) temp[y-'a']++;    //create the frequency count for all the elements in A
+            bool flag=true;
+            for(int i=0 ; i<26 ; i++)
+                if(freq[i]>temp[i]) {flag=false;break;}         //check if the frequency count of B is subset of all A elements
+            if(flag) res.push_back(x);
+        }
+        return res;
+    }
+};
+UPVOTE if found it helpful feel free to reach out to me or comment down if you have any doubt
+
+Java :
+
+ public List<String> wordSubsets(String[] A, String[] B) {
+        int[] count = new int[26], tmp;
+        int i;
+        for (String b : B) {
+            tmp = counter(b);
+            for (i = 0; i < 26; ++i)
+                count[i] = Math.max(count[i], tmp[i]);
+        }
+        List<String> res = new ArrayList<>();
+        for (String a : A) {
+            tmp = counter(a);
+            for (i = 0; i < 26; ++i)
+                if (tmp[i] < count[i])
+                    break;
+            if (i == 26) res.add(a);
+        }
+        return res;
+    }
+
+    int[] counter(String word) {
+        int[] count = new int[26];
+        for (char c : word.toCharArray()) count[c - 'a']++;
+        return count;
+    }
+=============================================================================================
+Idea:
+The first major shortcut we can recognize is that if a word in A has to match all entries in B, then we shouldn't have to think of all the entries of B as separate.
+Our first step should then be to merge all words in B into one master word for which all words in B are subsets of it. \
+\
+In Example 5, for instance, when B = ["ec","oc","ceo"], the master word would be "ceo".
+
+To accomplish this, we'll need to use some kind of frequency map. Since we're dealing with characters, we can use an arraymap of length 26 which should 
+be faster than using a regular map structure. We'll need to have two such arraymaps: one will hold the accumulated data (Bfreq) and the other (check) will 
+be used to temporarily store each word in B before checking it against Bfreq.
+
+Rather than creating a new array for each word, we just need to make sure to reset check to all 0's before the next word.
+
+While we check through the words in B, we should also keep track of how many characters are currently stored in Bfreq (cmax). 
+If cmax goes above 10, then it won't be possible for any word in A to match it due to the constraints upon A.length, so we should return an empty array.
+
+Once we have our master word information stored in Bfreq, we can iterate through the words in A and compare them to Bfreq in a similar manner.
+First, however, we can easily skip any word that isn't as long as cmax. If we get through the entire word without triggering an early break,
+we can add the word to our answer array (ans).
+
+Once we're all done iterating through A, we can return ans.
+
+Implementation:
+Python here is generally much slower with an arraymap, but can use a normal dict and count() to speed things up a bit.
+
+There's also an example of Python using Counter() and its easy comparisons for some short code.
+
+Java should convert the Strings to char[] before iterating through.
+class Solution {
+    public List<String> wordSubsets(String[] A, String[] B) {
+        int[] Bfreq = new int[26], check = new int[26];
+        int cmax = 0;
+        List<String> ans = new ArrayList<>();
+        for (int i = 0; i < B.length; i++, Arrays.fill(check, 0)) {
+            char[] word = B[i].toCharArray();
+            for (int j = 0; j < word.length; j++)
+                check[word[j] - 'a']++;
+            for (int j = 0; j < 26; j++) {
+                int diff = check[j] - Bfreq[j];
+                if (diff > 0) {
+                    cmax += diff;
+                    Bfreq[j] += diff;
+                }
+                if (cmax > 10) return ans;
+            }
+        }
+        for (int i = 0; i < A.length; i++, Arrays.fill(check, 0)) {
+            char[] word = A[i].toCharArray();
+            int j;
+            if (word.length < cmax) continue;
+            for (j = 0; j < word.length; j++)
+                check[word[j] - 'a']++;
+            for (j = 0; j < 26; j++)
+                if (check[j] < Bfreq[j]) break;
+            if (j == 26) ans.add(A[i]);
+        }
+        return ans;
+    }
+}
+=====================================
+class Solution {
+    public List<String> wordSubsets(String[] words1, String[] words2) {
+        List<String> result = new ArrayList<>();
+        int[] words2Freq = getMaxFrequencies(words2);
+        
+        //get frequencies for letters in words1 array and compare with 
+        //getMaxFrequencies of words2, check if it is valid
+        //if yes then add it to a result list
+        for(int i=0; i<words1.length; i++){
+            int[] word1Freq = getFrequency(words1[i]);
+            boolean flag = true;
+            for(int j=0; j<26; j++){
+                if(word1Freq[j] < words2Freq[j]){
+                    flag = false;
+                    continue;
+                }
+            }
+            
+            if(flag == true){
+               result.add(words1[i]);
+            }
+        }
+        
+        return result;
+    }
+    
+    //get maximum of freq of letters for all words in an array
+    public int[] getMaxFrequencies(String[] word2){
+        int[] max = new int[26];
+        for(int i=0; i<word2.length; i++){
+            int[] wordFrequencies = getFrequency(word2[i]);
+            
+            for(int j=0; j<26; j++){
+                max[j] = Math.max(max[j], wordFrequencies[j]);
+            }
+        } 
+        return max;
+    }
+    
+    //get frequency of letters for a word
+    public int[] getFrequency(String s){
+        int[] frequencies = new int[26];
+        for(char c: s.toCharArray()){
+            frequencies[c-'a']++;
+        }
+        return frequencies;
+    }
+}
+=======================================================================
