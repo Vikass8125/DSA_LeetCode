@@ -1,0 +1,164 @@
+Given the root of a binary tree, return the same tree where every subtree (of the given tree) not containing a 1 has been removed.
+
+A subtree of a node node is node plus every node that is a descendant of node.
+
+ 
+
+Example 1:
+
+
+Input: root = [1,null,0,0,1]
+Output: [1,null,0,null,1]
+Explanation: 
+Only the red nodes satisfy the property "every subtree not containing a 1".
+The diagram on the right represents the answer.
+Example 2:
+
+
+Input: root = [1,0,1,0,0,0,1]
+Output: [1,null,1,null,1]
+Example 3:
+
+
+Input: root = [1,1,0,1,1,0,1,0]
+Output: [1,1,0,1,1,null,1]
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [1, 200].
+Node.val is either 0 or 1.
+
+
+MY_SOLUTION
+Approach #1: Recursion [Accepted]
+Intuition
+
+Prune children of the tree recursively. The only decisions at each node are whether to prune the left child or the right child.
+
+Algorithm
+
+We'll use a function containsOne(node) that tells us whether the subtree at this node contains a 1, and prunes all subtrees that do not contain 1.
+
+If for example, node.left subtree does not contain a one, then we should prune it via node.left = null.
+
+Also, the parent needs to be checked. If for example the tree is a single node 0, the answer is an empty tree.
+
+class Solution {
+    public TreeNode pruneTree(TreeNode root) {
+        return containsOne(root) ? root : null;
+    }
+
+    public boolean containsOne(TreeNode node) {
+        if (node == null) return false;
+        
+        // Check if any node in the left subtree contains a 1.
+        boolean leftContainsOne = containsOne(node.left);
+        
+        // Check if any node in the right subtree contains a 1.
+        boolean rightContainsOne = containsOne(node.right);
+
+        // If the left subtree does not contain a 1, prune the subtree.
+        if (!leftContainsOne) node.left = null;
+        
+        // If the right subtree does not contain a 1, prune the subtree.
+        if (!rightContainsOne) node.right = null;
+        
+        // Return true if the current node, its left or right subtree contains a 1.
+        return node.val == 1 || leftContainsOne || rightContainsOne;
+    }
+}
+
+===================================================
+Simply do a POST-ORDER Traversal and check if current Node is 0 && BOTH :- left and right side of current Node is Null or not. 
+If its Null then this current Node must be Pruned as well if not then return current Node.
+For better Understanding refer to Tutorials of how Post-Order Traversal Works in a Binary-Tree
+
+class Solution {
+    public TreeNode pruneTree(TreeNode root) {
+        if(root==null){return null;}
+        root.left= pruneTree(root.left);
+        root.right=pruneTree(root.right);
+        if(root.val==0&&root.left==null&&root.right==null)
+        {return null;}
+         
+        return root;
+    }
+}
+
+=======================================================
+class Solution {
+    public TreeNode pruneTree(TreeNode root) {
+        TreeNode ans = postOrder(root);
+        return ans;
+    }
+
+    private TreeNode postOrder(TreeNode cur) {
+        if (cur == null) {
+            return null;
+        }
+        TreeNode left = postOrder(cur.left);
+        TreeNode right = postOrder(cur.right);
+        if (left == null) {
+            cur.left = null;
+        }
+        if (right == null) {
+            cur.right = null;
+        }
+        if (left == null && right == null && cur.val == 0) {
+            cur = null;
+            return null;
+        }
+        return cur;
+    }
+}
+=====================================================
+/*
+    Approach:
+    
+    Pruning is to be done of those subtrees which doesn't contain '1'. So to prune that subtree we have to start pruning from the leaf nodes.
+    Check Condition for every node: If the left subtree is null and right subtree is null and the node itself is 0 then the node should be pruned.
+    
+    Ex: [1,0,1,0,0,0,1]
+    Consider the left subtree of root node
+    
+                0
+               / \
+              0   0
+              
+    Here, call pruneTree(root.left) goes to leftmost leaf node which will return null 
+	as the above condition is true (left==null && right==null && node.val==0), 
+	so the tree become
+    
+                0
+               / \
+            null  0
+    Same the right part will also return null, hence
+    
+                0
+               / \
+            null  null
+        
+    Now here the left subtree's parent(the ultimate root) will also get null 
+	as return value from left subtree call, as the condition is fulfilling here also.
+    
+    So the left subtree of root node get pruned.
+    In the same way the right subtree will also get pruned.
+
+*/
+class Solution {
+    public TreeNode pruneTree(TreeNode root) {
+        if(root == null) return null;
+        
+        // Pruning left and right subtrees
+        TreeNode left = pruneTree(root.left);
+        TreeNode right = pruneTree(root.right);
+        
+        // Assign pruned subtrees
+        root.left=left;
+        root.right=right;
+        
+        // Check for the condition of pruning and return value accordingly
+        return (left==null && right==null && root.val==0)?null:root;
+    }
+}
