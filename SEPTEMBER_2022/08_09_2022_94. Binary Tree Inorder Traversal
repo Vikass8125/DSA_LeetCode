@@ -1,0 +1,666 @@
+Given the root of a binary tree, return the inorder traversal of its nodes' values.
+
+ 
+
+Example 1:
+
+
+Input: root = [1,null,2,3]
+Output: [1,3,2]
+Example 2:
+
+Input: root = []
+Output: []
+Example 3:
+
+Input: root = [1]
+Output: [1]
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [0, 100].
+-100 <= Node.val <= 100
+ 
+
+Follow up: Recursive solution is trivial, could you do it iteratively?
+
+MY_SOLUTION
+
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode() {}
+ *     TreeNode(int val) { this.val = val; }
+ *     TreeNode(int val, TreeNode left, TreeNode right) {
+ *         this.val = val;
+ *         this.left = left;
+ *         this.right = right;
+ *     }
+ * }
+ */
+class Solution {
+    public List<Integer> inorderTraversal(TreeNode root) {
+        // RECURSIVE
+        /*
+        List<Integer> list  = new ArrayList<>();
+        if(root == null) return list;
+        
+        list.addAll(inorderTraversal(root.left));
+        list.add(root.val);
+        list.addAll(inorderTraversal(root.right));
+        
+        return list;
+        */
+        
+        //ITERATIVE
+        List<Integer> list = new ArrayList<>();
+        Stack<TreeNode> st = new Stack<>();
+        
+        TreeNode node = root;
+        while(node != null || !st.isEmpty()){
+            while(node != null){
+                st.push(node);
+                node = node.left;
+            }
+            node = st.pop();
+            list.add(node.val);
+            node = node.right;
+        }
+        
+        return list;
+    }
+}
+
+
+===============================================================
+
+Solution
+Approach 1: Recursive Approach
+The first method to solve this problem is using recursion.
+This is the classical method and is straightforward. We can define a helper function to implement recursion.
+
+class Solution {
+    public List<Integer> inorderTraversal(TreeNode root) {
+        List<Integer> res = new ArrayList<>();
+        helper(root, res);
+        return res;
+    }
+
+    public void helper(TreeNode root, List<Integer> res) {
+        if (root != null) {
+            helper(root.left, res);
+            res.add(root.val);
+            helper(root.right, res);
+        }
+    }
+}
+
+
+omplexity Analysis
+
+Time complexity: O(n)
+
+The time complexity is O(n) because the recursive function is T(n)=2⋅T(n/2)+1.
+Space complexity: O(n)
+
+The worst case space required is O(n), and in the average case it's O(logn) where n is number of nodes.
+
+============================
+
+Approach 2: Iterating method using Stack
+The strategy is very similiar to the first method, the different is using stack.
+
+
+public class Solution {
+    public List<Integer> inorderTraversal(TreeNode root) {
+        List<Integer> res = new ArrayList<>();
+        Stack<TreeNode> stack = new Stack<>();
+        TreeNode curr = root;
+        while (curr != null || !stack.isEmpty()) {
+            while (curr != null) {
+                stack.push(curr);
+                curr = curr.left;
+            }
+            curr = stack.pop();
+            res.add(curr.val);
+            curr = curr.right;
+        }
+        return res;
+    }
+}
+
+Complexity Analysis
+
+Time complexity: O(n)
+
+Space complexity: O(n)
+
+
+=================================================
+
+Approach 3: Morris Traversal
+In this method, we have to use a new data structure-Threaded Binary Tree, and the strategy is as follows:
+
+Step 1: Initialize current as root
+
+Step 2: While current is not NULL,
+
+If current does not have left child
+
+    a. Add current’s value
+
+    b. Go to the right, i.e., current = current.right
+
+Else
+
+    a. In current's left subtree, make current the right child of the rightmost node
+
+    b. Go to this left child, i.e., current = current.left
+For example:
+
+
+          1
+        /   \
+       2     3
+      / \   /
+     4   5 6
+
+First, 1 is the root, so initialize 1 as current, 1 has left child which is 2, the current's left subtree is
+
+         2
+        / \
+       4   5
+So in this subtree, the rightmost node is 5, then make the current(1) as the right child of 5. 
+Set current = cuurent.left (current = 2). The tree now looks like:
+
+         2
+        / \
+       4   5
+            \
+             1
+              \
+               3
+              /
+             6
+For current 2, which has left child 4, we can continue with thesame process as we did above
+
+        4
+         \
+          2
+           \
+            5
+             \
+              1
+               \
+                3
+               /
+              6
+then add 4 because it has no left child, then add 2, 5, 1, 3 one by one, for node 3 which has left child 6, do the same as above. 
+Finally, the inorder taversal is [4,2,5,1,6,3].
+
+class Solution {
+    public List<Integer> inorderTraversal(TreeNode root) {
+        List<Integer> res = new ArrayList<>();
+        TreeNode curr = root;
+        TreeNode pre;
+        while (curr != null) {
+            if (curr.left == null) {
+                res.add(curr.val);
+                curr = curr.right; // move to next right node
+            } else { // has a left subtree
+                pre = curr.left;
+                while (pre.right != null) { // find rightmost
+                    pre = pre.right;
+                }
+                pre.right = curr; // put cur after the pre node
+                TreeNode temp = curr; // store cur node
+                curr = curr.left; // move cur to the top of the new tree
+                temp.left = null; // original cur left be null, avoid infinite loops
+            }
+        }
+        return res;
+    }
+}
+
+Time complexity: O(n)
+
+To prove that the time complexity is O(n), the biggest problem lies in finding the time complexity of finding the predecessor nodes
+of all the nodes in the binary tree. Intuitively, the complexity is O(nlogn), because to find the predecessor node for a single node related to the height of the tree. 
+But in fact, finding the predecessor nodes for all nodes only needs O(n) time.
+Because a binary Tree with nn nodes has n−1 edges, the whole processing for each edges up to 2 times, one is to locate a node, 
+and the other is to find the predecessor node. So the complexity is O(n).
+Space complexity: O(1)
+
+Extra space is only allocated for the ArrayList of size n, however the output does not count towards the space complexity.
+
+
+The Morris solution above modifies the tree. The following one recovers it :-)
+
+class Solution {
+    public List<Integer> inorderTraversal(TreeNode root) {
+        List<Integer> nodes = new ArrayList<>();
+        TreeNode cur = root;
+        while (cur != null) {
+            if (cur.left != null) {
+                TreeNode pre = cur.left;
+                while ((pre.right != null) && (pre.right != cur)) {
+                    pre = pre.right;
+                }
+                if (pre.right == null) {
+                    pre.right = cur;
+                    cur = cur.left;
+                } else {
+                    pre.right = null;
+                    nodes.add(cur.val);
+                    cur = cur.right;
+                }
+            } else {
+                nodes.add(cur.val);
+                cur = cur.right;
+            }
+        }
+        return nodes;
+    }
+}
+
+===================================================================
+Preorder: Node -> Left -> Right
+
+public void preorder(TreeNode root, List<Integer> nums) {
+  if (root == null) return;
+  nums.add(root.val);
+  preorder(root.left, nums);
+  preorder(root.right, nums);
+}
+Inorder : Left -> Node -> Right
+
+public void inorder(TreeNode root, List<Integer> nums) {
+  if (root == null) return;
+  inorder(root.left, nums);
+  nums.add(root.val);
+  inorder(root.right, nums);
+}
+Postorder : Left -> Right -> Node
+
+public void postorder(TreeNode root, List<Integer> nums) {
+  if (root == null) return;
+  postorder(root.left, nums);
+  postorder(root.right, nums);
+  nums.add(root.val);
+}
+
+=====================================
+1)
+class Solution 
+{//Recursive Solution
+    ArrayList<Integer> res=new ArrayList<>();//global ArrayList, to prevent localization 
+
+    public List<Integer> inorderTraversal(TreeNode root) 
+    {
+        if(root==null)//base case for the empty tree 
+            return res;//returning the empty ArrayList 
+        
+        inorder(root);//calling the inorder fuction to recursively traverse the element and put it into the ArrayList 
+
+        return res;//returning the resultant ArrayList 
+    }
+    public void inorder(TreeNode root)
+    {//T&S--O(n)
+        if(root==null)//base case when we reach the null node while recursing down the tree  
+            return;//returning back to the calling function and deleting this current activation record
+        
+        inorder(root.left);//traversing the left down hill 
+        
+        res.add(root.val);//adding the root value to the ArrayList before traversing the right subtree
+        
+        inorder(root.right);//traversing the right downhill
+        
+        return;//returning back to the calling fuction as all the statement of this function has been executed, and deleting this current activation record 
+    }
+}
+
+2)
+class Solution
+{//Non-Recursive 
+    private ArrayDeque<TreeNode> stack= new ArrayDeque<>();//ArrayDeque is little faster than Stack //global 
+    public void addLeft(TreeNode temp)//pushing all the left
+    {
+         while(temp != null)//till we reach the null node
+        {
+            stack.offerLast(temp);//pushing it into the stack 
+            temp= temp.left;//moving down in Left subtree
+        }
+    }
+    public List<Integer> inorderTraversal(TreeNode root) 
+    {//T&S--O(n)
+        List<Integer> ans= new ArrayList<>();//to store the elements in inorder fashion 
+        
+        if(root == null)//base case when we are provided with null graph 
+            return ans;
+        
+        addLeft(root);//pushing all left node into the stack as it is the Right Maximum 
+        
+        while(!stack.isEmpty())//teminating case 
+        {
+            TreeNode temp= stack.pollLast();//popping the top node 
+            ans.add(temp.val);//adding the root element into the Stack 
+            addLeft(temp.right);//adding left in inorder fashion 
+        }
+        return ans;//returning the ArrayList 
+    }
+}
+
+3)
+class Solution 
+{//Morris Traversal
+    private List<Integer> res= new ArrayList<>();
+    public List<Integer> inorderTraversal(TreeNode root) 
+    {//T--O(n) S--O(1)
+        if(root == null)//base case when we are provided with null graph 
+            return res;//returning the empty ArrayList
+    
+        TreeNode curr= root;//storing the reference 
+        while(curr != null)
+        {
+            if(curr.left == null)//                                       root
+            {//no left cild we are currently at root                  /          \
+                res.add(curr.val);//adding root to the list        null         right subtree
+                curr= curr.right;//moving towards the right child 
+            }
+            else//left subtree is present
+            { 
+                TreeNode predecessor= curr.left;//finding the inorder predecessor of the current node, we have to first go one step left and then traverse right(as down we can reach, till we reach null or curr)
+                
+                while(predecessor.right != curr && predecessor.right != null){
+                    predecessor= predecessor.right;
+                }
+                if(predecessor.right == null)//left is establishing the link with curr(parent)
+                {
+                    predecessor.right= curr;
+                    curr= curr.left;
+                }
+                else//predecessor.right == curr//revisiting, already visited(left child) destroying the link and moving to right subtree through parent
+                {//left subtree traversal is done 
+                    predecessor.right= null;//already visted the left path breaking the link with the curr and moving towards the parent and eventully to the Right subtree
+                    res.add(curr.val);//Root
+                    curr= curr.right;//moving to right subtree, since root is visited through curr
+                }
+            }
+        }
+        return res;//returning the ArrayList
+    }
+}
+
+=======================================================
+// https://leetcode.com/problems/binary-tree-inorder-traversal/discuss/1860290/Tree-Traversals%3A-PreOrder-InOrder-and-PostOrder-or-Traverse-Algorithms-All-In-One
+
+Leetcode Binary Tree Traversal such problems:
+
+Binary Tree Traversal
+94. Binary Tree Inorder Traversal
+144. Binary Tree Preorder Traversal
+145. Binary Tree Postorder Traversal
+
+N-ary Tree Traversal
+589. N-ary Tree Preorder Traversal
+590. N-ary Tree Postorder Traversal
+
+Binary Tree
+PreOrder
+Algorithm Preorder(tree)
+1. Visit the root.
+2. Traverse the left subtree, i.e., call Preorder(left-subtree)
+3. Traverse the right subtree, i.e., call Preorder(right-subtree) 
+Recursive
+    public List<Integer> preorderTraversal(TreeNode root) {
+        List<Integer> ans = new ArrayList<>();
+        preOrder(root, ans);
+        return ans;
+    }
+    
+    public void preOrder(TreeNode root, List<Integer> list) {
+        if (root == null) {
+            return;
+        }
+        
+        list.add(root.val);
+        preOrder(root.left, list);
+        preOrder(root.right, list);
+    }
+Analysis
+Time Complexity: O(n)
+Space Complexity: O(n)
+
+Iteration
+    public List<Integer> preorderTraversal(TreeNode root) {
+        List<Integer> ans = new ArrayList<>();
+        Stack<TreeNode> stack = new Stack<>();
+        if (root == null) {
+            return ans;
+        }
+        while (root != null || !stack.empty()) {
+            while (root != null) {
+                stack.push(root);
+                ans.add(root.val);
+                root = root.left;
+            }
+            
+            root = stack.pop();
+            root = root.right;
+        }
+        
+        return ans;
+    }
+Analysis
+Time Complexity: O(n)
+Space Complexity: O(n)
+
+InOrder
+Algorithm Inorder(tree)
+1. Traverse the left subtree, i.e., call Inorder(left-subtree)
+2. Visit the root.
+3. Traverse the right subtree, i.e., call Inorder(right-subtree)
+Recursive
+    public List<Integer> inorderTraversal_rec(TreeNode root) {
+        List<Integer> ans = new ArrayList<>();
+        inOrder(root, ans);
+        return ans;
+    }
+    
+    public void inOrder(TreeNode root, List<Integer> list) {
+        if (root == null) {
+            return;
+        }
+        if (root.left != null) {
+            inOrder(root.left, list);
+        }
+        list.add(root.val);
+        if (root.right != null) {
+            inOrder(root.right, list);
+        }
+    }
+Analysis
+Time Complexity: O(n)
+Space Complexity: O(n)
+
+Iteration
+    public List<Integer> inorderTraversal(TreeNode root) {
+        List<Integer> ans = new ArrayList<>();
+        Stack<TreeNode> stack = new Stack<>();
+        if (root == null) {
+            return ans;
+        }
+        
+        while (root != null || !stack.empty()) {
+            while (root != null) {
+                stack.push(root);
+                root = root.left;
+            }
+            
+            root = stack.pop();
+            ans.add(root.val);
+            root = root.right;
+        }
+        
+        return ans;
+    }
+Analysis
+Time Complexity: O(n)
+Space Complexity: O(n)
+
+PostOrder
+Algorithm Postorder(tree)
+1. Traverse the left subtree, i.e., call Postorder(left-subtree)
+2. Traverse the right subtree, i.e., call Postorder(right-subtree)
+3. Visit the root.
+Recursive
+    public List<Integer> postorderTraversal_rec(TreeNode root) {
+        List<Integer> ans = new ArrayList<>();
+        postOrder(root, ans);
+        return ans;
+    }
+    
+    public void postOrder(TreeNode root, List<Integer> list) {
+        if (root == null) {
+            return;
+        }
+        
+        postOrder(root.left, list);
+        postOrder(root.right, list);
+        list.add(root.val);
+    }
+Analysis
+Time Complexity: O(n)
+Space Complexity: O(n)
+
+Iteration
+    public List<Integer> postorderTraversal(TreeNode root) {
+        List<Integer> ans = new ArrayList<>();
+        Stack<TreeNode> stack = new Stack<>();
+        if (root == null) {
+            return ans;
+        }
+        
+        TreeNode prev = null;
+        while (root != null || !stack.empty()) {
+            while (root != null) {
+                stack.push(root);
+                root = root.left;
+            }
+
+            root = stack.pop();
+            if (root.right == null || root.right == prev) {
+                ans.add(root.val);
+                prev = root;
+                root = null;
+            } else {
+                stack.push(root);
+                root = root.right;
+            }
+        }
+
+        return ans;
+    }
+Analysis
+Time Complexity: O(n)
+Space Complexity: O(n)
+
+N-ary Tree Traversal
+PreOrder
+Recursive
+    public List<Integer> preorder(Node root) {
+        List<Integer> ans = new ArrayList<>();
+        preOrderTraversal(root, ans);
+        return ans;
+    }
+    
+    public void preOrderTraversal(Node root, List<Integer> list) {
+        if (root == null) {
+            return;
+        }
+        list.add(root.val);
+        List<Node> children = root.children;
+        for (Node child : children) {
+            preOrderTraversal(child, list);
+        }
+    }
+Analysis
+Time Complexity: O(n)
+Space Complexity: O(n)
+
+Iteration
+    public List<Integer> preorder(Node root) {
+        List<Integer> ans = new ArrayList<>();
+        if (root == null) {
+            return ans;
+        }
+        
+        Stack<Node> stack = new Stack<>();
+        stack.push(root);
+        while (!stack.empty()) {
+            Node node = stack.pop();
+            ans.add(node.val);
+            List<Node> children = node.children;
+            int size = children.size();
+            for (int i = size - 1; i >= 0; i--) {
+                stack.push(children.get(i));
+            }
+        }
+        
+        return ans;
+    }
+Analysis
+Time Complexity: O(n)
+Space Complexity: O(n)
+
+PostOrder
+Recursive
+    public List<Integer> postorder_rec(Node root) {
+        List<Integer> ans = new ArrayList<>();
+        postOrderTraversal(root, ans);
+        return ans;
+    }
+    
+    public void postOrderTraversal(Node root, List<Integer> list) {
+        if (root == null) {
+            return;
+        }
+        List<Node> children = root.children;
+        for (Node child : children) {
+            postOrderTraversal(child, list);
+        }
+        list.add(root.val);
+    }
+Analysis
+Time Complexity: O(n)
+Space Complexity: O(n)
+
+Iteration
+    public List<Integer> postorder(Node root) {
+        List<Integer> ans = new ArrayList<>();
+        if (root == null) {
+            return ans;
+        }
+        
+        Stack<Node> stack = new Stack<>();
+        stack.push(root);
+        while (!stack.empty()) {
+            Node node = stack.pop();
+            ans.add(node.val);
+            List<Node> children = node.children;
+            int size = children.size();
+            for (int i = 0; i < size; i++) {
+                stack.push(children.get(i));
+            }
+        }
+        
+        Collections.reverse(ans);
+        return ans;
+    }
+Analysis
+Time Complexity: O(n)
+Space Complexity: O(n)
