@@ -1,0 +1,319 @@
+You are given two integers n and k and two integer arrays speed and efficiency both of length n. There are n engineers numbered from 1 to n. speed[i] and efficiency[i] represent the speed and efficiency of the ith engineer respectively.
+
+Choose at most k different engineers out of the n engineers to form a team with the maximum performance.
+
+The performance of a team is the sum of their engineers' speeds multiplied by the minimum efficiency among their engineers.
+
+Return the maximum performance of this team. Since the answer can be a huge number, return it modulo 109 + 7.
+
+ 
+
+Example 1:
+
+Input: n = 6, speed = [2,10,3,1,5,8], efficiency = [5,4,3,9,7,2], k = 2
+Output: 60
+Explanation: 
+We have the maximum performance of the team by selecting engineer 2 (with speed=10 and efficiency=4) and 
+engineer 5 (with speed=5 and efficiency=7). That is, performance = (10 + 5) * min(4, 7) = 60.
+Example 2:
+
+Input: n = 6, speed = [2,10,3,1,5,8], efficiency = [5,4,3,9,7,2], k = 3
+Output: 68
+Explanation:
+This is the same example as the first but k = 3. We can select engineer 1, engineer 2 and engineer 5 to get the maximum performance of the team. 
+That is, performance = (2 + 10 + 5) * min(5, 4, 7) = 68.
+Example 3:
+
+Input: n = 6, speed = [2,10,3,1,5,8], efficiency = [5,4,3,9,7,2], k = 4
+Output: 72
+ 
+
+Constraints:
+
+1 <= k <= n <= 105
+speed.length == n
+efficiency.length == n
+1 <= speed[i] <= 105
+1 <= efficiency[i] <= 108
+
+
+MY_SOLUTION
+
+class Solution {
+    // TC : O(nlogn)
+    // SC : O(n)
+
+    private class Engineer{
+
+        private int speed;
+        private  int efficiency;
+
+        public Engineer(int speed, int efficiency){
+
+            this.speed = speed;
+            this.efficiency = efficiency;
+        }
+    }
+
+    public int maxPerformance(int n, int[] speed, int[] efficiency, int k) {
+
+        List<Engineer> engineers = new ArrayList<>();
+
+        for(int i = 0; i < n; i++) {
+            engineers.add(new Engineer(speed[i], efficiency[i]));
+        }
+
+        //now sort the engineers list by their efficiency descending
+
+       engineers.sort((a, b) -> b.efficiency - a.efficiency);
+
+        //will keep slowest members at the top, fastest ones stay in the team longest
+        PriorityQueue<Engineer> currentTeam = new PriorityQueue<>((a, b) -> a.speed - b.speed);
+
+
+        long teamSpeed = 0;
+        long maxPerformance = 0;
+
+        for(Engineer newHire : engineers){
+
+            if(currentTeam.size() == k){
+
+                //we must evict the slowest engineer from out current team
+
+                Engineer slowGuy = currentTeam.poll();
+
+                //now we must remove the slow guys speed from our total speed
+                teamSpeed -= slowGuy.speed;
+            }
+
+            //hire the new guy to the team
+            currentTeam.add(newHire);
+
+            //so pickup the new engineers speed and add it to the current teams speed
+            teamSpeed += newHire.speed;
+
+            // Minimum would be new hire efficiency
+
+            long performanceWithNewGuy = teamSpeed * (long) newHire.efficiency;
+
+             maxPerformance = Math.max(maxPerformance, performanceWithNewGuy);
+        }
+
+       return (int) (maxPerformance % 1000000007);
+    }
+
+
+}
+
+========================================================
+
+class Solution {
+    public int maxPerformance(int n, int[] speed, int[] efficiency, int k) {
+        int[][] players = new int[n][2];
+        for (int i=0; i<n; i++) {
+            players[i][0] = efficiency[i];
+            players[i][1] = speed[i];
+        }
+		// Sort the players based on efficiency in decreasing order, as for each iteration, we'll consider only players with higher efficiency.
+        Arrays.sort(players, (p1, p2) -> (p2[0] - p1[0]));
+
+		// Priority-Queue to maintain players with highest relative speeds with efficiencies greater than the one under iteration.
+        PriorityQueue<Integer> speedQueue = new PriorityQueue<>(k);
+        long teamPerformance = 0, teamSpeed = 0;
+
+        for (int i=0; i<n; i++) {
+			// This is because a team can have atmost `k` players.
+            if (speedQueue.size() >= k) {
+                teamSpeed -= speedQueue.remove();
+            }
+            speedQueue.add(players[i][1]);
+            teamSpeed += players[i][1];
+
+            teamPerformance = Math.max(teamPerformance, teamSpeed * players[i][0]);
+        }
+        return (int) (teamPerformance % 1000000007);
+    }
+}
+
+
+=============================================================
+Idea:
+The trick to this problem, like many best product of x and y problems, is to find a way to iterate through one of the values in order, 
+then evaluate the other value for each combination and take the best result. 
+If we sort the engineers by efficiency, we can iterate downward through the engineers while evaluating the combined speed (totalSpeed) of the ideal group.
+
+Since the index numbers between speed and efficiency correspond to each other, we shouldn't just sort efficiency, however. 
+Instead, we can create another array of arrays (ord) with both stats combined into one array, then sort it based on the efficiency.
+
+As we iterate through the engineers in ord order and add them to the available pool, we know that all the engineers so far are at or higher than minEff, 
+so we're free to only choose the k fastest engineers for our group. To keep track of the sorted order of speeds of the engineers in our available pool, 
+we can use a min priority queue (sppq) or min heap (spheap) structure.
+This way, we can eliminate the slowest engineer from our pool every time we add an engineer over the k limit.
+At each stop, we should also find the product of totalSpeed and the current minimum efficiency and update the best result if necessary.
+
+It's important to note that the instructions say "at most" k engineers, so we should start keeping track of best right away. 
+Also, we should remember to modulo 1e9+7 before we return best.
+
+Time Complexity: O(N * log(N)) where N is the length of speed or efficiency, for the sorting of ord and for the priority queue / heap
+Space Complexity: O(N) for ord and sppq / spheap
+Implementation:
+The Javascript code would be even faster with a custom heap implementation. The MinPriorityQueue() npm is easier to use, but not as efficient.
+
+Javascript is faster by passing only the index reference into the priority queue, rather than combining both stats into an array before storage.
+
+
+class Solution {
+    public int maxPerformance(int n, int[] speed, int[] efficiency, int k) {
+        int[][] ord = new int[n][2];
+        for (int i = 0; i < n; i++)
+            ord[i] = new int[] {efficiency[i], speed[i]};
+        Arrays.sort(ord, (a, b) -> Integer.compare(b[0], a[0]));
+        PriorityQueue<Integer> sppq = new PriorityQueue<>();
+        long totalSpeed = 0, best = 0;
+        for (int[] pair : ord) {
+            int spd = pair[1];
+            sppq.add(spd);
+            if (sppq.size() <= k) totalSpeed += spd;
+            else totalSpeed += spd - sppq.poll();
+            best = Math.max(best, totalSpeed * pair[0]);
+        }
+        return (int)(best % 1000000007);
+    }
+}
+
+
+=============================================
+
+Our objective
+Find the maximum performance of a team composed of at most k engineers.
+
+where the performance of a team is the sum of their engineers' speeds multiplied by the minimum efficiency among their engineers.
+
+Approach
+So the first thing that comes to our mind is to take the most efficient engineers, right?
+
+So we can simply sort the efficiency array in decreasing order.
+But since the index numbers between speed and efficiency correspond to each other, we shouldn’t just sort efficiency. 
+Instead, we can create another array that keeps speed and efficiency together.
+
+We keep the queue with a maximum size of k, and when we add a new worker, we only need O(logK) to find the smallest speed in the team now.
+
+Complexity: 
+* TC: O(NlogN) for sorting and O(NlogK) for priority queue
+* SC: O(N)
+Steps
+Sort efficiency with descending order.
+Maintain a min_heap to track the minimum speed of the team.
+Update performance after each loop.
+Code:
+class Solution {
+    public int maxPerformance(int n, int[] speed, int[] efficiency, int k) {
+        PriorityQueue<Integer> min_heap = new PriorityQueue<>();
+        int[][] worker = new int[n][2];
+        for (int i = 0; i < n; i++) worker[i] = new int[] {efficiency[i], speed[i]};
+        Arrays.sort(worker, (a, b) -> Integer.compare(b[0], a[0]));
+        
+        long sum_of_speed = 0, performance = 0;
+        for (int[] pair : worker) {
+            int curr_speed = pair[1];
+            min_heap.add(curr_speed);
+            if (min_heap.size() <= k) sum_of_speed += curr_speed;
+            else sum_of_speed += curr_speed - min_heap.poll();
+            performance = Math.max(performance, sum_of_speed * pair[0]);
+        }
+        return (int)(performance % 1000000007);
+    }
+}
+
+
+==================================================================================
+
+Approach:
+
+Since the least efficiency among the players in a team has to be considered, we'll first sort the players based on efficiency.
+
+Now, we will start from player with highest efficiency and consider only players with greater or equal efficiency, 
+which is automatically handled now as the other elements in the list would have low/equal efficiency (since we sorted on that basis).
+
+Computing which (k-1) players to be selected with higher efficiency will cost O(n2) if we do it brute-force, 
+hence, we'd use Priority-Queue to maintain highest speeds of players and automatically, 
+these players would have efficiencies higher than the one under iteration right now.
+
+We simply pick k-1 players from here (as the kth is the current player in iteration itself) and compute the team performance, 
+and update it if current evaluation turns greater than previous one.
+
+class Solution {
+    public int maxPerformance(int n, int[] speed, int[] efficiency, int k) {
+        int[][] players = new int[n][2];
+        for (int i=0; i<n; i++) {
+            players[i][0] = efficiency[i];
+            players[i][1] = speed[i];
+        }
+		// Sort the players based on efficiency in decreasing order, as for each iteration, we'll consider only players with higher efficiency.
+        Arrays.sort(players, (p1, p2) -> (p2[0] - p1[0]));
+
+		// Priority-Queue to maintain players with highest relative speeds with efficiencies greater than the one under iteration.
+        PriorityQueue<Integer> speedQueue = new PriorityQueue<>(k);
+        long teamPerformance = 0, teamSpeed = 0;
+
+        for (int i=0; i<n; i++) {
+			// This is because a team can have atmost `k` players.
+            if (speedQueue.size() >= k) {
+                teamSpeed -= speedQueue.remove();
+            }
+            speedQueue.add(players[i][1]);
+            teamSpeed += players[i][1];
+
+            teamPerformance = Math.max(teamPerformance, teamSpeed * players[i][0]);
+        }
+        return (int) (teamPerformance % 1000000007);
+    }
+}
+
+
+==========================================================================
+
+Approach:
+
+->add both the speed and efficiency of engineers to a 2D array
+->sort the above properties array in descending order of efficiency
+->when we iterate this array from left to right, we will always encounter an engineer with lesser efficiency
+->hence, at any point during out iteration, the min efficiency should be the current efficiency of the engineer
+->iterate the properties array from left to right in descending order of engineer's efficiency
+->maintain a min heap of size 'k' containing the speed of engineers
+->the minimum efficiency should be the current efficiency since the properties array is sorted in descending order of efficiency
+->add the speed of the current engineer to the min heap
+->if the min heap size exceeds 'k', pop the engineer with the minimum speed
+->keep track of the maximum efficiency encountered so far across a group of <= k engineers
+Solution:
+
+class Solution {
+    public int maxPerformance(int n, int[] speed, int[] efficiency, int k) {
+        int[][] engineerProperties = new int[n][2];
+        // add both the speed and efficiency of engineers to a 2D array
+        for (int i = 0; i < n; i++) engineerProperties[i] = new int[] { efficiency[i], speed[i] };
+        // sort the above array in descending order of efficiency
+        // when we iterate this array from left to right, we will always encounter an engineer with lesser efficiency
+        // hence, at any point during out iteration, the min efficiency should be the current efficiency of the engineer
+        Arrays.sort(engineerProperties, (int[] a, int[] b) -> b[0] - a[0]);
+        
+        long result = 0, speedSum = 0;
+        // maintain a min heap of size 'k' containing the speed of engineers
+        PriorityQueue<Integer> speedMinHeap = new PriorityQueue<>(k);
+        for (int i = 0; i < n; i++) {
+            // the minimum efficiency should be the current efficiency since the properties array is sorted in descending order of efficiency
+            int minEfficiency = engineerProperties[i][0];
+            // add the speed of the current engineer to the min heap
+            speedMinHeap.add(engineerProperties[i][1]);
+            // if the min heap size exceeds 'k', pop the engineer with the minimum speed
+            // we might even pop the current engineer if both their speed and efficiency are less than other previous engineers
+            // in that case, the below computation won't make sense but it won't impact the max performance answer
+            speedSum += engineerProperties[i][1];
+            if (speedMinHeap.size() > k) speedSum -= speedMinHeap.poll();
+            // keep track of the maximum efficiency encountered so far across a group of <= k engineers
+            result = Math.max(result, (minEfficiency * speedSum));
+        }
+        // return result mod 1e9+7
+        return (int)(result % 1_000_000_007l);
+    }
+}
