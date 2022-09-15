@@ -1,0 +1,576 @@
+An integer array original is transformed into a doubled array changed by appending twice the value of every element in original, and then randomly shuffling the resulting array.
+
+Given an array changed, return original if changed is a doubled array. If changed is not a doubled array, return an empty array. The elements in original may be returned in any order.
+
+ 
+
+Example 1:
+
+Input: changed = [1,3,4,2,6,8]
+Output: [1,3,4]
+Explanation: One possible original array could be [1,3,4]:
+- Twice the value of 1 is 1 * 2 = 2.
+- Twice the value of 3 is 3 * 2 = 6.
+- Twice the value of 4 is 4 * 2 = 8.
+Other original arrays could be [4,3,1] or [3,1,4].
+Example 2:
+
+Input: changed = [6,3,0,1]
+Output: []
+Explanation: changed is not a doubled array.
+Example 3:
+
+Input: changed = [1]
+Output: []
+Explanation: changed is not a doubled array.
+ 
+
+Constraints:
+
+1 <= changed.length <= 105
+0 <= changed[i] <= 105
+HINTS:
+If changed is a doubled array, you should be able to delete elements and their doubled values until the array is empty.
+
+Which element is guaranteed to not be a doubled value? It is the smallest element.
+
+After removing the smallest element and its double from changed, is there another number that is guaranteed to not be a doubled value?
+
+MY_SOLUTION
+class Solution {
+    public int[] findOriginalArray(int[] changed) {
+        int len = changed.length;
+        if((len&1) != 0) return new int[0];
+        
+        // Sorting the array
+        Arrays.sort(changed);
+        
+        // Store frequencies in map
+        Map<Integer,Integer> map = new HashMap<>();
+        for(int e : changed) map.put(e,map.getOrDefault(e,0)+1);
+        
+        int[] res = new int[len/2];
+        int k = 0;
+        for(int i=0; i<len; i++){
+            int ele = changed[i];
+            
+            // if map contains 'ele'
+            if(map.containsKey(ele)){
+                
+                // if map contains 'ele*2'
+                if(map.containsKey(ele*2)){
+                    res[k++] = ele;
+                    
+                    // reduce frequency of 'ele' and 'ele*2' 
+                    map.put(ele,map.get(ele)-1);
+                    map.put(ele*2,map.get(ele*2)-1);
+                    
+                    // if freq of any key becomes <=0, remove it from map 
+                    if(map.get(ele)<=0) map.remove(ele);
+                    if(map.containsKey(ele*2) && map.get(ele*2)<=0) map.remove(ele*2);
+                }
+                else return new int[0];
+            }
+            
+        }
+        return res;
+    
+
+    }
+}
+
+
+=====================================================================================================
+-> With Sorting the changed array
+class Solution {
+    public int[] findOriginalArray(int[] changed) {
+        
+        Arrays.sort(changed);
+            
+        if(changed.length%2!=0) return new int[0];
+        
+        int mid = changed.length/2;
+        
+        int[] res = new int[mid];
+        
+        int[] freq = new int[100001];
+        
+        for(int no : changed)
+            freq[no]++;
+        
+        int idx=0;
+        
+        for(int no: changed){
+            if(freq[no] > 0 && no*2 <= 100000 && freq[no*2]>0){
+                freq[no]--;
+                freq[no*2]--;
+                res[idx++] = no;
+            }
+        }
+        
+        for(int i=0; i<freq.length; i++){
+            if(freq[i]!=0) return new int[0];
+        }
+        
+        return res;
+        
+
+    }
+}
+
+-> Without Sorting the changed array. (As suggested by @Digvijaysingh0707 in the comments)
+class Solution {
+    public int[] findOriginalArray(int[] changed) {
+        
+            
+        if(changed.length%2!=0) return new int[0];
+        
+        int mid = changed.length/2;
+        
+        int[] res = new int[mid];
+        
+        int[] freq = new int[100001];
+        
+        for(int no : changed)
+            freq[no]++;
+        
+        
+        int idx=0;
+        
+        for(int no=0; no<freq.length; no++){
+            
+            while(freq[no] > 0 && no*2 < 100001 && freq[no*2]>0){
+                freq[no]--;
+                freq[no*2]--;
+                res[idx++] = no;
+            }
+        }
+        
+        for(int i=0; i<freq.length; i++){
+            if(freq[i]!=0) return new int[0];
+        }
+        
+        return res;
+        
+
+    }
+}
+
+
+=====================================================================================================
+
+class Solution {
+    public int[] findOriginalArray(int[] nums) {
+       int[] vacarr = new int[0];
+	   	// when we need to return vacant array
+        int n= nums.length;
+			// size of the array
+        if(n%2!=0)
+        {
+            return vacarr;
+			// when we will have odd number of integer in our input(double array can't be in odd number)
+    
+        }
+        HashMap<Integer, Integer> hm = new HashMap<Integer, Integer>();
+			 // for storing the frequencies of each input
+        int[] ans = new int[(nums.length/2)];
+        // answer storing array
+     
+        for(int i=0;i<n;i++)
+        {
+            hm.put(nums[i], hm.getOrDefault(nums[i],0)+1);
+			// storing the frequencies
+        }
+        int temp = 0;
+        
+        Arrays.sort(nums);
+		// sorting in increasing order
+        for(int i: nums)
+        {
+           
+            if(hm.get(i)<=0)
+            {
+			  // if we have already decreased it's value when we were checking y/2 value, like 2,4 we will
+        //remove 4 also when we will check 2 but our iteration will come again on 4.
+      
+                continue;
+            }
+         
+            if(hm.getOrDefault(2*i,0)<=0)
+            {   // if we have y but not y*2 return vacant array
+                return vacarr;
+            }
+            ans[temp++] = i;
+			 // if we have both y and y*2, store in our ans array
+           // decrease the frequency of y and y*2
+            hm.put(i, hm.get(i)-1); 
+            hm.put(2*i, hm.get(2*i)-1);
+        }
+        
+        return ans;
+    }
+}
+
+
+=====================================================================================================
+Steps:
+
+-> Sort the double array.
+-> Start iterating from the end and use a hashmap to keep track of the seen elements.
+-> If double of current element is present in the map, that means the current element is part of the original array, so add it to result.
+-> else add the element to the hashmap, because it is a new element generated from an element in the original array.
+
+Edge cases:
+
+-> Length of the double array must be even to be valid.
+-> If the number of elements in the final result are not equal to (double.length/2), that means the double array is not valid.
+
+class Solution {
+    public int[] findOriginalArray(int[] arr) {
+        int n = arr.length;
+        if(n % 2 != 0)return new int[0];
+        
+        int[] res = new int[n/2];
+        int idx = 0;
+        
+        Arrays.sort(arr);
+        int j = n-1;
+        Map<Integer,Integer> map = new HashMap<>();
+        
+        while(j >= 0){
+            int element = arr[j];
+            int twice = element * 2;
+            
+            if(map.containsKey(twice)){
+                if(map.get(twice) == 1)map.remove(twice);
+                else map.put(twice,map.get(twice) - 1);
+                res[idx++] = element;
+            }else{
+                map.put(element,map.getOrDefault(element,0) + 1);
+            }
+            j--;
+        }
+        
+        return idx == n/2 ? res : new int[0];
+    }
+}
+
+
+
+=====================================================================================================
+
+class Solution { 
+    int[] res;
+    int index=0;
+    public int[] findOriginalArray(int[] changed) {
+        if(changed.length%2==1) return new int[0];
+        res = new int[changed.length/2];
+        
+        int max = 0;
+        for(int num: changed) max = Math.max(max, num);
+        int[] nums = new int[max+1];
+        for(int num: changed) nums[num]++;
+        
+        if(nums[0]%2==1) return new int[0];
+        fill(0, nums[0]/2);
+        
+        for(int i=1; i<=max/2; i++){
+            if(nums[2*i] < nums[i]) return new int[0];
+            nums[2*i] -= nums[i];
+            fill(i, nums[i]);
+        }
+        return index != res.length ? new int[0] : res;
+    }
+    
+    private void fill(int num, int count){
+        while(count-->0)
+            res[index++] = num;
+    }
+}
+
+
+
+=====================================================================================================
+
+Important point:
+Many people might come to a solution which would either fail for either this input [4,8,2,16,1,8] or this one [4,4,16,20,8,8,2,10],
+
+The thing is that while checking for both twice and half of a number, we might be greedily counting the first case that exists which 
+might make the final solution not possible.
+
+Let me explain what I meant by this in an example:
+Take this changed array and assume that you are checking to find num * 2 first.
+[4,4,16,20,8,8,2,10]
+Here when traversing from the beginning of the array (after putting count in hashmap), for first 4 we will pick 8.
+For second 4 we will choose the second 8 but now for 16 there is no number left to choose which would result in empty response.
+
+Similar thing will happen for [4,8,2,16,1,8] if you are checking for finding num / 2 first.
+
+Explaination:
+What is the solution to this?
+Sorting.
+
+When you sort the map, then you basically make sure that when traversing through the array (from the beginning), the num / 2 case has already been taken care of.
+
+To explain further the above example [4,4,16,20,8,8,2,10] will become [2,4,4,8,8,10,16,20].
+Now for the 2 you will find only num * 2 that is 4 which exists. Then for 4 you will find 8 and for 8 you will find 16 and so on.
+
+The code looks like this:
+
+class Solution {
+    public int[] findOriginalArray(int[] changed) {
+        if (changed.length % 2 != 0) {
+            return new int[0];
+        }
+        
+        Arrays.sort(changed);
+        Map<Integer, Integer> map = new HashMap<>();
+        for (int change : changed) {
+            map.put(change, map.getOrDefault(change, 0) + 1);
+        }
+        
+        int[] arr = new int[changed.length / 2];
+        int index = 0;
+        
+        for (int change : changed) {
+            if (map.get(change) <= 0) {
+                continue;
+            }
+            
+            map.put(change, map.get(change) - 1);
+            int find1 = change * 2;
+            
+            if (index == arr.length) {
+                break;
+            }
+            
+            if (map.containsKey(find1) && map.get(find1) > 0) {
+                arr[index++] = change;
+                map.put(find1, map.get(find1) - 1);     
+            } else {
+                return new int[0];
+            }
+        }
+        
+        return arr;
+    }
+}
+
+
+=====================================================================================================
+/*
+    Use HashMap to store frequencies of every element from changed array, and after sorting the changed array, start traversing from left-to-right and check that map contains the keys 'ele' and 'ele*2' in the map and reduce the frequency count in the map of both keys.
+    And keep stroing the keys 'ele' in the result array for output
+    
+    Tip: if size of array is not even, then return empty array
+    
+    Ex: [1,2,2,2,4,4]
+    map -> {
+                1 : 1,
+                2 : 3,
+                4 : 2
+            }
+    Changed array after sorting becomes [1,2,2,2,4,4]
+    
+    Now, start traversing from left-to-right
+    
+    for ele=1 [idx=0]       map -> {1:0, 2:2, 4:2}  res=[1]
+    now when the frequency of any key becomes 0, remove that from map
+    
+    for ele=2 [idx=1]       map -> {2:1,4:1}        res=[1,2]
+    for ele=2 [idx=2]       map->{2:0,4:0}          res=[1,2,2]  // remove 2 and 4 from map
+    for ele=2 [idx=3]       map doesn't contains 2, so continue
+    for ele=4 [idx=4]       map doesn't contains 4, so continue
+    for ele=4 [idx=5]       map doesn't contains 4, so continue
+    
+    now output is ready, i.e., [1,2,2]
+    
+*/
+class Solution {
+    public int[] findOriginalArray(int[] changed) {
+        
+        int len = changed.length;
+        if((len&1) != 0) return new int[0];
+        
+        // Sorting the array
+        Arrays.sort(changed);
+        
+        // Store frequencies in map
+        Map<Integer,Integer> map = new HashMap<>();
+        for(int e : changed) map.put(e,map.getOrDefault(e,0)+1);
+        
+        int[] res = new int[len/2];
+        int k = 0;
+        for(int i=0; i<len; i++){
+            int ele = changed[i];
+            
+            // if map contains 'ele'
+            if(map.containsKey(ele)){
+                
+                // if map contains 'ele*2'
+                if(map.containsKey(ele*2)){
+                    res[k++] = ele;
+                    
+                    // reduce frequency of 'ele' and 'ele*2' 
+                    map.put(ele,map.get(ele)-1);
+                    map.put(ele*2,map.get(ele*2)-1);
+                    
+                    // if freq of any key becomes <=0, remove it from map 
+                    if(map.get(ele)<=0) map.remove(ele);
+                    if(map.containsKey(ele*2) && map.get(ele*2)<=0) map.remove(ele*2);
+                }
+                else return new int[0];
+            }
+            
+        }
+        return res;
+    }
+}
+
+
+
+=====================================================================================================
+The code below uses an array to count how many occurrences of each number in the changed[] array.
+The counts of each number can also be called the frequency of each number.
+The counts are processes from index 1, to half of the maximum number, with special case processing for the number zero.
+Processing from low numbers to high numbers, the low numbers should always be non-doubled numbers. 
+There must also be at least the same count of the low number, for the count of twice the low number. 
+Then the count of the low number is removed from the count of twice that low number.
+
+The length of the array of counts[] is one plus the maximum numeric value from the changed[] array, because the counts array must contain the count 
+of each numeric value from the changed[] array.
+
+The code below consists of three major loops, resulting in complexity O(2N+M), where N is the length of changed[] and M is one half of the maximum 
+numeric value in changed[]:
+
+One pass through the changed[] array to find the maximum numeric value in the changed[] array.
+Another pass through the changed[] array to count the number of occurrences of each numeric value from the changed[] array, into the counts[] array.
+One pass through the first half of the counts[] array to search for doubled numbers. We only need to loop through the first half of the counts[].
+All counts in the second half of the counts[] array must be doubled values from the first half of the counts[] array, and were therefore not part of the original array.
+When scanning through the counts[] array, we scan from low to high because the lowest non-zero count will always be from the original array, and not a doubled number.
+For each non-zero value count[n], make sure that counts[2*n] is at least as large as counts[n]. 
+Then subtract counts[n] from counts[2*n] because they were only doubled values. Also insert n into the original array being built in result[], counts[n] times.
+Several special cases are used to quickly detect invalid doubled arrays and avoid some of the processing loops mentioned above, or just to make processing faster:
+
+A valid doubled array cannot have an odd length, because the doubled array must have 2 times the length of the original array.
+If the changed[] array is long and contains some large values, then skip the scanning for the maximum value and
+assume a maximum value of 100_000 (the max value listed in the problem description).
+If the maximum value from changed[] is odd, then it is an invalid doubled array, because the highest value must be a doubled value.
+If the maximum value from changed[] is zero, then the original array must have been all zeroes. In Java, int arrays are initialized to all zeroes, 
+so we can return the recently created result[] array as the original array.
+If the last count in the counts[] does not have enough corresponding counts at index which is half of that last index, then it is an invalid doubled array.
+The last index into counts[] is the maximum numeric value maxN from changed[] and maxN must be a value that was doubled from the original array's maxN/2 values. 
+So the original array must have contributed at least the same count at index maxN/2 into the counts[] array, or else the changed[] array is an invalid doubled array.
+The count for zero values at counts[0] must be handled as a special case, because unlike other numbers, 2 times zero is still zero.
+Therefore if the count of zeroes is odd, then changed[] is an invalid doubled array, because each zero from the original array must have an 
+extra zero put into the doubled array. Also, since the original array being build in result[] was initialized to zeroes by Java, 
+we simply set the next index to use in the original array being built, to half the count of zeroes, rather than waste time writing more zeroes into the 
+original array being built.
+Only the first half of the counts[] array needs to be scanned to validate the doubled array, because the second half of the counts[] array can only 
+contain values that were doubled from the original array. If the original array result[] was NOT fully filled by processing the first half of the counts[] array, 
+then the changed[] array is an invalid doubled array.
+The code below ran as fast as 4ms in September 2022, but usually ran about 10ms, and as slow as 20ms. Multiple SUBMITs result in different runtimes. 
+In the future, changes to the leetcode test cases may make this code run slower.
+
+If useful, please upvoe.
+
+class Solution {
+    public int[] findOriginalArray(int[] changed) {
+        // If changed[] is odd length array, then NOT a valid doubled array.
+        if ((changed.length & 1) != 0)  return new int[0];
+
+        // Setup some working values.
+        int[] result = new int[changed.length / 2];
+        int maxN = 0;
+        if (changed.length > 1000 && (changed[0] > 1000 || changed[changed.length - 1] > 1000))
+            maxN = 100_000;
+        else {
+            for (int i = changed.length; i > 0; )  maxN = Math.max(maxN, changed[--i]);
+            if ((maxN & 1) != 0)  return new int[0];
+            if (maxN == 0)  return result;
+        }
+        int halfMaxN = maxN / 2;
+        int[] counts = new int[maxN + 1];
+        int changedIdx = 0;
+
+        // Build the array of counts of each number in changed[] array.
+        for (int n : changed)  counts[n]++;
+        if (counts[maxN] > counts[halfMaxN])  return new int[0];
+        
+        // Go through the counts[] array to resolve all non-zero count values.
+        if ((counts[0] & 1) != 0)  return new int[0];
+        int resultIdx = counts[0] / 2;
+        for (int i = 1; i <= halfMaxN; i++) {
+            int count = counts[i];
+            if (count != 0) {
+                if ((counts[2 * i] -= count) < 0)  return new int[0];
+                while (count-- > 0)  result[resultIdx++] = i;
+            }
+        }
+        
+        if (resultIdx != result.length)  return new int[0];
+        return result;
+    }
+}
+
+=====================================================================================================
+
+CLEAN AND SIMPLE JAVA SOLUTION!
+Major edge case is if our array contains zero!!
+If there are zeores we handle them first and then move on with rest of the elements.
+class Solution {
+
+    public int[] findOriginalArray(int[] array) {
+		
+		//EDGE CASE
+        if (array == null) return new int[] {};
+        int n = array.length;
+        if (n == 0 || n % 2 != 0) return new int[] {};
+
+        Arrays.sort(array);
+
+        List<Integer> l = new ArrayList<>();
+        HashMap<Integer, Integer> map = new HashMap<>();
+
+        //FREQUENCY
+        for (int element : array) map.put(element, map.getOrDefault(element, 0) + 1);
+
+		// HANDLING ZEROES(IMPORTANT EDGE CASES)
+        int zeroes = 0;
+        if (array[0] == 0){
+            zeroes = map.get(0);
+            if (zeroes % 2 != 0) return new int[]{};
+        }
+
+        if (zeroes == n) return new int[n / 2];
+    
+        for (int k = 0; k < zeroes/2;k++) l.add(0);
+
+		// DEALING WITH REMAINING ELEMENTS(starting from the zeroes index because we have dealt with all the zeroes)
+        for (int i = zeroes; i < array.length; i++) {
+		//Check if we have current element and then check current element * 2 in our map.
+            if (map.containsKey(array[i])) {
+                int frequency = map.get(array[i]);
+                map.remove(array[i]);
+                if (!map.containsKey(array[i] * 2)) return new int[] {};
+
+                l.add(array[i]);
+                //NOW DEAL WITH DOUBLED ARRAY ELEMENT
+                int frequencyOfDoubled = map.get(array[i] * 2);
+                map.remove(array[i] * 2);
+
+                if (frequency > 1) map.put(array[i], frequency - 1);
+                if (frequencyOfDoubled > 1) map.put(array[i] * 2, frequencyOfDoubled - 1);
+            }
+        }
+
+
+		//COPY FROM LIST TO ARRAY
+        int[] result = new int[l.size()];
+        for (int j = 0; j < l.size(); j++) result[j] = l.get(j);
+        return result;
+    }
+}
+
+Time Complexity : O(N log N) + O(N) [Sorting + Traversing]
+Space Complexity : O(N) + O(N/2) [HashMap + List]
