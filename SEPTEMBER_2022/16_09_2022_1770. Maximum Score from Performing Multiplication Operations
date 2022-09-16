@@ -1,0 +1,700 @@
+You are given two integer arrays nums and multipliers of size n and m respectively, where n >= m. The arrays are 1-indexed.
+
+You begin with a score of 0. You want to perform exactly m operations. On the ith operation (1-indexed), you will:
+
+Choose one integer x from either the start or the end of the array nums.
+Add multipliers[i] * x to your score.
+Remove x from the array nums.
+Return the maximum score after performing m operations.
+
+ 
+
+Example 1:
+
+Input: nums = [1,2,3], multipliers = [3,2,1]
+Output: 14
+Explanation: An optimal solution is as follows:
+- Choose from the end, [1,2,3], adding 3 * 3 = 9 to the score.
+- Choose from the end, [1,2], adding 2 * 2 = 4 to the score.
+- Choose from the end, [1], adding 1 * 1 = 1 to the score.
+The total score is 9 + 4 + 1 = 14.
+Example 2:
+
+Input: nums = [-5,-3,-3,-2,7,1], multipliers = [-10,-5,3,4,6]
+Output: 102
+Explanation: An optimal solution is as follows:
+- Choose from the start, [-5,-3,-3,-2,7,1], adding -5 * -10 = 50 to the score.
+- Choose from the start, [-3,-3,-2,7,1], adding -3 * -5 = 15 to the score.
+- Choose from the start, [-3,-2,7,1], adding -3 * 3 = -9 to the score.
+- Choose from the end, [-2,7,1], adding 1 * 4 = 4 to the score.
+- Choose from the end, [-2,7], adding 7 * 6 = 42 to the score. 
+The total score is 50 + 15 - 9 + 4 + 42 = 102.
+ 
+
+Constraints:
+
+n == nums.length
+m == multipliers.length
+1 <= m <= 103
+m <= n <= 105
+-1000 <= nums[i], multipliers[i] <= 1000
+HINTS:
+
+At first glance, the solution seems to be greedy, but if you try to greedily take the largest value from the beginning or the end, this will not be optimal.
+
+You should try all scenarios but this will be costy.
+
+Memoizing the pre-visited states while trying all the possible scenarios will reduce the complexity, and hence dp is a perfect choice here.
+
+MY_SOLUTION
+
+Example 1:
+
+Input: nums = [1,2,3], multipliers = [3,2,1]
+Output: 14
+Explanation: An optimal solution is as follows:
+- Choose from the end, [1,2,3], adding 3 * 3 = 9 to the score.
+- Choose from the end, [1,2], adding 2 * 2 = 4 to the score.
+- Choose from the end, [1], adding 1 * 1 = 1 to the score.
+The total score is 9 + 4 + 1 = 14.
+Example 2:
+
+Input: nums = [-5,-3,-3,-2,7,1], multipliers = [-10,-5,3,4,6]
+Output: 102
+Explanation: An optimal solution is as follows:
+- Choose from the start, [-5,-3,-3,-2,7,1], adding -5 * -10 = 50 to the score.
+- Choose from the start, [-3,-3,-2,7,1], adding -3 * -5 = 15 to the score.
+- Choose from the start, [-3,-2,7,1], adding -3 * 3 = -9 to the score.
+- Choose from the end, [-2,7,1], adding 1 * 4 = 4 to the score.
+- Choose from the end, [-2,7], adding 7 * 6 = 42 to the score. 
+The total score is 50 + 15 - 9 + 4 + 42 = 102.
+
+ 
+
+Constraints:
+
+n == nums.length
+
+m == multipliers.length
+
+1 <= m <= 103
+
+m <= n <= 105
+
+-1000 <= nums[i], multipliers[i] <= 1000
+
+Solution:
+
+
+class Solution {
+    int[][] dp = new int [1000][1000];
+   public int maximumScore(int[] nums, int[] multipliers) {
+    return helper(nums,multipliers,0,nums.length-1,0);
+    }
+    public int helper(int[] a,int[] m,int start, int end, int mindex)
+    {
+        if(mindex==m.length) return 0;
+        if(dp[mindex][start]!=0) return dp[mindex][start];
+        int val1 = m[mindex]*a[start]+helper(a,m,start+1,end,mindex+1);
+        int val2 = m[mindex]*a[end]+helper(a,m,start,end-1,mindex+1);
+        dp[mindex][start]=Math.max(val1,val2);
+        return dp[mindex][start];
+    }
+}
+
+
+======================================================================================================
+We have three parameters we could form our dp on:
+
+Left idx of nums array
+Right idx of nums array
+Idx of multiplier array
+However, if you already have the Idx of multiplier array(which tells us how many numbers we've used), and the Left idx of nums array, 
+you don't really need the Right idx of nums array.
+For a given nums Left idx and multiplier Idx, the nums Right idx will always be.. the same.
+So it's redundant. Therefore our memo only needs to be 2 dimensional.
+
+Translating the words above to code:
+
+class Solution {
+    public int maximumScore(int[] nums, int[] multipliers) {
+        int n = nums.length, m = multipliers.length;
+        return helper(nums, multipliers, 0, 0, n-1, new Integer[m][m]);
+    }
+    
+    public int helper(int[] nums, int[] multipliers, int idx, int left, int right, Integer[][] memo){
+        if(idx == multipliers.length) return 0;
+        if(memo[idx][left] != null) return memo[idx][left];
+        
+        int takeLeft = nums[left] * multipliers[idx] + 
+            helper(nums, multipliers, idx + 1, left + 1, right, memo);
+        
+        int takeRight = nums[right]  * multipliers[idx] + 
+            helper(nums, multipliers, idx + 1, left, right - 1, memo);
+        
+        return memo[idx][left] = Math.max(takeLeft, takeRight);
+    }
+}
+
+
+
+
+======================================================================================================
+
+Overview
+As per the problem description, we have to do m operations and find the maximum score. At every operation, we have to select i th integer from multipliers a
+nd multiply it with an integer x from nums. The integer x can be chosen from either the start or the end of the nums. 
+And then we have to remove that integer from nums.
+
+At first glance, a greedy approach looks promising. In step i, out of nums[start] and nums[end], we can pick the integer x that maximizes x * multipliers[i].
+
+This greedy approach works well for one of the given examples.
+
+nums = [1,2,3], multipliers = [3,2,1]
+
+Taking Decision
+‣ From multipliers, we have 3, nums is [1, 2, 3], from 3 * 1 and 3 * 3, pick 3, add 3 * 3 = 9.
+‣ From multipliers, we have 2, nums is [1, 2], from 2 * 1 and 2 * 2, pick 2, add 2 * 2 = 4.
+‣ From multipliers, we have 1, nums is [1], add 1 * 1 = 1.
+
+Total Score is 9+4+1=14, which is correct
+However, it fails for the second example.
+
+nums = [-5,-3,-3,-2,7,1], multipliers = [-10,-5,3,4,6]
+
+Taking Decision
+‣ From multipliers, we have 10, nums is [-5,-3,-3,-2,7,1], from (-10) * (-5) and (-10) * 1, pick -5, add (-10) * (-5) = 50.   
+‣ From multipliers, we have -5, nums is [-3,-3,-2,7,1], from (-5) * (-3) and (-5) * 1, pick -3, add (-5) * (-3) = 15.   
+‣ From multipliers, we have 3, nums is [-3,-2,7,1], from 3 * (-3) and 3 * 1, pick 1, add 3 * 1 = 3.   
+‣ From multipliers, we have 4, nums is [-3,-2,7], from 4 * (-3) and 4 * 7, pick 7, add 4 * 7 = 28.   
+‣ From multipliers, we have 6, nums is [-3,-2], from 6 * (-3) and 6 * (-2), pick -2, add 6 * (-2) = -12.   
+
+Total Score is 50+15+3+28+(-12)=84 which isn't optimal.   
+102 is Optimal Solution as given in Problem Example.
+The logical intuition of why it is not optimal can be deduced from the following two cases:
+
+Greedy is short-sighted. For global optimum, we pick local optimum. But picking this Local Optimum may restrict greater positive product afterward.
+
+nums = [-10,1,1000,1,1,100], multipliers = [1,1,1]
+If we pick 100 over -10, we would never ever be able to collect 1000.
+There are only three elements in multipliers, and we can collect 1000 by taking the left integers only.
+But selecting 100 at the first point restricts it.
+
+Moreover, what if both ends of nums are identical? We don't know which one to favor. 
+One may yield another score, another may yield a very different score.
+
+nums = [2, 1000, -1, 2], multipliers = [1, 1]
+a. if we select Left 2 first, then at the next step, there would be a contest between Left 1000 and Right 2. 
+As per approach we now would select left 1000, obtaining 1002 as the answer.
+
+b. if we select Right 2 first, then at the next step, there would be a contest between Left 2 and Right -1.
+As per approach we now would select left 2, obtaining 4 as the answer.
+
+Thus, these examples suggest that we have to look for all two possible combinations at each step:
+
+Select nums[start], now problem reduces to another subproblem with nums being nums[start+1] to nums[end] and multipliers being multipliers[i+1] to multipliers[m-1].
+Moreover, the number of operations is lessened by one.
+
+Select nums[end], now problem reduces to another subproblem with nums being nums[start] to nums[end-1] and multipliers being multipliers[i+1] to multipliers[m-1]. 
+Moreover, the number of operations is lessened by one.
+
+We then have to solve these subproblems successively and at each step return the maximum of two possible answers. When all operations are done, we can return 0.
+
+====================================
+Approach 1: Brute Force
+Intuition
+As explained above, at each step we have to reduce the problem to two subproblems, with one less operation. And then we have to repeatedly solve these subproblems.
+This hints at recursion. Now, for solving each subproblem, we essentially need three things
+
+nums: the remaining integers to be considered
+
+multipliers: the remaining multipliers to be considered
+
+op: number of operations done.
+
+Minute Improvement: We need not pass multipliers. We are only interested in its i th element. And this i is closely related to op. 
+If we have done 0 operations, this implies we have to do the next operation from multipliers[0]. 
+If we have done 1 operation, this implies we have to do the next operation from multipliers[1]. And so on.
+
+Note: There are two possible definitions of op. However, logically they are equivalent.
+
+One is to define op as the number of operations done. If we have done 0 operation, this implies we have to do the next operation from multipliers[0].
+If we have done 1 operation, this implies we have to do the next operation from multipliers[1]. And so on.
+In this case, the terminating condition is op == m, when all operations are done.
+
+Another is to define op as the number of operations remaining, then the indexing of multipliers and base condition will change. 
+If we have m-0 operations remaining, this implies we have to do next operation from multipliers[0].
+If we have m-1 operation remaining, this implies we have to do next operation from multipliers[1]. And so on. 
+In this case, terminating condition is op == 0, when no operation is remaining.
+
+We have defined op as the number of operations done.
+
+Algorithm
+Define a helper function that takes two arguments nums, and op.
+
+If we are done with all operations, op, return 0.
+
+Otherwise,
+
+3.1 One time multiply multipliers[op] with nums[0]. Now, solve the subproblem with nums[1:] and op+1. Add the result of the subproblem to the product.
+
+3.2 Another time multiply multipliers[op] with nums[-1]. Now, solve the subproblem with nums[:-1] and op+1. Add the result of the subproblem to the product.
+
+Return the maximum of two results.
+
+Call the helper function with nums and op=0 as parameters indicating we have done zero operations so far!
+
+Implementation
+
+class Solution:
+    def maximumScore(self, nums, multipliers):
+
+        # Number of Operations
+        m = len(multipliers)
+
+        def helper(nums, op):
+            if op == m:
+                return 0
+
+            # Returning Maximum of Two
+            # In first parameter we have chosen nums[start], thus subproblem will be nums excluding nums[start]
+            # In second parameter we have chosen nums[end], thus subproblem will be nums excluding nums[end]
+            return max(nums[0] * multipliers[op] + helper(nums[1:], op+1),
+                       nums[-1] * multipliers[op] + helper(nums[:-1], op+1))
+
+        return helper(nums, 0)
+        
+        
+Note: It is likely to give TLE since the time complexity is too high.
+
+Note that in python string slicing creates another copy. This consumes a lot of memory. 
+We can reduce it too likewise we removed the passing of the multipliers array.
+
+In themultipliers array, we were interested in the left pointer, we obtained it very easily with the op parameter.
+
+In the nums array, we were interested in both left and right pointers. Thus, instead of passing the entire nums, we can pass these pointers.
+
+class Solution {
+    int helper(int[] nums, int[] multipliers, int left, int right, int op) {
+        // For Right Pointer
+        int n = nums.length;
+        if (op == multipliers.length) {
+            return 0;
+        }
+        
+        int l = nums[left] * multipliers[op] + helper(nums, multipliers, left + 1, right, op + 1);
+        int r = nums[right] * multipliers[op] + helper(nums, multipliers, left, right - 1, op + 1);
+        
+        return Math.max(l, r);
+    }
+    
+    public int maximumScore(int[] nums, int[] multipliers) {
+        // Zero operation done in the beginning
+        return helper(nums, multipliers, 0, nums.length - 1, 0);
+    }
+}
+
+Note : It is likely to give TLE because the algorithm is not efficient.
+
+Complexity Analysis
+Let M be the size of multipliers, the same as the number of operations.
+
+Time complexity: O(2^M)).
+This can be calculated using the fact that at every step we are reducing the problem of size M to two subproblems of size M−1, 
+for doing so we are doing constant time operations (increasing/decreasing left, right and op, and multiplying with y are constant time operations).
+Thus, the recurrence relation is T(M)=2T(M-1)+O(1), which can be solved using Master Theorem and the result is O(2^M).
+
+Another way of analyzing is that at each step, we branch two sub-tree. The height of the recursion tree will be M. 
+Thus, there will be 2^M nodes in the recursion tree.
+
+Space complexity: O(M), the recursion stack will take O(M) space.
+
+Approach 2: Recursive Dynamic Programming
+Intuition
+We can notice that we may need to solve for a particular (left, right, op) state multiple times.
+Example: nums = [a, b, c, d, e] and multipliers = [u, v, w, x, y]
+
+Overlapping
+
+The tree indicates that from two different paths, we have reached a common state/sub-problem x with c vs d.
+Thus, we have repeated states. Hence, we can solve this once, and can use its result.
+
+Thus, Dynamic Programming. Select best from all possible states and instead of computing again and again, save what you have already computed.
+Memoizing the pre-visited states while trying all the possible scenarios will reduce the complexity.
+
+To determine a state, we essentially need 3 things
+
+left: specify we have used left integers from the left side of nums so far. Next, we may use nums[left]
+
+right: specify we have used right integers from the right side of nums so far. Next, we may use nums[right]
+
+op: number of operations done.
+
+Hence, there are 3 state variables, left, right, and op. Thus, it's a 3D Dynamic Programming problem. And to memoize it, we may need a 3D array.
+
+If there are n state variables, then we need an array of at most n dimensions.
+
+However, with mathematics, we can reduce these 3 state variables to 2. Can you think of how to do that? Try this multiple choice question!
+(Note that len(nums) will be constant in this approach, since we are not modifying nums and passing indices instead)
+
+Therefore, we can define a state with only two state variables op and left. We will use dp to denote the state in the following.
+
+dp[op][left] stores the maximum possible score after we have done op total operations and used left numbers from the left/start side.
+
+From this state, we have two options
+
+Select Left: Number of operations will advance by one. And, so does the left pointer. 
+              Thus, we will multiply mulitpliers[op] and nums[left] (since we have selected from left), and 
+              add this product to (optimal) result of state dp[op+1][left+1].
+
+Select Right: Then also the number of operations will advance by one. Then, we will multiply mulitpliers[op] with nums[n-1-(op-left)] 
+               (since we have selected from right), and add this product to (optimal) result of state dp[op+1][left] 
+               (Now, left will not increment since number has not been chosen from left).
+
+Select maximum of results obtained by selecting from Left, and Right.
+If op == m, means we have performed m operations, add 0. The base Condition of Recursion.
+
+
+Algorithm
+1.Initialize variable m as the size of multipliers and n as the size of nums. Now, m will help us in determining the number of operations,
+   and with help of n, we can calculate the right pointer.
+2.Create a dictionary memo to memoize states.
+3.Define a dp function that takes two arguments op, and left.
+4.If we are done with all operations, i.e. op == m, return 0.
+5.If we have already computed and memoized the state, return the value from the dictionary.
+6.Otherwise,
+  6.1. One time multiply multipliers[op] with nums[left]. Now, solve the subproblem with left+1 and op+1 as parameters. 
+        Add the result of the subproblem to the product.
+  6.2. Another time multiply multipliers[op] with nums[(n-1)-(op-left)]. The index points to the right pointer.
+        Now, solve the subproblem with left and op+1 as parameters. Add the result of the subproblem to the product.
+7.Memoize the maximum of 6.1 and 6.2 as the result of state (op, left).
+8.Return the memoized result of state op, left.
+9.Call the dp function with op = 0 and left = 0.
+
+Implementation
+
+class Solution {
+    int dp(Integer[][] memo, int[] nums, int[] multipliers, int op, int left) {
+        // For Right Pointer
+        int n = nums.length;
+        if (op == multipliers.length) {
+            return 0;
+        }
+        
+        // If already computed, return
+        if (memo[op][left] != null) {
+            return memo[op][left];
+        }
+        
+        int l = nums[left] * multipliers[op] + dp(memo, nums, multipliers, op + 1, left + 1);
+        int r = nums[(n - 1) - (op - left)] * multipliers[op] + dp(memo, nums, multipliers, op + 1, left);
+        
+        return memo[op][left] = Math.max(l, r);
+    }
+    
+    public int maximumScore(int[] nums, int[] multipliers) {
+        Integer[][] memo = new Integer[nums.length + 1][multipliers.length + 1];
+        // Zero operation done in the beginning
+        return dp(memo, nums, multipliers, 0, 0);
+    }
+}
+
+Note: The python code of top-down DP may give Time Limit Exceeded/Memory Limit Exceeded since it has a larger constant factor.
+
+Complexity Analysis
+Let M be the size of multipliers, the same as the number of operations.
+
+Time complexity: O(M^2). op can vary from 0 to M-1. Now, in two recursive calls that we are making, one time we are incrementing left, alongwith op. 
+                  Other time, we are not incrementing left, but incrementing op. So, left is atmost op. 
+                  Thus, left also varies from 0 to M-1. So, there are O(M^2) such pairs for computing.
+
+Space complexity: O(M^2), the memo will store atmost M^2 such pairs!
+
+
+============================
+Approach 3: Iterative Dynamic Programming
+Intuition
+Using the same equation, we can solve this problem using iterative dynamic programming.
+We will start from the base condition, and then we will compute the optimal result for each state.
+
+We need to convert function dp(operation, left) to dp[op][left]. Hence, we need to use a 2D array.
+But, we only need those cells where op >= left. Hence, we only need the bottom-right triangle, where left will always be less than or equal to op.
+
+Since we know the base condition, we can start from op = m and fill it up
+. Moreover, since the number of operations at any stage is greater than or equal to the integer chosen from left (op >= left), the left will drop from op to 0.
+
+Algorithm
+-> Create a 2D array dp of size m+1 by m+1. Reason being op can vary from 0 to m, and so does left.
+-> Initialized all elements to 0. By this initialization, we have filled the base condition, that when we have done m operations, 
+   and this operation will add nothing to the result.
+-> Iterate over op from m-1 to 0.
+-> For each op, iterate over left from op to 0.
+-> Using the equation, compute the optimal result for state dp[op][left].
+-> We have formulated the problem in such a way that dp[0][0] will force us to do m operations in a row.
+   In other words, dp[0][0] stores the optimal answer. Hence, we can return dp[0][0] at the end.
+
+Implementation
+
+
+class Solution {
+    public int maximumScore(int[] nums, int[] multipliers) {
+        // For Right Pointer
+        int n = nums.length;
+        // Number of Operations
+        int m = multipliers.length;
+        int[][] dp = new int[m + 1][m + 1];
+        
+        for (int i = 0; i <= m; i++)
+            Arrays.fill(dp[i], 0);
+        
+        for (int op = m - 1; op >= 0; op--) {
+            for (int left = op; left >= 0; left--) {
+                dp[op][left] = Math.max(multipliers[op] * nums[left] + dp[op + 1][left + 1],
+                                   multipliers[op] * nums[n - 1 - (op - left)] + dp[op + 1][left]);
+            }
+        }
+        
+        return dp[0][0];
+    }
+}
+
+Complexity Analysis
+Let M be the size of multipliers, the same as the number of operations.
+
+Time complexity: O(M^2) op varies from M-1 to 0, and left varies from to op to 0. 
+                This is equivalent to iterating half matrix of order M×M. So, we are computing O({M^2}/{2} states.
+
+Space complexity: O(M^2), as evident from dp array.
+
+===============================================
+Approach 4: Space Optimized Dynamic Programming
+Intuition
+On carefully eyeing mathematical formula and iterative code, we can say that for computing present row dp[op], we need next row dp[op+1] ONLY.
+Therefore, we can have 1D Array only. We will fill the dp array from bottom to top, saving the next row in a temporary array, and then computing
+the present row using the saved temporary array.
+
+Interview Tip: Always spend time on forming and analyzing Dynamic Programming Equation.
+For Dynamic Programming, forming an equation requires time. Writing code isn't tough in most cases.
+Moreover, by analyzing the equation, quite a few times, we can solve the problem using less space.
+
+Algorithm
+-> Create a 1D array dp of size m+1. Initialize all elements to 0.
+-> Iterate over op from m-1 to 0.
+-> Since dp array will be modified using next row, and this next row result is saved in dp only, we need to use a temporary array to store the next row. 
+   Thus, save all current entries of dp in next_row.
+-> For each op, iterate over left from op to 0.
+-> Using the equation, compute the optimal result for state dp[left].
+-> Return dp[0] at the end.
+
+class Solution {
+    public int maximumScore(int[] nums, int[] multipliers) {
+        // For Right Pointer
+        int n = nums.length;
+        // Number of Operations
+        int m = multipliers.length;
+        int[] dp = new int[m + 1];
+        
+        for (int op = m - 1; op >= 0; op--) {
+            int[] next_row = dp.clone();
+            // Present Row is now next_Row because we are moving upwards
+            for (int left = op; left >= 0; left--) {
+                dp[left] = Math.max(multipliers[op] * nums[left] + next_row[left + 1],
+                                   multipliers[op] * nums[n - 1 - (op - left)] + next_row[left]);
+            }
+        }
+        
+        return dp[0];
+    }
+}
+
+Complexity Analysis
+Let MM be the size of multipliers, the same as the number of operations.
+
+Time complexity: O(M^2) op varies from M-1 to 0, and left varies from to op to 0. 
+                This is equivalent to iterating half matrix of order M\times MM×M. So, we are computing O({M^2}/{2} states.
+
+Space complexity: O(M), since we have used dp array of size M.
+
+======================================================================================================
+
+class Solution {
+    public int maximumScore(int[] nums, int[] multipliers) {
+        int n = nums.length;
+        int m = multipliers.length;
+        int[][] dp = new int[m + 1][m + 1];
+        
+        for (int i = m - 1; i >= 0; i--) {
+            for (int left = i; left >= 0; left--) {
+                int mult = multipliers[i];
+                int right = n - 1 - (i - left);
+                dp[i][left] = Math.max(mult * nums[left] + dp[i + 1][left + 1], 
+                                       mult * nums[right] + dp[i + 1][left]);
+            }
+        }
+        
+        return dp[0][0];
+    }
+}
+
+
+======================================================================================================
+
+3 state variable here -
+i will keep track of multipliers indexes
+start will keep track of start of nums element
+end will keep track of end of nums element
+
+Approach 1 brute force -
+
+just keep on multiplying ith numltiplier element with nums[start] and nums[end] and keep on adding max of them to the answer.
+
+	public int bruteForce(int[] nums, int[] multipliers) {
+		return helper(nums, multipliers, 0, 0, nums.length - 1);
+	}
+
+	private int helper(int[] nums, int[] multipliers, int i, int start, int end) {
+		if (i == multipliers.length || start > end) {
+			return 0;
+		}
+		int resStart = multipliers[i] * nums[start] + helper(nums, multipliers, i + 1, start + 1, end);
+		int resEnd = multipliers[i] * nums[end] + helper(nums, multipliers, i + 1, start, end - 1);
+		return Math.max(resStart, resEnd);
+	}
+
+Approach 2 top down dp ->
+take 2d array of size m * m to hold the answer. it will save unnecessary calls.
+
+	public int topdowndp(int[] nums, int[] multipliers) {
+		return topdowndp(nums, multipliers, 0, 0, nums.length - 1, new int[multipliers.length][multipliers.length]);
+	}
+
+	private int topdowndp(int[] nums, int[] multipliers, int i, int start, int end, int[][] op) {
+		if (i == multipliers.length) {
+			return 0;
+		}
+		if (op[i][start] != 0) {
+			return op[i][start];
+		}
+		int resStart = multipliers[i] * nums[start] + topdowndp(nums, multipliers, i + 1, start + 1, end, op);
+		int resEnd = multipliers[i] * nums[end] + topdowndp(nums, multipliers, i + 1, start, end - 1, op);
+		op[i][start] = Math.max(resStart, resEnd);
+		return op[i][start];
+	}
+Approach 3 Bottom Up DP -
+
+public int bottomUpdp(int[] nums, int[] multipliers) {
+		int[][] op = new int[multipliers.length + 1][multipliers.length + 1];
+		for (int i = multipliers.length - 1; i >= 0; i--) {
+			for (int start = i, end = nums.length - 1; start >= 0; start--, end--) {
+				int resStart = multipliers[i] * nums[start] + op[i + 1][start + 1];
+				int resEnd = multipliers[i] * nums[end] + op[i + 1][start];
+				op[i][start] = Math.max(resStart, resEnd);
+			}
+		}
+		return op[0][0];
+	}
+
+
+
+
+======================================================================================================
+
+Java - Dynamic Programming (Memoization)
+
+Iterative - Fast and Low Memory
+
+class Solution {
+    public int maximumScore(int[] nums, int[] multipliers) {
+
+        int N = nums.length;
+        int M = multipliers.length;
+
+        // Pointer for traversing the multipliers array.
+        int current = M;
+
+        // Memoization involves saving the optimum solution from the previous operation for easy retrieval.
+        // This is so that we can avoid repeating the operation, thus lowering time complexity.
+        int[] maximumScore = new int[M];
+        int[] memo = new int[M+1];
+
+        // As we traverse from back to front of the multipliers array, 
+        // we are also multiplying from the ends (left and right) to the center of the nums array.
+        // Each iteration, we get the higher value sums of the multiplication and highest value from previous round (memo).
+        // Note:
+        // Imagine the first multiple (0) in the multipliers can only choose first left or right in the nums.
+        // While the last multiple (M-1) in the multipliers can possibly choose 0 to M-th number from left or right nums.
+		// Since choosing the first left or right number can affect the choice in the following iteration, we need to
+        // record the highest scores possible starting from the last multiple (M-1), for the optimum number picking.
+		
+		// As both multipliers and nums is 1-indexed, we perform the --current and ++i, to exit the loop once reach 0.
+        while (--current >= 0) {
+            for (int i = 0; i <= current; ++i) {
+                int left = memo[i+1] + multipliers[current] * nums[i];
+                int right = memo[i] + multipliers[current] * nums[N - current + i - 1];
+                maximumScore[i] = Math.max(left, right);
+            }
+            // Store the current round of maximumScores in the memo, for reference in the next round.
+            memo = maximumScore;
+        }
+        return maximumScore[0];
+    }
+}
+Recursive
+
+class Solution {
+
+    Integer[][] memo;
+    int[] nums;
+    int[] multipliers;
+    int N;
+    int M;
+
+    public int maximumScore(int[] nums, int[] multipliers) {
+
+        // First assign the values of multipliers and nums.
+        this.nums = nums;
+        this.multipliers = multipliers;
+        N = nums.length;
+        M = multipliers.length;
+
+        // If the N >= M * 2, then we will remove the middle numbers from nums, since the middle is unreachable.
+        // We will only keep the first M-th and last M-th numbers that is reachable by the multipliers.
+        if (N >= M * 2) {
+            int[] newNums = new int[M * 2];
+            System.arraycopy(nums,0,newNums,0, M);
+            System.arraycopy(nums,N - M,newNums,M, M);
+            this.nums = newNums;
+        }
+
+        // Set up a memo for the dynamic programming with memoization.
+        memo = new Integer[this.nums.length][this.nums.length];
+
+        // See below for the explanation for the memoization method.
+        return memoization(0, this.nums.length - 1, 0);
+    }
+
+    // Memoization involves saving the optimum solution from the previous operation for easy retrieval.
+    // This is so that we can avoid repeating the operation, thus lowering time complexity.
+    private int memoization(int front, int back, int current) {
+        // Breaking condition, when the current pointer reaches the end of the multipliers array.
+        // Thus, the recursion will propagate from back to front of the multiplier array,
+        // and from center to ends of the nums array.
+        if (current == M) {
+            return 0;
+        }
+        if (memo[front][back] != null) {
+            return memo[front][back];
+        }
+
+        // Get the higher values of multiplication between the front and back of nums.
+        int left = nums[front] * multipliers[current] + memoization(front + 1, back, current + 1);
+        int right = nums[back] * multipliers[current] + memoization(front, back - 1, current + 1);
+        memo[front][back] = Math.max(left, right);
+
+        // Each time the memoization is called, the value is updated with total score from the multiplications.
+        return memo[front][back];
+    }
+}
+
+
+
