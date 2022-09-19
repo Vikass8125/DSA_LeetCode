@@ -1,0 +1,561 @@
+Given a list paths of directory info, including the directory path, and all the files with contents in this directory, 
+return all the duplicate files in the file system in terms of their paths. You may return the answer in any order.
+
+A group of duplicate files consists of at least two files that have the same content.
+
+A single directory info string in the input list has the following format:
+
+"root/d1/d2/.../dm f1.txt(f1_content) f2.txt(f2_content) ... fn.txt(fn_content)"
+It means there are n files (f1.txt, f2.txt ... fn.txt) with content (f1_content, f2_content ... fn_content) respectively in the directory "root/d1/d2/.../dm". 
+Note that n >= 1 and m >= 0. If m = 0, it means the directory is just the root directory.
+
+The output is a list of groups of duplicate file paths. For each group, it contains all the file paths of the files that have the same content.
+A file path is a string that has the following format:
+
+"directory_path/file_name.txt"
+ 
+
+Example 1:
+
+Input: paths = ["root/a 1.txt(abcd) 2.txt(efgh)","root/c 3.txt(abcd)","root/c/d 4.txt(efgh)","root 4.txt(efgh)"]
+Output: [["root/a/2.txt","root/c/d/4.txt","root/4.txt"],["root/a/1.txt","root/c/3.txt"]]
+Example 2:
+
+Input: paths = ["root/a 1.txt(abcd) 2.txt(efgh)","root/c 3.txt(abcd)","root/c/d 4.txt(efgh)"]
+Output: [["root/a/2.txt","root/c/d/4.txt"],["root/a/1.txt","root/c/3.txt"]]
+ 
+
+Constraints:
+
+1 <= paths.length <= 2 * 104
+1 <= paths[i].length <= 3000
+1 <= sum(paths[i].length) <= 5 * 105
+paths[i] consist of English letters, digits, '/', '.', '(', ')', and ' '.
+You may assume no files or directories share the same name in the same directory.
+You may assume each given directory info represents a unique directory. A single blank space separates the directory path and file info.
+
+
+Follow up:
+
+Imagine you are given a real file system, how will you search files? DFS or BFS?
+If the file content is very large (GB level), how will you modify your solution?
+If you can only read the file by 1kb each time, how will you modify your solution?
+What is the time complexity of your modified solution? What is the most time-consuming part and memory-consuming part of it? How to optimize?
+How to make sure the duplicated files you find are not false positive?
+
+MY_SOLUTIONS
+
+class Solution {
+    public List<List<String>> findDuplicate(String[] paths) {
+        Map<String, List<String>> store = new HashMap<>();
+        
+        for(String path : paths){
+            String[] arr = path.split(" ");
+            String directory = arr[0];
+            
+            for(int i = 1; i < arr.length; i++){
+                //fileName(content)
+                String fileName = arr[i].substring(0, arr[i].indexOf("("));
+                String content = arr[i].substring(arr[i].indexOf("(") + 1, arr[i].length() - 1);
+                List<String> filepaths = store.getOrDefault(content, new ArrayList<>());
+                filepaths.add(directory + "/" + fileName);
+                store.put(content, filepaths);
+            }
+        }
+        
+        store.entrySet().removeIf(entry -> entry.getValue().size() < 2);
+        return new ArrayList<>(store.values());
+        
+    }
+}
+
+
+
+==============================================================================================================
+Approach #1 Brute Force [Time Limit Exceeded]
+Algorithm
+
+For the brute force solution, firstly we obtain the directory paths, the filenames and file contents separately by appropriately splitting the elements of 
+the pathspaths list. While doing so, we keep on creating a listlist which contains the full path of every file along with the contents of the file. 
+The listlist contains data in the 
+form [ [file_1\_full\_path, file_1\_contents], [file_2\_full\_path, file_2\_contents]..., [file_n\_full\_path, file_n\_contents] ]
+
+Once this is done, we iterate over this list. For every element i chosen from the list,
+we iterate over the whole listlist to find another element j whose file contents are the same as the i^{th} element. 
+For every such element found, we put the j^{th} element's file path in a temporary list l and we also mark the j^{th} element 
+as visited so that this element isn't considered again in the future. Thus, when we reach the end of the array for every i^{th} element, 
+we obtain a list of file paths in ll, which have the same contents as the file corresponding to the i^{th} element. 
+If this list isn't empty, it indicates that there exists content duplicate to the i^{th} element. Thus, we also need to put the i^{th} element's file path in the l.
+At the end of each iteration, we put this list ll obtained in the resultant list resres and reset the list l for finding the duplicates of the next element.
+
+public class Solution {
+    public List < List < String >> findDuplicate(String[] paths) {
+        List < String[] > list = new ArrayList < > ();
+        for (String path: paths) {
+            String[] values = path.split(" ");
+            for (int i = 1; i < values.length; i++) {
+                String[] name_cont = values[i].split("\\(");
+                name_cont[1] = name_cont[1].replace(")", "");
+                list.add(new String[] {
+                    values[0] + "/" + name_cont[0], name_cont[1]
+                });
+            }
+        }
+        boolean[] visited = new boolean[list.size()];
+        List < List < String >> res = new ArrayList < > ();
+        for (int i = 0; i < list.size() - 1; i++) {
+            if (visited[i])
+                continue;
+            List < String > l = new ArrayList < > ();
+            for (int j = i + 1; j < list.size(); j++) {
+                if (list.get(i)[1].equals(list.get(j)[1])) {
+                    l.add(list.get(j)[0]);
+                    visited[j] = true;
+                }
+            }
+            if (l.size() > 0) {
+                l.add(list.get(i)[0]);
+                res.add(l);
+            }
+        }
+        return res;
+    }
+}
+
+
+Complexity Analysis
+
+Time complexity : O(n*x + f^2*s). Creation of listlist will take O(n*x), where n is the number of directories and x is the average string length.
+Every file is compared with every other file. Let ff files are there with average size of ss, then files comparision will take O(f^2*s), equals can take O(s). 
+Here, Worst case will be when all files are unique.
+
+Space complexity : O(n*x). Size of lists res and list can grow upto n*x.
+
+=====================
+
+Approach #2 Using HashMap [Accepted]
+In this approach, firstly we obtain the directory paths, the file names and their contents separately by appropriately splitting each string in the
+given pathspaths list. In order to find the files with duplicate contents, we make use of a HashMap mapmap, which stores the data in
+the form (contents,list_of_file_paths_with_this_content). Thus, for every file's contents, we check if the same content already exist in the hashmap.
+If so, we add the current file's path to the list of files corresponding to the current contents.
+Otherwise, we create a new entry in the mapmap, with the current contents as the key and the value being a list with only one entry(the current file's path).
+
+At the end, we find out the contents corresponding to which atleast two file paths exist. 
+We obtain the resultant list resres, which is a list of lists containing these file paths corresponding to the same contents.
+
+
+public class Solution {
+    public List < List < String >> findDuplicate(String[] paths) {
+        HashMap < String, List < String >> map = new HashMap < > ();
+        for (String path: paths) {
+            String[] values = path.split(" ");
+            for (int i = 1; i < values.length; i++) {
+                String[] name_cont = values[i].split("\\(");
+                name_cont[1] = name_cont[1].replace(")", "");
+                List < String > list = map.getOrDefault(name_cont[1], new ArrayList < String > ());
+                list.add(values[0] + "/" + name_cont[0]);
+                map.put(name_cont[1], list);
+            }
+        }
+        List < List < String >> res = new ArrayList < > ();
+        for (String key: map.keySet()) {
+            if (map.get(key).size() > 1)
+                res.add(map.get(key));
+        }
+        return res;
+    }
+}
+
+Complexity Analysis
+
+Time complexity : O(n*x). n strings of average length x is parsed.
+
+Space complexity : O(n*x). map and res size grows upto n*x.
+
+==============================================================================================================
+Idea:
+The order to group duplicate files, we should use a map to store the file paths by content value. 
+For each string (pStr) in paths, we can iterate through the string up to the first space to find the path.
+Then we can iterate through the remainder of pStr and use two more pointers (j, k) to mark the indexes around the filename (file) and contents (cont).
+
+When we find a ')', we've found the end of a complete entry, so we should add it to our content map (contMap) by merging path and 
+file (with a '/' between) and storing the result in contMap under cont.
+
+Once we've added all files to contMap, we can iterate through its values and add any groups that are larger than 1 (indicating duplicates) to 
+our answer array (ans) before we return ans.
+
+Time Complexity: O(N + C) where N is the total number of files and C is the number of different keys in contMap
+Space Complexity: O(N) for N files in contMap
+Implementation:
+Python is much faster when using split() as opposed to direct iteration through the strings.
+
+Java is faster when using a StringBuilder to compile the path + file before entry into contMap.
+
+
+class Solution {
+    public List<List<String>> findDuplicate(String[] paths) {
+        Map<String, List<String>> contMap = new HashMap<>();
+        StringBuilder pathfile = new StringBuilder();
+        for (String pStr : paths) {
+            int i = 0;
+            pathfile.setLength(0);
+            while (pStr.charAt(i) != ' ') i++;
+            pathfile.append(pStr.substring(0,i)).append('/');
+            int pLen = ++i;
+            for (int j = i, k = 0; i < pStr.length(); i++)
+                if (pStr.charAt(i) == '(') {
+                    pathfile.append(pStr.substring(j,i));
+                    k = i + 1;
+                } else if (pStr.charAt(i) == ')') {
+                    String cont = pStr.substring(k, i);
+                    if (!contMap.containsKey(cont))
+                        contMap.put(cont, new ArrayList<>());
+                    contMap.get(cont).add(pathfile.toString());
+                    j = i + 2;
+                    pathfile.setLength(pLen);
+                }
+        }
+        List<List<String>> ans = new ArrayList<>();
+        for (List<String> v : contMap.values())
+            if (v.size() > 1) ans.add(v);
+        return ans;
+    }
+}
+
+
+==============================================================================================================
+class Solution {
+    public List<List<String>> findDuplicate(String[] paths) {
+        List<List<String>> al = new ArrayList<>();
+        HashMap<String, List<String>> hashmap = new HashMap<>();
+        for(String path : paths) {
+            String[] arr = path.split("\\ ");
+            String dirPath = arr[0];
+            for(int i = 1; i < arr.length; i++) {
+                StringBuilder content = new StringBuilder();
+                int j = 0;
+                for(j = arr[i].length() - 2; j >= 0 && arr[i].charAt(j) != '('; j--) {
+                    content.insert(0, arr[i].charAt(j));
+                }
+                
+                String fileName = arr[i].substring(0, j);
+                hashmap.putIfAbsent(content.toString(), new ArrayList<>());
+                hashmap.get(content.toString()).add(dirPath + "/" + fileName);
+            }
+        }
+        
+        for(String string : hashmap.keySet()) {
+            if(hashmap.get(string).size() >= 2) {
+                al.add(new ArrayList<>(hashmap.get(string)));
+            }
+        }
+        return al;
+    }
+}
+
+
+
+
+==============================================================================================================
+import java.util.*;
+
+class Solution {
+    public List<List<String>> findDuplicate(String[] paths) {
+
+        // Set up the result list.
+        List<List<String>> result = new ArrayList<>();
+
+        // Return an empty list if there is no item in the paths.
+        if (paths.length == 0) {
+            return result;
+        }
+
+        // Use a HashMap to record the content (key) and the file path list (value).
+        Map<String, List<String>> map = new HashMap<>();
+
+        for (String path : paths) {
+            // Split each path into the directory and contents.
+            // Example:
+            // String path = "root/a 1.txt(abcd) 2.txt(efgh)"
+            // path.split(" ") = ["root/a", "1.txt(abcd)", "2.txt(efgh)"]
+            String[] strings = path.split(" ");
+
+            // We know that path[0] is always the directory.
+            String directory = strings[0];
+			
+            // So, i = 1, and we check for the content.
+            for (int i = 1; i < strings.length; i++) {
+                // From "(" onwards, all letters are the contents (including the final ")"), to check for duplicates.
+                int index = strings[i].indexOf("(");
+
+                // Example:
+                // content = "abcd)" or "efgh)".
+                String content = strings[i].substring(index);
+
+                // Example:
+                // "root/a" + "/" + "1.txt" = "root/a/1.txt"
+                // "root/a" + "/" + "2.txt" = "root/a/2.txt"
+                String filename = directory + "/" + strings[i].substring(0, index);
+
+                // If the list contains the content (e.g. "abcd)" or "efgh)"),
+                // we add the 'filename' ("root/a/1.txt") to the list.
+                List<String> filenames = map.getOrDefault(content, new ArrayList<>());
+                filenames.add(filename);
+
+                // Record the file path list as the key, into the 'map'.
+                // Since if content is the same, meaning it is duplicate file in different directories.
+                map.put(content, filenames);
+            }
+        }
+
+        // Check all the key (content) if there are duplicates (size > 1).
+        // If there are duplicates, add the list to the result.
+        for (String key : map.keySet()) {
+            if (map.get(key).size() > 1) {
+                result.add(map.get(key));
+            }
+        }
+
+        return result;
+    }
+}
+
+
+
+
+==============================================================================================================
+// Using HashMap to keep record of files' content(as key) and list of names(with directory) as value.
+
+class Solution {
+    public List<List<String>> findDuplicate(String[] paths) {
+        Map<String,List<String>> map = new HashMap<>();
+
+        // Traverse each path
+        for(String e : paths){
+            // Array contains, files' directory and names with content
+            String[] arr = e.split(" ");
+            
+            // Get directory name
+            String dir = arr[0];
+            
+            // Pass for every file name
+            for(int i=1; i<arr.length; i++){
+                String str = arr[i];
+                
+                // "file" contains file name(0 index) and content(1 index)
+                String[] file =  str.replace(")","(").split("\\(");
+                String content = file[1];
+                String fName = file[0];
+                
+                // Get list of files from map, add file name and put it again in map
+                List<String> fList = map.getOrDefault(content,new ArrayList<String>());
+                fList.add(dir+"/"+fName);
+                map.put(content,fList);
+            }
+        }
+        
+        // Get files from map, if duplicates present(i.e., list size > 1)
+        List<List<String>> res = new ArrayList<>();
+        for(List<String> e : map.values()) if(e.size()>1) res.add(e);
+        return res;
+    }
+}
+
+
+
+==============================================================================================================
+
+public List<List<String>> findDuplicate(String[] paths) {
+        Map<String, List<String>> fileContentToPath = new HashMap<>();
+
+        for (String path : paths) {
+            String[] pathParts = path.split(" "); String filePath = pathParts[0];
+
+            for (int i = 1; i < pathParts.length; ++i) {
+                String fileAndContent = pathParts[i];
+                String content = fileAndContent.substring(fileAndContent.indexOf("(") + 1, fileAndContent.indexOf(")"));
+                String fileName = fileAndContent.substring(0, fileAndContent.indexOf("("));
+
+                fileContentToPath.computeIfAbsent(content, param -> new ArrayList<>()).add(filePath + "/" + fileName);
+            }
+        }
+
+        return fileContentToPath.values().stream().filter(value -> value.size() > 1).toList();
+    }
+
+
+
+==============================================================================================================
+class Solution {
+    public List<List<String>> findDuplicate(String[] paths) {
+        //Decleration of HashMap of String , List of String
+        HashMap<String,List<String>>HM=new HashMap<>();
+        //Traversing each path in paths.
+        for(String path:paths){
+            int index_=path.indexOf(" ");
+            int len=path.length();
+            
+            //splitting the directory from the filename.
+            String dirName=path.substring(0,index_);
+            
+          // Declaring list for Files having same directory.
+            List<String>list=new ArrayList<>();
+            
+            // remaining String containing different files having same directory.
+            String rem= path.substring(index_+1,len);
+         
+            int j=0;
+            
+            // Iterating over the remaining String rem.
+            for(int i=0;i<rem.length();i++){
+                if(rem.charAt(i)==')'){
+                    String tmp=rem.substring(j,i+1);
+                    
+                    j=i+2;
+                    // adding all files seperated by a space ' '
+                    list.add(tmp);
+                }
+            }
+            for(String Subpath:list){
+                int iotxt=Subpath.indexOf(".txt");
+                int lengt=Subpath.length();
+                
+                //seperating file name from file content.
+                String Prepath=Subpath.substring(0,iotxt+4);
+                
+                // storing filecontent in fcontent.
+                String fcontent=Subpath.substring(iotxt+4,lengt);
+                  if(!HM.containsKey(fcontent)){
+                        HM.put(fcontent,new ArrayList<String>());
+                    }
+                
+                //adding values as path of file at key as file content.
+                  HM.get(fcontent).add(dirName+"/"+Prepath);
+                     
+            }
+                
+            
+        }
+        
+        //declaring list of list to return
+        List<List<String>>ans=new ArrayList<>();
+
+        for(String txt:HM.keySet()){
+            int n=HM.get(txt).size();
+            // adding key having more than 1 files into list ans.
+            if(n>1)ans.add(HM.get(txt));
+        }
+        
+        
+        return ans;
+    }
+}
+
+
+==============================================================================================================
+There are much easier ways to solve this problem, but if you want a fast solution, you need to keep all your actions inside a single loop 
+where we first loop through each path in the list of paths and for each path, loop through all its characters and carefully construct the 
+file names with a stirng builder. There aren't many nice string features used here to keep the runtime low.
+
+class Solution {
+    public List<List<String>> findDuplicate(String[] paths) {
+        
+        // hold a map of content pointing to a list of files
+        Map<String, List<String>> ContentToFileMap = new HashMap();
+        
+        // build the correct file name with a string builder
+        StringBuilder fileNameBuilder = new StringBuilder();
+        
+        // create list of lists to return final answer
+        List<List<String>> duplicates = new ArrayList();
+        
+        // for each path, determine how many files contain duplicate data
+        for(String path : paths){
+            
+            // capture the length of the current string
+            int len = path.length();
+            
+            // use and index to iterate through the stirng as an array of chars
+            // we assume that all these strings are formatted correctly so no 
+            // length checks are here, we are looking to run through the string 
+            // until we find the first empty space which indicates we are done 
+            // parsing the directory. Add the chars of the directory to the string builder
+            // to build the final file name
+            int index = 0;
+            while(path.charAt(index) != ' '){
+                fileNameBuilder.append(path.charAt(index));
+                index++;
+            }
+            
+            // move the index forward to pass the empty space and
+            // add the final slash to the current file name and 
+            // capture the length of the string now so if 
+            // multple files are part of this path, we can reset the 
+            // string builder to this length for each file
+            index++;
+            fileNameBuilder.append("/");
+            int folderLen = fileNameBuilder.length();
+            
+            // this is the core loop of the method. We iterate through the rest 
+            // of the string until the index has reached the end of the path string
+            // we parse the file name and content seperately in this loop and check
+            // if we have reached the end of the file.
+            while(index < len){
+                
+                // assuming a correctly formatted string, iterate the index until
+                // we reach a ( which indicates we have found the content, add all
+                // chars to the curren string builder to complete the current file name.
+                while(path.charAt(index) != '('){
+                    fileNameBuilder.append(path.charAt(index));
+                    index++;
+                }
+
+                // to carefully extract the current file content from the current
+                // path string, create a new index that will be used 
+                int contentEnd = index;
+
+                while(path.charAt(contentEnd) != ')' )
+                    contentEnd++;
+                contentEnd++;
+                
+                // extract the content (substring method is faster than using another string builder)
+                String content = path.substring(index, contentEnd);
+
+                // if our map doesnt have this content as a key, create a new array list for it
+                if(!ContentToFileMap.containsKey(content))
+                    ContentToFileMap.put(content, new ArrayList());
+
+                // add the complete file name to the list of files that contain the current content
+                List<String> files = ContentToFileMap.get(content);
+                files.add(fileNameBuilder.toString());
+
+                // when this list of files is exactly 2, we can add the array list to the total list
+                // of duplicates, as we are passing in a reference to this array list so any subequent 
+                // additions to it will automatically apply in the duplicates list
+                if(files.size() == 2)
+                    duplicates.add(files);
+                
+                // remove the characters that make up the file, but keep the characters that make up
+                // the directory
+                fileNameBuilder.setLength(folderLen);
+                
+                // set the index to the end of the current file content and advance it passed the 
+                // empty space in front of the next file in the string. If we are at the end of 
+                // the string, the outer while loop will complete
+                index = contentEnd;
+                index++;
+            }
+            
+            // when we have reached the end of the current string, clear the string builder of 
+            // the folder characters.
+            fileNameBuilder.setLength(0);
+        }
+        
+        return duplicates;
+    }
+}
+runtime: O(n)
+space: O(n) 
+
+
+
