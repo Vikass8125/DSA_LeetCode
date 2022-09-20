@@ -1,0 +1,998 @@
+Given two integer arrays nums1 and nums2, return the maximum length of a subarray that appears in both arrays.
+
+ 
+
+Example 1:
+
+Input: nums1 = [1,2,3,2,1], nums2 = [3,2,1,4,7]
+Output: 3
+Explanation: The repeated subarray with maximum length is [3,2,1].
+Example 2:
+
+Input: nums1 = [0,0,0,0,0], nums2 = [0,0,0,0,0]
+Output: 5
+ 
+
+Constraints:
+
+1 <= nums1.length, nums2.length <= 1000
+0 <= nums1[i], nums2[i] <= 100
+
+
+MY_SOLUTION
+class Solution {
+    public int findLength(int[] nums1, int[] nums2) {
+        int ans =  0;
+        int len1 = nums1.length;
+        int len2 = nums2.length; 
+        int[][] memo = new int[len1 + 1][len2 + 1];
+        
+        for(int i = len1 - 1; i >= 0; i--){
+            for(int j = len2 - 1; j >= 0; j--){
+                if(nums1[i] == nums2[j]){
+                    memo[i][j] = memo[i + 1][j + 1] + 1;
+                    if(ans < memo[i][j]) ans = memo[i][j];
+                }
+            }
+        }
+        
+        return ans;
+        
+    }
+}
+
+=============================================================================================================
+
+Approach #1: Brute Force with Initial Character Map [Time Limit Exceeded]
+Intuition and Algorithm
+
+In a typical brute force, for all starting indices i of A and j of B, we will check for the longest matching subarray A[i:i+k] == B[j:j+k] of length k. 
+This would look roughly like the following psuedocode:
+
+ans = 0
+for i in [0 .. A.length - 1]:
+    for j in [0 .. B.length - 1]:
+        k = 0
+        while (A[i+k] == B[j+k]): k += 1 #and i+k < A.length etc.
+        ans = max(ans, k)
+Our insight is that in typical cases, most of the time A[i] != B[j].
+We could instead keep a hashmap Bstarts[A[i]] = all j such that B[j] == A[i], and only loop through those in our j loop.
+
+class Solution {
+    public int findLength(int[] A, int[] B) {
+        int ans = 0;
+        Map<Integer, ArrayList<Integer>> Bstarts = new HashMap();
+        for (int j = 0; j < B.length; j++) {
+            Bstarts.computeIfAbsent(B[j], x -> new ArrayList()).add(j);
+        }
+
+        for (int i = 0; i < A.length; i++) if (Bstarts.containsKey(A[i])) {
+            for (int j: Bstarts.get(A[i])) {
+                int k = 0;
+                while (i+k < A.length && j+k < B.length && A[i+k] == B[j+k]) {
+                    k++;
+                }
+                ans = Math.max(ans, k);
+            }
+        }
+        return ans;
+    }
+}
+Complexity Analysis
+
+Time Complexity: O(M∗N∗min(M,N)), where M, N are the lengths of A, B. The worst case is when all the elements are equal.
+
+Space Complexity: O(N), the space used by Bstarts. (Of course, we could amend our algorithm to make this O(min(M,N)).)
+
+
+=================================
+
+Approach #2: Binary Search with Naive Check [Time Limit Exceeded]
+Intuition
+
+If there is a length k subarray common to A and B, then there is a length j <= k subarray as well.
+
+Let check(length) be the answer to the question "Is there a subarray with length length, common to A and B?" 
+This is a function with range that must take the form [True, True, ..., True, False, False, ..., False] with at least one True.
+We can binary search on this function.
+
+Algorithm
+
+Focusing on the binary search, our invariant is that check(hi) will always be False.
+We'll start with hi = min(len(A), len(B)) + 1; clearly check(hi) is False.
+
+Now we perform our check in the midpoint mi of lo and hi.
+When it is possible, then lo = mi + 1, and when it isn't, hi = mi. 
+This maintains the invariant. At the end of our binary search, hi == lo and lo is the lowest value such that check(lo) is False, so we want lo - 1.
+
+As for the check itself, we can naively check whether any A[i:i+k] == B[j:j+k] using set structures.
+
+class Solution {
+    public boolean check(int length, int[] A, int[] B) {
+        Set<String> seen = new HashSet();
+        for (int i = 0; i + length <= A.length; ++i) {
+            seen.add(Arrays.toString(Arrays.copyOfRange(A, i, i+length)));
+        }
+        for (int j = 0; j + length <= B.length; ++j) {
+            if (seen.contains(Arrays.toString(Arrays.copyOfRange(B, j, j+length)))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public int findLength(int[] A, int[] B) {
+        int lo = 0, hi = Math.min(A.length, B.length) + 1;
+        while (lo < hi) {
+            int mi = (lo + hi) / 2;
+            if (check(mi, A, B)) lo = mi + 1;
+            else hi = mi;
+        }
+        return lo - 1;
+    }
+}
+Complexity Analysis
+
+Time Complexity: O((M+N)∗min(M,N)∗log(min(M,N))), where M, NM,N are the lengths of A, B. 
+The log factor comes from the binary search. 
+The complexity of our naive check of a given O((M+N)∗length), as we will create the seen strings with complexity O(M∗length),
+then search for them with complexity O(N∗length), and our total complexity when performing our check is the addition of these two.
+
+Space Complexity: O(M^2), the space used by seen.
+
+
+=================================================
+
+Approach #3: Dynamic Programming [Accepted]
+Intuition and Algorithm
+
+Since a common subarray of A and B must start at some A[i] and B[j], let dp[i][j] be the longest common prefix of A[i:] and B[j:]. 
+Whenever A[i] == B[j], we know dp[i][j] = dp[i+1][j+1] + 1. Also, the answer is max(dp[i][j]) over all i, j.
+
+We can perform bottom-up dynamic programming to find the answer based on this recurrence. 
+Our loop invariant is that the answer is already calculated correctly and stored in dp for any larger i, j.
+
+class Solution {
+    public int findLength(int[] A, int[] B) {
+        int ans = 0;
+        int[][] memo = new int[A.length + 1][B.length + 1];
+        for (int i = A.length - 1; i >= 0; --i) {
+            for (int j = B.length - 1; j >= 0; --j) {
+                if (A[i] == B[j]) {
+                    memo[i][j] = memo[i+1][j+1] + 1;
+                    if (ans < memo[i][j]) ans = memo[i][j];
+                }
+            }
+        }
+        return ans;
+    }
+}
+Complexity Analysis
+
+Time Complexity: O(M*N), where M, NM,N are the lengths of A, B.
+
+Space Complexity: O(M*N), the space used by dp.
+
+
+==============================================================================
+
+Approach #4: Binary Search with Rolling Hash [Accepted]
+Intuition
+
+As in Approach #2, we will binary search for the answer. 
+However, we will use a rolling hash (Rabin-Karp algorithm) to store hashes in our set structure.
+
+Algorithm
+
+For some prime p, consider the following function modulo some prime modulus hash(S)=∑ 0≤i<len(S)p^i∗S[i]
+
+Notably, hash(S[1:]+x)= (hash(S)−S[0])/P+p^(n−1)*x.
+This shows we can get the hash of all A[i:i+guess] in linear time.
+We will also use the fact that p^−1=p^M−2 modM.
+
+For every i >= length - 1, we will want to record the hash of A[i-length+1], A[i-length+2], ..., A[i]. 
+After, we will truncate the first element by h = (h - A[i - (length - 1)]) * Pinv % MOD to get ready to add the next element.
+
+To make our algorithm air tight, we also make a naive check when our work with rolling hashes says that we have found a match.
+
+import java.math.BigInteger;
+
+class Solution {
+    int P = 113;
+    int MOD = 1_000_000_007;
+    int Pinv = BigInteger.valueOf(P).modInverse(BigInteger.valueOf(MOD)).intValue();
+
+    private int[] rolling(int[] source, int length) {
+        int[] ans = new int[source.length - length + 1];
+        long h = 0, power = 1;
+        if (length == 0) return ans;
+        for (int i = 0; i < source.length; ++i) {
+            h = (h + source[i] * power) % MOD;
+            if (i < length - 1) {
+                power = (power * P) % MOD;
+            } else {
+                ans[i - (length - 1)] = (int) h;
+                h = (h - source[i - (length - 1)]) * Pinv % MOD;
+                if (h < 0) h += MOD;
+            }
+        }
+        return ans;
+    }
+
+    private boolean check(int guess, int[] A, int[] B) {
+        Map<Integer, List<Integer>> hashes = new HashMap();
+        int k = 0;
+        for (int x: rolling(A, guess)) {
+            hashes.computeIfAbsent(x, z -> new ArrayList()).add(k++);
+        }
+        int j = 0;
+        for (int x: rolling(B, guess)) {
+            for (int i: hashes.getOrDefault(x, new ArrayList<Integer>()))
+                if (Arrays.equals(Arrays.copyOfRange(A, i, i+guess),
+                                  Arrays.copyOfRange(B, j, j+guess))) {
+                    return true;
+                }
+            j++;
+        }
+        return false;
+    }
+
+    public int findLength(int[] A, int[] B) {
+        int lo = 0, hi = Math.min(A.length, B.length) + 1;
+        while (lo < hi) {
+            int mi = (lo + hi) / 2;
+            if (check(mi, A, B)) lo = mi + 1;
+            else hi = mi;
+        }
+        return lo - 1;
+    }
+}
+Complexity Analysis
+
+Time Complexity: O((M+N)∗log(min(M,N))), where M,N are the lengths of A, B. 
+The log factor is contributed by the binary search, while creating the rolling hashes is O(M+N). 
+The checks for duplicate hashes are O(1). 
+If we perform a naive check to make sure our answer is correct, it adds a factor of O(min(M,N)) to our cost of check, 
+which keeps the complexity the same.
+
+Space Complexity: O(M), the space used to store hashes and the subarrays in our final naive check.
+
+
+=============================================================================================================
+
+
+class Solution {    
+    public int findLength(int[] nums1, int[] nums2) {
+        int n= nums1.length;
+        int m= nums2.length;
+        int ans=0;
+        int dp[][]= new int[n+1][m+1];
+        
+        for(int i=1;i<=n;i++)
+            for(int j=1;j<=m;j++){
+                
+                if(nums1[i-1]==nums2[j-1] ){
+                    dp[i][j]= 1+ dp[i-1][j-1];
+                    ans=Math.max (ans,dp[i][j] );
+                } 
+                else dp[i][j]=0;
+            }
+        return ans;
+    }
+}
+
+
+
+=============================================================================================================
+
+// https://leetcode.com/problems/maximum-length-of-repeated-subarray/discuss/1181612/Java-Clean-O(N-logN)-Rolling-Hash-Solution-oror-with-comments
+
+For those who are not familiar with Rabin-Karp rolling-hash method, I strongly recommand you try this question first.
+
+28. Implement strStr()
+You might also want to try and compare these questions to realize the power of Rabin-Karp's:
+
+214. Shortest Palindrome
+718. Maximum Length of Repeated Subarray
+1044. Longest Duplicate Substring (collision)
+1316. Distinct Echo Substrings
+1698. Number of Distinct Substrings in a String
+The rolling hash solution is pretty straightforward and this article aims to give some important notes when performing this algorithm.
+
+The key step is to update hash similar to:
+
+hash = hash - B[i] * (long) Math.pow(PRIME, mid-1);
+hash = hash * PRIME + B[j];
+However, chances are that your solution will fail if you implement your algorithm like above.
+These frustrating failures happen not because of the instablilty of hashing, but because of these three main issues.
+
+since hash == 0 at the beginning, if each step B[i] == 0, hash will still be 0; Namely, [0], [0, 0], [0, 0, ..., 0] will have the same hash value;
+Math.pow(PRIME, mid-1) will overflow even if we use long
+after minus some number, hash may be negative
+To solve these issues, we may consider:
+
+use (B[i] + 1) instead of B[i] since A[i], B[i] >= 0 for all i;
+pre-calculate the remainder of Math.pow(PRIME, mid-1) by taking modulus in each step
+take modulus again for (B[i] + 1) * power to make it less than MOD
+add MOD after calculation to make hash non-smaller than 0;
+So we may do something like this when updating hash value at each step:
+
+long power = 1;
+for (int i = 0; i < mid-1; i++) {
+	power = (power * PRIME) % MOD;
+}
+
+hash = hash - ((B[i] + 1) * power % MOD) + MOD;
+hash = hash * PRIME + (B[j] + 1);
+hash %= MOD;
+Finally, here is the complete Solution:
+
+class Solution {
+    private static final int PRIME = 101;
+    private static final int MOD = 1_000_000_007;
+    
+    public int findLength(int[] A, int[] B) {
+        if (A.length < B.length) return findLength(B, A);
+        
+        // 1.) Check result for length 1  <==>  single character
+        Set<Integer> set = new HashSet<>();
+        boolean lenZero = false;
+        
+        for (int a : A) set.add(a);
+        for (int b : B) {
+            if (!set.contains(b)) continue;
+            lenZero = true;
+            break;
+        }
+        
+        if (!lenZero) return 0;
+        
+        
+        // 2). Now the result lies in [1, min(A.length, B.length)], perform binary serach
+        int left = 1, right = Math.min(A.length, B.length);
+        while (left < right - 1) {
+            int mid = left + (right - left) / 2;
+            if (check(mid, A, B)) left = mid;
+            else right = mid - 1;
+        }
+        return check(right, A, B) ? right : left;
+    }
+    
+    // check every subarray with length mid
+    private boolean check(int mid, int[] A, int[] B) {
+        Set<Integer> set = new HashSet<>();  
+        
+        // 1). Adding hash values of subarrays of B into set
+        long hash = 0;
+        for (int j = 0; j < mid; j++) {
+            hash = hash * PRIME + (B[j] + 1);
+            hash %= MOD;
+        }
+        set.add((int) hash);
+        
+        long power = 1;
+        for (int i = 0; i < mid-1; i++) {
+            power = (power * PRIME) % MOD;
+        }
+        
+        for (int i = 0, j = mid; j < B.length; i++, j++) {
+            hash = hash - ((B[i] + 1) * power % MOD) + MOD;
+            hash = hash * PRIME + (B[j] + 1);
+            hash %= MOD;
+            set.add((int) hash);
+        }
+        
+        // 2.) Check the hash values of subarrays of A
+        hash = 0;
+        for (int j = 0; j < mid; j++) {
+            hash = hash * PRIME + (A[j] + 1);
+            hash %= MOD;
+        }
+        if (set.contains((int)hash)) return true;
+        
+        for (int i = 0, j = mid; j < A.length; i++, j++) {
+            hash = hash - ((A[i] + 1) * power % MOD) + MOD;
+            hash = hash * PRIME + (A[j] + 1);
+            hash %= MOD;
+            if (set.contains((int)hash)) return true;
+        }
+        
+        return false;
+    }
+}
+Note, using Dynammic Programming to solve this problem may be more natural for some people.
+Feel free to check this post for an O(1)-Space Dynammic Programming Solution:
+
+718. Maximum Length of Repeated Subarray: Dynammic Programming Solution
+
+
+
+
+=============================================================================================================
+MEMOIZATION 1 - TC - O(N^3) & SC - O(N^3) (TLE)
+
+class Solution {
+    private int lcs(int n1[], int n2[], int i, int j, int count, int dp[][][]){
+        if (i >= n1.length || j >= n2.length) return count; 
+        if(dp[i][j][count]!=-1) return dp[i][j][count];
+        int same = count; 
+        if (n1[i] == n2[j]) { 
+            same = lcs(n1, n2, i + 1, j + 1, count + 1, dp); 
+        }
+        int diff1 = lcs(n1, n2, i, j + 1, 0, dp);
+        int diff2 =  lcs(n1, n2, i + 1, j, 0, dp);
+        return dp[i][j][count] = Math.max(same, Math.max(diff1, diff2));
+    } 
+    public int findLength(int[] nums1, int[] nums2) {
+        int n = nums1.length, m = nums2.length;
+        int dp[][][]= new int[n+1][m+1][Math.min(n,m)];
+        for (int[][] mat : dp){ 
+            for (int[] row : mat){ 
+                Arrays.fill(row, -1); 
+            } 
+        } 
+        return lcs(nums1, nums2, 0, 0, 0, dp);
+    }
+}
+
+MEMOIZATION 2 - TC - O(N^2) & SC - O(N^2) (ACCEPTED)
+
+class Solution {
+   private int lcs(int n1[], int n2[], int i, int j, int ans[], int dp[][]){
+        if (i >= n1.length || j >= n2.length) return 0; 
+        if(dp[i][j]!=-1) return dp[i][j];
+        int cur = 0;
+        if (n1[i] == n2[j]) {
+            cur = lcs(n1, n2, i + 1, j + 1, ans, dp)+1; 
+        }
+        lcs(n1, n2, i, j + 1, ans, dp);
+        lcs(n1, n2, i + 1, j, ans, dp);
+        ans[0] = Math.max(ans[0], cur);
+        return dp[i][j] = cur;
+    } 
+    public int findLength(int[] nums1, int[] nums2) {
+        int n = nums1.length, m = nums2.length;
+        int dp[][]= new int[n+1][m+1]; 
+        for (int[] row : dp){ 
+            Arrays.fill(row, -1); 
+        } 
+        int ans[] = new int[1];
+        lcs(nums1, nums2, 0, 0, ans, dp);
+        return ans[0];
+    }
+}
+
+
+TABULATION 1 - TC - O(N^2) & SC - O(N^2) (ACCEPTED)
+
+class Solution {
+    public int findLength(int[] nums1, int[] nums2) {
+        int n = nums1.length, m = nums2.length;
+        int dp[][] = new int[n+1][m+1];
+        for(int i = 0 ; i <= n ; i++) dp[i][0] = 0;
+        for(int j = 0 ; j <= m ; j++) dp[0][j] = 0;
+        int ans = 0;
+        for(int i = 1 ; i <= n ; i++){
+            for(int j = 1 ; j <= m ; j++){
+                if(nums1[i-1]==nums2[j-1])
+                    dp[i][j] = dp[i-1][j-1]+1;
+                else
+                    dp[i][j] = 0;
+                ans = Math.max(ans, dp[i][j]);
+            }
+        }
+        return ans;
+    }
+}
+
+
+TABULATION 2 - TC - O(N^2) & SC - O(N) (BEST APPROACH)
+
+class Solution {
+    public int findLength(int[] nums1, int[] nums2) {
+        int n = nums1.length, m = nums2.length;
+        int prev[] = new int[n+1];
+        int ans = 0;
+        for(int i = 1 ; i <= n ; i++){
+            int cur[] = new int[n+1];
+            for(int j = 1 ; j <= m ; j++){
+                if(nums1[i-1]==nums2[j-1])
+                   cur[j] = prev[j-1]+1;
+                else
+                    cur[j] = 0;
+                ans = Math.max(ans, cur[j]);
+            }
+            prev = cur;
+        }
+        return ans;
+    }
+}
+
+
+
+
+=============================================================================================================
+
+Java - 2D Matrix
+
+class Solution {
+    
+    public int findLength(int[] nums1, int[] nums2) {
+        int m = nums1.length;
+        int n = nums2.length;
+
+        // Check for empty nums1 or nums2. If any is 0, then there won't be any repeated subarray.
+        if (m == 0 || n == 0) {
+            return 0;
+        }
+
+        // Dynamic Programming using 2D Matrix.
+        int[][] dp = new int[m + 1][n + 1];
+        int max = 0;
+
+        // Traverse both nums2 for every numbers in nums1, to check if same number.
+        // If same, then we increase the count of dp[i][j] by 1.
+        // If there are already matching number previously dp[i+1][j+1], we add the count.
+        // Then update max.
+	    // Example:
+        // nums1 = [1,2,3,4]
+        // nums2 = [4,2,3,4]
+        // i = 3, [[1,0,0,1,0]  (nums[i] = 4), max = 1
+        // i = 2,  [0,0,2,0,0]  (nums[i] = 3), max = 2
+        // i = 1,  [0,3,0,0,0]  (nums[i] = 2), max = 3
+        // i = 0,  [0,0,0,0,0]] (nums[i] = 1), max = 3
+        for (int i = m - 1; i >= 0; i--) {
+            for (int j = n - 1; j >= 0; j--) {
+                if (nums1[i] == nums2[j]) {
+                    dp[i][j] = dp[i+1][j+1] + 1;
+					max = Math.max(max, dp[i][j]);
+                }
+            }
+        }
+        return max;
+    }
+}
+Java - 1D Array
+
+class Solution {
+    public int findLength(int[] nums1, int[] nums2) {
+        int m = nums1.length;
+        int n = nums2.length;
+
+        // Check for empty nums1 or nums2. If any is 0, then there won't be any repeated subarray.
+        if (m == 0 || n == 0) {
+            return 0;
+        }
+
+        // Dynamic Programming using 1D Array.
+        int[] dp = new int[n + 1];
+        int max = 0;
+
+        // Traverse both nums2 for every numbers in nums1, to check if same number.
+        // Method is similar to the 2D Matrix solution, but we only use an array to keep track of the count.
+		// Example:
+        // nums1 = [1,2,3,4]
+        // nums2 = [4,2,3,4]
+        // i = 3, dp = [1,0,0,1,0], max = 1
+        // i = 2, dp = [0,0,2,0,0], max = 2
+        // i = 1, dp = [0,3,0,0,0], max = 3
+        // i = 0, dp = [0,0,0,0,0], max = 3
+        // Note that the count for each round only increase when there is a continuing match from previous number.
+        for (int i = m - 1; i >= 0; i--) {
+            for (int j = 0; j < n; j++) {
+                dp[j] = nums1[i] == nums2[j] ? dp[j + 1] + 1 : 0;
+                max = Math.max(max, dp[j]);
+            }
+        }
+        return max;
+    }
+}
+
+
+
+
+
+=============================================================================================================
+// Recursive : TLE
+// TC - exponential
+class Solution {
+    public int findLength(int[] nums1, int[] nums2) {
+        
+        return helper(nums1, nums2, nums1.length-1, nums2.length-1, 0);
+    }
+    
+    private int helper(int[] nums1, int[] nums2, int i, int j, int cnt){
+        
+        if(i < 0 || j < 0){
+            return cnt;
+        }
+        
+        if(nums1[i] == nums2[j]){
+            cnt = helper(nums1, nums2, i-1, j-1, cnt+1);
+        }
+        return Math.max(cnt, Math.max(helper(nums1, nums2, i-1, j, 0), helper(nums1, nums2, i, j-1, 0)));
+    }
+}
+
+
+// Tabulation
+// TC - O(m*n), SC - O(m*n)
+class Solution {
+    public int findLength(int[] nums1, int[] nums2) {
+        
+        int m = nums1.length, n = nums2.length, ans = 0;
+        int[][] dp = new int[m+1][n+1];
+
+        for(int i = 1; i <= m; i++){
+            for(int j = 1; j <= n; j++){
+                if(nums1[i-1] == nums2[j-1]){
+                    dp[i][j] = 1 + dp[i-1][j-1];
+                    ans = Math.max(ans, dp[i][j]);
+                }else{
+                    dp[i][j] = 0;
+                }
+            }
+        }
+        return ans;
+    }
+}
+
+
+// Space Optimization
+// TC - O(m*n), SC - O(2*n)
+class Solution {
+    public int findLength(int[] nums1, int[] nums2) {
+        
+        int m = nums1.length, n = nums2.length, ans = 0;
+        int[][] dp = new int[2][n+1];
+
+        for(int i = 1; i <= m; i++){
+            for(int j = 1; j <= n; j++){
+                if(nums1[i-1] == nums2[j-1]){
+                    dp[i%2][j] = 1 + dp[(i-1)%2][j-1];
+                    ans = Math.max(ans, dp[i%2][j]);
+                }else{
+                    dp[i%2][j] = 0;
+                }
+            }
+        }
+        return ans;
+    }
+}
+
+
+=============================================================================================================
+1. Brute Force (TLE)
+
+Loop through all the elements in A and B, and check the corresponding matchness
+If the elements match, we check as far as we can and then get the maximum length
+Else we skip
+Time complexity O(mn^2)
+Space complexity O(1)
+Solution
+
+class Solution {
+    public int findLength(int[] A, int[] B) {
+        int res = 0;
+        for (int i = 0; i < A.length; i++) {
+            for (int j = 0; j < B.length; j++) {
+                if (A[i] == B[j]) {
+                    int k = 1;
+                    while (i + k < A.length && j + k < B.length && A[i + k] == B[j + k]) k++;
+                    res = Math.max(res, k);
+                }
+            }
+        }
+        return res;
+    }
+}
+2. Naive Binary Search
+
+Having length k subarray appear in both array indicates having shorter length of subarray as well
+Using the above fact, we can use binary search to narrow our search
+We create a separate function checkLength(x, A, B) to check if there is length x subarray common to both arrays
+If x is checked, we need to continue search the right part, so lo = mi
+Else hi = mi
+However, we need special formula to take care of infinite loop to make mi calculation right leaning
+Time complexity O(mnl(logl)), where m is length of A, n is length of B, l is min of m and n
+Space complexity O(m^2)
+Solution
+
+class Solution {
+    public int findLength(int[] A, int[] B) {
+        int lo = 0, hi = Math.min(A.length, B.length);
+        while (lo < hi) {
+            int mi = lo + (hi - lo + 1) / 2;
+            if (checkLength(mi, A, B)) lo = mi;
+            else hi = mi - 1;
+        }
+        return lo;
+    }
+
+    private boolean checkLength(int x, int[] A, int[] B) {
+        if (x == 0) return true;
+        else if (x > Math.min(A.length, B.length)) return false;
+        else {
+            Set<String> seen = new HashSet<>();
+            for (int i = 0; i + x <= A.length; i++) {
+                seen.add(Arrays.toString(Arrays.copyOfRange(A, i, i + x)));
+            }
+            for (int i = 0; i + x <= B.length; i++) {
+                if (seen.contains(Arrays.toString(Arrays.copyOfRange(B, i, i + x)))) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+}
+
+3. Dynamic Programing
+
+Use similar idea as typical longest subsequence of string, we use dynamic programing to record the best length so far
+If the integers are the same for ith A and jth B element, we set dp[i][j] = dp[i - 1][j - 1] + 1
+Else we set dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1])
+Time complexity O(mn)
+Space complexity O(mn)
+Solution
+
+class Solution {
+    public int findLength(int[] A, int[] B) {
+        int m = A.length, n = B.length;
+        int[][] dp = new int[m + 1][n + 1];
+        int ans = 0;
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (A[i] == B[j]) {
+                    dp[i + 1][j + 1] = dp[i][j] + 1;
+                    ans = Math.max(ans, dp[i + 1][j + 1]);
+                }
+            }
+        }
+        return ans;
+    }
+}
+4. Binary Search with Rolling Hash
+
+Instead of using string to check whether the two subarrays are equal, we use hash
+To efficiently calculate the hash, we use rolling hash function, more specifically Rabin-Karp algorithm
+The formula is h(i) = Sum(a[i]p^i) mod M, where i range from 0 to L - 1, calculating the next hash is h(i+1) = [(h(i) - a[0])/p + a[i+1]p^(L - 1)] mod M
+Using a map to store the A's hash and its indices, then we can loop through the hash from B
+Instead of relying in the hash, we double check whether these two subarrays match even if they have same hash
+Time complexity O(log(l)(m + n)), where l = min(m, n)
+Space complexity O(m + n)
+Solution
+
+import java.math.BigInteger;
+
+class Solution {
+    private int p = 113;
+    private int M = 1000000007;
+    private int pInv = BigInteger.valueOf(p).modInverse(BigInteger.valueOf(M)).intValue();
+
+    public int findLength(int[] A, int[] B) {
+        int lo = 0, hi = Math.min(A.length, B.length);
+        while (lo < hi) {
+            int mi = lo + (hi - lo + 1) / 2;
+            if (checkLength(mi, A, B)) lo = mi;
+            else hi = mi - 1;
+        }
+        return lo;
+    }
+
+    private boolean checkLength(int x, int[] A, int[] B) {
+        Map<Integer, List<Integer>> map = new HashMap<>();
+        int k = 0;
+        for (int h : getHashes2(A, x)) {
+            map.computeIfAbsent(h, z -> new ArrayList<>()).add(k++);
+        }
+        int j = 0;
+        for (int h : getHashes2(B, x)) {
+            for (int i : map.getOrDefault(h, new ArrayList<>())) {
+                if (Arrays.equals(Arrays.copyOfRange(A, i, i + x), Arrays.copyOfRange(B, j, j + x))) return true;
+            }
+            j++;
+        }
+        return false;
+    }
+
+    private int[] getHashes(int[] a, int L) {
+        int[] res = new int[a.length - L + 1];
+        long h = 0, power = 1;
+        for (int i = 0; i < L - 1; i++) {
+            h = (h + a[i] * power) % M;
+            power = (power * p) % M;
+        }
+        for (int i = L - 1; i < a.length; i++) {
+            h = (h + a[i] * power) % M;
+            res[i - L + 1] = (int) h;
+            h = (h - a[i - L + 1]) * pInv % M;
+        }
+        return res;
+    }
+
+    private int[] getHashes2(int[] a, int L) {
+        int[] res = new int[a.length - L + 1];
+        long h = 0, power = 1;
+        for (int i = 0; i < L - 1; i++) {
+            h = (h * p % M + a[i]) % M;
+            power = (power * p) % M;
+        }
+        for (int i = L - 1; i < a.length; i++) {
+            h = (h * p % M + a[i]) % M;
+            res[i - L + 1] = (int) h;
+            h = (h - a[i - L + 1] * power) % M;
+            if (h < 0) h += M;
+        }
+        return res;
+    }
+}
+
+
+
+
+=============================================================================================================
+
+Sliding the 2 arrays over eachother. An analogy would be like 2 trains passing eachother going in opposite directions. 
+(Or just one overtakes the other. It doesn't matter. It is relative.) We need to make 2 passes because we need the 2 arrays fully passed eachother. 
+The arrays would only compare half of the possibilities with only 1 pass. 
+With just 1 pass, we can imagine the first element of the 1st array never had the chance to see the last element of the 2nd array.
+example:
+
+Train Station:
+[////////Platform A////////]
+[7]_[4]_[3]_[2]_[1]_[train>
+<train]_[1]_[2]_[1]_[4]
+[////////Platform B////////]
+code:
+
+class Solution {
+    public int findLength(int[] nums1, int[] nums2) {
+        // 2 passes because we need to have the 2 arrays fully pass eachother 
+        return Math.max(helper(nums1,nums2),helper(nums2,nums1));
+    }
+    
+    private int helper(int[] arr1, int[] arr2){
+        int max = 0;
+        // move arr1 forward one step at a time
+        for(int i = 1; i <= arr1.length; i++){
+            // set the comparison starting points of both arr1 and arr2
+            int arr1Index = arr1.length - i;
+            int arr2Index = 0;
+            int matched = 0;
+            while(arr1Index < arr1.length && arr2Index < arr2.length){
+                // increment match count each time a match is found; reset otherwise
+                matched = arr1[arr1Index++] == arr2[arr2Index++]? matched + 1: 0;
+                max = Math.max(max,matched);
+            }
+        }
+        return max;
+    }
+}
+The time complexity is O(nm), where n is the length of the 1st array, and m is the length of the 2nd array.
+This is because we compare the arrays from the front to the end of the arrays with number of array length times. 
+Technically, it is O(2nm) because we have 2 passes, but we can drop the constant value 2, thus O(nm).
+The space complexity is O(1)
+
+
+
+
+=============================================================================================================
+
+This article aims to show the process of how we can get an O(1)-space Dynammic Programming Solution from the most naive one.
+However, we may have a solution with better time complexity using Rabin-Karp's Algorithm. Feel free to check this post:
+
+718. Maximum Length of Repeated Subarray: Rabin-Karp Solution
+First of all, defining each entry of dp-table is pretty straightforward.
+For each index pair i, j, we only consider subarrays ending at nums1[i] & ending at nums2[j].
+And dp[i][j] stores the max length of common subarrays only for those subarrays.
+
+The relation of bigger problem & smaller problem is also straightforward:
+
+// for index pair (i+1, j+1)
+1. nums1[i+1] != nums2[j+1]    ==>  dp[i+1][j+1] = 0
+2. nums1[i+1] == nums2[j+1]    ==>  dp[i+1][j+1] = dp[i][j] + 1
+Thus we may have this very straightforward Solution Version 1:
+
+// Version 1:  O(N^2)-Space
+class Solution {
+    public int findLength(int[] nums1, int[] nums2) {
+        int m = nums1.length, n = nums2.length, res = 0;
+        
+        // dp[i][j] : max length for subarray of nums1[0: i] ending at nums1[i] 
+        //                       and subarray of nums2[0: j] ending at nums2[j]
+        int[][] dp = new int[m][n];
+        
+        // first row:
+        for (int j = 0; j < n; j++) {
+            dp[0][j] = (nums1[0] == nums2[j]) ? 1 : 0;
+            res = Math.max(res, dp[0][j]);
+        }
+        
+        // first column: 
+        for (int i = 1; i < m; i++) {
+            dp[i][0] = (nums1[i] == nums2[0]) ? 1 : 0;
+            res = Math.max(res, dp[i][0]);
+        }
+        
+        for (int i = 1; i < m; i++) {
+            for (int j = 1; j < n; j++) {
+                if (nums1[i] != nums2[j]) continue;
+                dp[i][j] = dp[i-1][j-1] + 1;
+                res = Math.max(res, dp[i][j]);
+            }
+        }
+        
+        return res;
+    }
+}
+Or equivalently, we may rewrite Version 1 as Version 2.
+
+// Version 2:  O(N^2)-Space
+class Solution {
+    public int findLength(int[] nums1, int[] nums2) {
+        int m = nums1.length, n = nums2.length, res = 0;
+        
+        int[][] dp = new int[m+1][n+1];
+        
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (nums1[i] != nums2[j]) continue;
+                dp[i+1][j+1] = dp[i][j] + 1;
+                res = Math.max(res, dp[i+1][j+1]);
+            }
+        }
+        
+        return res;
+    }
+}
+Now notice in the dp-table, for each entry (i, j) we only need the information from its left-top entry (i-1, j-1). 
+Thus we can traverse all entries in the dp-table by:
+
+starting from every entry on the left boundary of dp-table, and traverse in the direction of right-bottom until reach a boundary.
+starting from every entry on the top boundary of dp-table, and traverse in the direction of right-bottom until reach a boundary.
+Namely, we should start with the entries:
+
+1. left boundary:     [0, 0],  [1, 0], ... , [m-1, 0]
+2. top boundary:     ([0, 0]), [0, 1], ... , [0, n-1]
+Then we may reduce the Space Complexity to O(1) by only keep the record of previous entry.
+
+// Version 3:  O(1)-Space
+class Solution {
+    private int[] nums1;
+    private int[] nums2;
+    private int res;
+    public int findLength(int[] nums1, int[] nums2) {
+        this.nums1 = nums1;
+        this.nums2 = nums2;
+        this.res = 0;
+        
+        // starting from first column 
+        for (int i = 0; i < nums1.length; i++) {
+            checkRightBottom(i, 0);
+        }
+        
+        // starting from first column 
+        for (int j = 1; j < nums2.length; j++) {
+            checkRightBottom(0, j);
+        }
+        
+        return res;
+    }
+    
+    private void checkRightBottom(int i, int j) {
+        int prev = 0;
+        while (i < nums1.length && j < nums2.length) {
+            if (nums1[i++] == nums2[j++]) {
+                res = Math.max(res, ++prev);
+            } else {
+                prev = 0;
+            }
+        }
+    }
+}
+
+
+
+
+=============================================================================================================
