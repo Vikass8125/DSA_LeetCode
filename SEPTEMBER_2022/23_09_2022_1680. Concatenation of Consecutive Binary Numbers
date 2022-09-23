@@ -1,0 +1,326 @@
+Given an integer n, return the decimal value of the binary string formed by concatenating the binary representations of 1 to n in order, modulo 109 + 7.
+
+ 
+
+Example 1:
+
+Input: n = 1
+Output: 1
+Explanation: "1" in binary corresponds to the decimal value 1. 
+Example 2:
+
+Input: n = 3
+Output: 27
+Explanation: In binary, 1, 2, and 3 corresponds to "1", "10", and "11".
+After concatenating them, we have "11011", which corresponds to the decimal value 27.
+Example 3:
+
+Input: n = 12
+Output: 505379714
+Explanation: The concatenation results in "1101110010111011110001001101010111100".
+The decimal value of that is 118505380540.
+After modulo 109 + 7, the result is 505379714.
+ 
+
+Constraints:
+
+1 <= n <= 105
+
+HINTS:
+Express the nth number value in a recursion formula and think about how we can do a fast evaluation.
+
+MY_SOLUTION
+
+==============================================================
+class Solution {
+    public int concatenatedBinary(int n) {
+        long res = 0;
+        int mod = 1_000_000_007;
+        for(int i = 1; i<=n; i++){
+            String binaryString = Integer.toBinaryString(i);
+            res = (res<<binaryString.length())%mod;
+            res = (res+i)%mod;
+        }
+        return (int)res;
+    }
+}
+
+class Solution {
+    public int concatenatedBinary(int n) {
+        long res = 0;
+        int mod = 1_000_000_007;
+        int size=0;
+        for(int i = 1; i<=n; i++){
+            if((i&(i-1))==0) size++;
+            res = (res<<size | i) %mod;
+        }
+        return (int)res;
+    }
+}
+
+==============================================================
+class Solution {
+    public int concatenatedBinary(int n) {
+        int mod = 1_000_000_007;
+        int result = 0,pow=1;
+        for(int i=n;i>0;i--)
+        {
+            int no = i;
+            while(no>0)
+            {
+             if((no&1)==1) result = (result+pow)%mod;
+             no=no>>1;
+             pow = (pow*2)%mod;    
+            }
+            
+        }
+        return result;
+    }
+}
+
+==============================================================
+class Solution {
+    public int concatenatedBinary(int n) {
+        long result=1;
+        int length=0;
+        for(int i=2;i<=n;i++) {
+            // length of number in binary form
+            length=((int)(Math.log(i)/Math.log(2)))+1;
+            result=((result<<length)+i)%1000000007;
+        }
+        return (int)result;
+        
+    }
+}
+
+==============================================================
+
+Java (Bit Manipulation) - Clean Code
+
+class Solution {
+    public int concatenatedBinary(int n) {
+        final long modulo = (long) (1e9 + 7);
+        long result = 0;
+        int binaryDigits = 0;
+        for (int i = 1; i <= n; i++) {
+            if ((i & (i - 1)) == 0) binaryDigits++;
+            result = ((result << binaryDigits) + i) % modulo;
+        }
+        return (int) result;
+    }
+}
+Java (Bit Manipulation) - With Explanation
+
+// Time Complexity: O(N)
+// Space Complexity: O(1)
+// where N is n.
+class Solution {
+
+    // Approach:
+    // Using bit manipulation as described below.
+    // A bit of description for the bitwise operations used, if you are not familiar.
+    // 1. & - Bitwise AND operation:
+    //    0 & 0 = 0,
+    //    1 & 0 = 0,
+    //    1 & 1 = 1.
+    //    Example : 1101 & 1010 = 1000
+    //
+    // 2. << - Shift Left operation, by n position:
+    //    Example:
+    //    11 (3) << 2 (n position) = 1100 (14)
+    //
+
+    public int concatenatedBinary(int n) {
+
+        final long modulo = (long) (1e9 + 7);
+        long result = 0;
+
+        // This records the number of binaryDigits we need to shift left.
+        int binaryDigits = 0;
+
+        for (int i = 1; i <= n; i++) {
+
+            // If i is a power of 2, we add one additional binaryDigits to shift.
+            // Example:
+            // i = 8 (1000), i-1 = 7 (111)
+            // i & (i-1) = 1000 & 111 = 0
+            // So we know we have increased the binaryDigits from 3 (in 111) to 4 (in 1000).
+            if ((i & (i - 1)) == 0) {
+                binaryDigits++;
+            }
+
+            // With the updated binaryDigits, we now can concatenate i to the result.
+            // Each time get the remainder of the result % modulo.
+            // Example:
+            // i = 2
+            // result = 1 (1) << 2 (n position) + 10 (2) = 100 (4) + 10 (2) = 110 (6).
+            // i = 3
+            // result = 110 (6) << 2 (n position) + 11 (3) = 11000 (24) + 11 (3) = 11011 (27).
+            //
+            result = ((result << binaryDigits) + i) % modulo;
+        }
+        return (int) result;
+    }
+}
+Java (Math) - With Explanation
+
+class Solution {
+    
+    // Approach:
+    // We concatenate by shifting position of result with division and multiplication, then add the number.
+    // As there are a lot of repetitions in shifting of positions, it is much less efficient than using bit manipulation.
+    
+    public int concatenatedBinary(int n) {
+        final long modulo = (long) (1e9 + 7);
+        long result = 0;
+        for (int i = 1; i <= n; i++) {
+            // For each i, we shift left the position of result with * 2,
+            // while shifting right the position of i with / 2.
+            int temp = i;
+            while (temp > 0) {
+                temp /= 2;
+                result *= 2;
+            }
+            // Add the i to the result and get the remainder of modulo.
+            result = (result + i) % modulo;
+        }
+        return (int) result;
+    }
+}
+==============================================================
+// Time Complexity: O(N)
+// Space Complexity: O(1)
+class Solution {
+    // the idea is to use bit manipulation to set the current number based on the previous number
+    // for example, 
+    // n = 1, ans = 0b1
+    // n = 2 (10), we need to shift 2 bits of the previous ans to the left and add `n`
+    // i.e. 1 -> 100 (shift 2 bits to the left) -> 110 (set `10`). ans = 0b110
+    // n = 3 (11), we need to shift 2 bits of the previous ans to the left and add `n` 
+    // i.e 110 -> 11000 (shift 2 bits to the left) -> 11011 (set `11`). ans = 0b11011
+    // n = 4 (100), we need to shift 3 bits of the previous ans to the left and add `n`
+    // i.e. 11011 -> 11011000 (shift 3 bits to the left) -> 11011100 (set `100). ans = 0b11011100
+    // so now we can see a pattern here
+    // we need to shift `l` bits of the previous ans to the left and add the current `i` 
+    // how to know `l`? it is not difficult to see `x` only increases when we meet power of 2
+    public int concatenatedBinary(int n) {
+        // `l` is the bit length to be shifted
+        int M = 1000000007, l = 0;
+        // use long here as it potentially could overflow for int
+        long ans = 0;
+        for (int i = 1; i <= n; i++) {
+            // i & (i - 1) means removing the rightmost set bit
+            // e.g. 100100 -> 100000
+            //      000001 -> 000000
+            //      000000 -> 000000
+            // after removal, if it is 0, then it means it is power of 2
+            // as all power of 2 only contains 1 set bit
+            // if it is power of 2, we increase the bit length `l`
+            if ((i & (i - 1)) == 0) l += 1;
+            // (ans << l) means shifting the orginal answer `l` bits to th left
+            // (x | i) means  using OR operation to set the bit
+            // e.g. 0001 << 3 = 0001000
+            // e.g. 0001000 | 0001111 = 0001111
+            ans = ((ans << l) | i) % M;
+        }
+        return (int) ans;
+    }
+}
+
+==============================================================
+
+class Solution {
+    public int concatenatedBinary(int n) {
+        int modulo = 1000000007;
+        
+        long ans =0;
+        for(int i=1; i<=n; i++){
+            ans = (((ans<<(1+(int)(Math.log(i) / Math.log(2))))%modulo)+i)%modulo;
+        }
+        return (int)ans;
+    }
+}
+
+
+
+==============================================================
+
+-> if it is asked to make a decimal number how would concatenation work?
+    for example ->
+    suppose 1 is first number and we want to concate it with 2. it can be written as 1* 10+2=12
+    suppose 1 is first number and we want to concate it with 21. it can be written as 1* 100+21=121
+    suppose 1 is first number and we want to concate it with 342. it can be written as 1* 1000+341=1341
+    so what we can deduce is the result of append is like = original_num* pow(10,lengthOfSecondString) + secondString.
+    in case of 1 and 341. length of 341 is 3 so, res= 1* pow(10,3) + 341
+-> so we just need to run loop from 2 to n and start applying above logic to build the answer.
+-> second observation. since above example is in decimal system that is why we are multiplying by 10 power.
+   if it is binary me need to multiply by power (2,lengthOfSecondNumber).
+-> Now question is we need to find length of number in binary format. 
+   log of a number in base 2 will give the length of number in binary format +1. 
+   just like log of a number base 10 +1 gives length in decimal format. 
+   In java log base 2 method is not available only base 10 is available. so we can use below log property.
+-> for this we could use below formula -
+    Math.log2(n) = Math.log10(n)/Math.log10(2);
+-> now we have length. we can using power method to multiply firstNumber* pow(2,lengthOfSecond) or we can use left shift operator. 
+   as we know left shift by 1 is multiply by 2. and left shift of length will be multiply by 2^length.
+class Solution {
+    public int concatenatedBinary(int n) {
+        long result=1;
+        int length=0;
+        for(int i=2;i<=n;i++) {
+            length=((int)(Math.log(i)/Math.log(2)))+1;
+            result=((result<<length)+i)%1000000007;
+        }
+        return (int)result;
+    }
+}
+
+==============================================================
+
+class Solution {
+    public int concatenatedBinary(int n) {
+        int mod = 1000000007;
+        long value = 0;
+        // iterate for all numbers till n
+        for(int i=1;i<=n;i++)
+            value = ((value << countBits(i)) + i)%mod;        
+        return (int)value;
+    }
+    // util to get total bit count
+    private int countBits(int n)
+    {
+        int count = 0;
+        while (n != 0)
+        {
+            count++;
+            n >>= 1;
+        }
+          
+        return count;
+    }
+}
+
+
+
+==============================================================
+
+The number of left-shifts is the number of 2 we need to multiply.
+
+For instance, when n = 3,
+
+It is 1, 10, and 11.
+We start with 1, and we left-shift 2 positions after we add 10, which get us 1 * 2 * 2 + 2 = 6.
+And then we left-shift two positions again after we add 11, which give us 6 * 2 * 2 + 3 = 27.
+    private static int MOD = 1000000007;
+
+    public int concatenatedBinary(int n) {
+        long ans = 0;
+        int highest = 2;
+        for (int i = 1; i <= n; i++) {
+            if (i >= highest) {
+                highest *= 2;
+            }
+            ans = (ans * highest + i) % MOD;
+        }
+        return (int) ans;
+    }
