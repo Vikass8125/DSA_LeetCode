@@ -1,0 +1,509 @@
+Given the root of a binary tree and an integer targetSum, return all root-to-leaf paths where the sum of the node values in the path equals targetSum. 
+Each path should be returned as a list of the node values, not node references.
+
+A root-to-leaf path is a path starting from the root and ending at any leaf node. A leaf is a node with no children.
+
+ 
+
+Example 1:
+
+
+Input: root = [5,4,8,11,null,13,4,7,2,null,null,5,1], targetSum = 22
+Output: [[5,4,11,2],[5,8,4,5]]
+Explanation: There are two paths whose sum equals targetSum:
+5 + 4 + 11 + 2 = 22
+5 + 8 + 4 + 5 = 22
+Example 2:
+
+
+Input: root = [1,2,3], targetSum = 5
+Output: []
+Example 3:
+
+Input: root = [1,2], targetSum = 0
+Output: []
+ 
+
+Constraints:
+
+The number of nodes in the tree is in the range [0, 5000].
+-1000 <= Node.val <= 1000
+-1000 <= targetSum <= 1000
+
+MY_SOLUTION
+
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode() {}
+ *     TreeNode(int val) { this.val = val; }
+ *     TreeNode(int val, TreeNode left, TreeNode right) {
+ *         this.val = val;
+ *         this.left = left;
+ *         this.right = right;
+ *     }
+ * }
+ 
+ */
+class Solution {
+    public List<List<Integer>> pathSum(TreeNode root, int targetSum) {
+        List<List<Integer>> res = new ArrayList<List<Integer>>();
+        pathSum(root, targetSum, new ArrayList<Integer>(), res);
+        return res;
+    }
+    
+    public void pathSum(TreeNode root, int remainingSum, List<Integer> ans, List<List<Integer>> res){
+        if(root == null) return;
+        
+        ans.add(root.val);
+        
+        if(root.left == null && root.right == null && remainingSum == root.val){
+            res.add(new ArrayList<Integer>(ans));
+        }
+        else{
+            pathSum(root.left, remainingSum - root.val, ans, res);
+            
+            pathSum(root.right, remainingSum - root.val, ans, res);
+        }
+        
+        ans.remove(ans.size() - 1);
+    }
+}
+
+=========================================================================================================
+
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode() {}
+ *     TreeNode(int val) { this.val = val; }
+ *     TreeNode(int val, TreeNode left, TreeNode right) {
+ *         this.val = val;
+ *         this.left = left;
+ *         this.right = right;
+ *     }
+ * }
+ */
+class Solution {
+    List<List<Integer>> ans = new ArrayList<List<Integer>>();
+    // the idea is to use dfs to traverse the tree from all root to leaf paths
+    // `path` is used to store the current route 
+    // `remainingSum` is used to store thre remaining sum that we need with the initial value `targetSum`.
+    //  we substract it from the node value when we traverse down the tree
+    // if we arrive the leaf and the the remaining sum is eqaul to leaf node value
+    // then we can add `path` to ans
+    // e.g. path = [5,4,11,2] and remainingSum = targetSum = 22
+    // traverse node 5, remainingSum = 22 - 5 = 17
+    // traverse node 4, remainingSum = 17 - 4 = 13
+    // traverse node 11, remainingSum = 13 - 11 = 2
+    // traverse node 2, remainingSum = 2 - 2 = 0
+    // remainingSum is 0 which means the sum of current path is eqaul to targetSum
+    // so how to find another path?
+    // we can backtrack here
+    // we can pop back a node and try another
+    // e.g. path = [5, 4, 11, 7]
+    // pop 7 out = [5, 4, 11]
+    // push 2 = [5, 4, 11, 2]
+    // ... etc
+    private void dfs(TreeNode node, List<Integer> path, int remainingSum) {
+        // if it is null, then return
+        if (node == null) return;
+        // add the current node val to path
+        path.add(node.val);
+        // !node.left && !node.right : check if it is a leaf node
+        // remainingSum == node.val: check if the remaining sum - node.val == 0
+        // if both condition is true, then we find one of the paths
+        if (node.left == null && node.right == null && remainingSum == node.val) ans.add(new ArrayList<>(path));
+        // traverse left sub tree with updated remaining sum
+        // we don't need to check if left sub tree is nullptr or not
+        // as we handle it in the first line of this function
+        this.dfs(node.left, path, remainingSum - node.val);
+        // traverse right sub tree with updated remaining sum
+        // we don't need to check if right sub tree is nullptr or not
+        // as we handle it in the first line of this function
+        this.dfs(node.right, path, remainingSum - node.val);
+        // backtrack 
+        path.remove(path.size() - 1);
+    }
+    public List<List<Integer>> pathSum(TreeNode root, int targetSum) {
+        List<Integer> path = new ArrayList<Integer>();
+        dfs(root, path, targetSum);
+        return ans;
+    }
+}
+
+
+=========================================================================================================
+
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode() {}
+ *     TreeNode(int val) { this.val = val; }
+ *     TreeNode(int val, TreeNode left, TreeNode right) {
+ *         this.val = val;
+ *         this.left = left;
+ *         this.right = right;
+ *     }
+ * }
+ */
+class Solution {
+    public List<List<Integer>> pathSum(TreeNode root, int targetSum) {
+        
+        List<Integer> currPath = new ArrayList<>();
+        
+        List<List<Integer>> allPaths = new ArrayList<>();
+        pathSum(root, targetSum, currPath, allPaths);
+        return allPaths;
+    }
+    
+    public void pathSum(TreeNode root, int targetSum, List<Integer> currPath, List<List<Integer>> allPaths) {
+        
+        if(root == null) {
+            return;
+        }
+        /*
+          1. Agar node leaf node, koi child nahin hai, or targetsum bann gaya to allPath list mein 
+             currentPath list ko add krdia.
+          2. If statement mein topi utarna(backtrack krna) na bhulna, path add krne ke baad.
+
+          1. If node is a leaf node i.e no left and right child and target sum is achieved 
+             add the currentPath into all path
+          2. Do not forget to backtrack in if statement i.e remove after adding path.
+        */
+        if(root.left == null && root.right == null && targetSum - root.val == 0) {
+            currPath.add(root.val);
+            allPaths.add(new ArrayList<>(currPath));
+            currPath.remove(currPath.size() - 1);
+            return;
+        }
+        
+        //Add the current node in the potential currentPath list.
+        //jis node pr hain usko consider krenge to usko currentPath list mein add krdia
+        currPath.add(root.val); //Topi pehnana(Wearing The Cap)
+        
+        //Two choices(Left, Right) -> decrement target sum by root's(current node) value.
+        //Do choices hain left jao and right jao -> targetSum mein se current node ki value minus krdo
+        pathSum(root.left, targetSum - root.val, currPath, allPaths);
+        pathSum(root.right, targetSum - root.val, currPath, allPaths);
+        //Backtracking(Topi Utarna(Pehle jaisi list krna)/Taking of the cup(undo))
+        currPath.remove(currPath.size() - 1); 
+    }
+}
+
+
+
+=========================================================================================================
+
+class Solution {
+    public List<List<Integer>> pathSum(TreeNode root, int targetSum) {
+        List<Integer> currentPath = new ArrayList();
+        List<List<Integer>> allPaths = new ArrayList();
+        findPathsRecursive(root,targetSum,currentPath,allPaths);
+        return allPaths;
+    }
+    private static void findPathsRecursive(TreeNode currentNode, int sum, List<Integer> currentPath,List<List<Integer>> allPaths){
+         if(currentNode==null)return;
+         // add the current node to the path
+         currentPath.add(currentNode.val);
+         // if the current node is a leaf and its value is equal to sum, save the current path
+         if(currentNode.val==sum && currentNode.left==null && currentNode.right==null)
+             allPaths.add(new ArrayList<Integer>(currentPath));
+         else{
+             // traverse the left sub-tree
+             findPathsRecursive(currentNode.left,sum-currentNode.val,currentPath,allPaths);
+             // traverse the right sub-tree
+             findPathsRecursive(currentNode.right,sum-currentNode.val,currentPath,allPaths);
+         }
+         // remove the current node from the path to backtrack, 
+         // we need to remove the current node while we are going up the recursive call stack.
+         currentPath.remove(currentPath.size()-1);
+      }
+
+}
+
+=========================================================================================================
+
+class Solution {
+
+public List<List<Integer>> pathSum(TreeNode root, int target) {
+    List<List<Integer>> results = new ArrayList<>();
+    // Store path as we decend
+    List<Integer> path = new ArrayList<>();
+    dfs(root, 0, target, path, results);
+    return results;
+}
+
+/**
+ * Node - the current being looked at
+ * sum  - the sum for the current path
+ * target - the targetted total
+ * path - the nodes seen in the current path
+ * results - the list of paths that led to the targetted total
+ */
+public void dfs(TreeNode node, int sum, int target, List<Integer> path, List<List<Integer>> results) {
+    if (node == null) return;
+    // Add the value of the current node to the sum
+    sum += node.val;
+    // Add the current node the path
+    path.add(node.val);
+    
+    // If it's a leaf node and the sum matches what we're targetting
+    // add the path to the list of paths that lead to the targetted total
+    if(node.left == null && node.right == null && sum == target) {
+        results.add(new ArrayList(path));
+        return;
+    }
+    
+    // Visit recursivelly the left branch, but only if it exists :)
+    if (node.left != null) {
+        dfs(node.left, sum, target, path, results);
+        // Remove the last node from the path since we're going to explore other paths when 
+        // we return the function
+        path.remove(path.size()-1);
+    }
+    
+    // Same as above, but now for the rigth branch
+    if(node.right != null) {
+        dfs(node.right, sum, target, path, results);
+        path.remove(path.size()-1);
+    }
+}
+}
+
+
+=========================================================================================================
+DFS :
+
+class Solution {
+    public List<List<Integer>> pathSum(TreeNode root, int targetSum) {
+        List<List<Integer>> ans = new ArrayList();
+        pathSumHelper(root,targetSum,ans,new ArrayList<Integer>());
+        return ans;
+    }
+    private void pathSumHelper(TreeNode node , int sum , List<List<Integer>> ans , List<Integer> path){
+        if(node==null) return;
+        path.add(node.val);
+        if(node.left==null&&node.right==null&&sum-node.val==0){
+            List<Integer> list = new ArrayList(path);
+            ans.add(list);
+        }
+        pathSumHelper(node.left,sum-node.val,ans,path);
+        pathSumHelper(node.right,sum-node.val,ans,path);
+        path.remove(path.size()-1);
+    }
+}
+BFS:
+
+class Solution {
+    public List<List<Integer>> pathSum(TreeNode root, int targetSum) {
+        if(root==null) return new ArrayList();
+        Queue<Helper> queue = new ArrayDeque();
+        List<List<Integer>> ans = new ArrayList();
+        queue.add(new Helper(root,targetSum,new ArrayList<Integer>()));
+        
+        while(queue.size()>0){
+            Helper helper = queue.remove();
+            List<Integer> list = helper.list;
+            list.add(helper.node.val);
+            if(helper.node.left==null&&helper.node.right==null&&helper.sum-helper.node.val==0){
+                ans.add(list);
+            }
+            if(helper.node.left!=null){
+                Helper left = new Helper(helper.node.left,helper.sum-helper.node.val,new ArrayList(list));
+                queue.add(left);
+            }
+            if(helper.node.right!=null){
+                Helper right = new Helper(helper.node.right,helper.sum-helper.node.val,new ArrayList(list));
+                queue.add(right);
+            }
+        }
+        
+        return ans;
+    }
+}
+class Helper{
+    TreeNode node;
+    int sum;
+    ArrayList<Integer> list;
+    
+    public Helper(TreeNode node , int sum , ArrayList<Integer> list){
+        this.node = node;
+        this.sum = sum;
+        this.list = list;
+    }
+}
+
+
+
+=========================================================================================================
+// dfs recursively 
+public List<List<Integer>> pathSum1(TreeNode root, int sum) {
+    List<List<Integer>> ret = new ArrayList<>();
+    List<Integer> path = new ArrayList<>();
+    dfs(root, sum, path, ret);
+    return ret;
+}
+
+private void dfs(TreeNode root, int sum, List<Integer> path, List<List<Integer>> ret) {
+    if (root != null) {
+        path.add(root.val);
+        if (root.left == null && root.right == null && root.val == sum) {
+            ret.add(path);
+        }
+        dfs(root.left, sum-root.val, new ArrayList(path), ret);
+        dfs(root.right, sum-root.val, new ArrayList(path), ret);
+    }
+}
+
+class Tripple {
+    TreeNode node;
+    List<Integer> path;
+    int value;
+    Tripple(TreeNode node, List<Integer> path, int value) {
+        this.node = node;
+        this.path = path;
+        this.value = value;
+    }
+}
+
+// dfs iteratively
+public List<List<Integer>> pathSum(TreeNode root, int sum) {
+    List<List<Integer>> ret = new ArrayList<>();
+    Stack<Tripple> stack = new Stack<>();
+    stack.push(new Tripple(root, new ArrayList<>(), sum));
+    while (!stack.isEmpty()) {
+        Tripple tripple = stack.pop();
+        TreeNode node = tripple.node;
+        List<Integer> path = tripple.path;
+        int v = tripple.value;
+        if (node != null) {
+            path.add(node.val);
+            if (node.left == null && node.right == null && node.val == v) {
+                ret.add(path);
+            }
+            stack.push(new Tripple(node.right, new ArrayList(path), v-node.val));
+            stack.push(new Tripple(node.left, new ArrayList(path), v-node.val));
+        }
+    }
+    return ret;
+}
+
+
+
+=========================================================================================================
+
+class Solution {
+    public List<List<Integer>> pathSum(TreeNode root, int targetSum) {
+        List<List<Integer>> res = new ArrayList<>();
+        List<Integer> list = new ArrayList<>();
+        dfs(root, targetSum, res, list);
+        return res;
+    }
+    
+    private void dfs(TreeNode root, int ts, List<List<Integer>> res, List<Integer> list){
+        if(root == null) return;
+        
+        list.add(root.val);
+        
+        // Found a leaf node, if targetSum becomes zero after adding leaf node value then a path is found, add the path to the result list
+        if(root.left == null && root.right == null){
+            if((ts-root.val)==0) res.add(new ArrayList<>(list));
+            return;
+        }
+        
+        // Traverse left part(reduce targetSum by node value), and backtrack (by deleting node from list) after completing the left subtree
+        if(root.left != null){
+            dfs(root.left, ts-root.val, res, list);
+            list.remove(list.size()-1);   
+        }
+        
+        
+        // Traverse right part and backtrack
+        if(root.right != null){
+            dfs(root.right, ts-root.val, res, list);
+            list.remove(list.size()-1);    
+        }
+        
+    }
+}
+Kotlin
+
+class Solution {
+    fun pathSum(root: TreeNode?, targetSum: Int): List<List<Int>> {
+        val res = mutableListOf<List<Int>>()
+        val list = mutableListOf<Int>()
+        dfs(root,targetSum,list,res)
+        return res
+    }
+    
+    private fun dfs(root : TreeNode?, ts : Int, list : MutableList<Int>, res : MutableList<List<Int>>){
+        root?.let{
+            list.add(root.`val`)
+            
+            if(root.left==null && root.right==null){
+                if((ts-root.`val`)==0) res.add(list.toMutableList())
+                return
+            }
+            
+            root.left?.let{
+                dfs(root.left, ts-root.`val`, list, res)
+                list.removeAt(list.size-1)
+            }
+            root.right?.let{
+                dfs(root.right, ts-root.`val`, list, res)
+                list.removeAt(list.size-1)
+            }
+        }
+    }
+}
+
+=========================================================================================================
+The basic idea is to find every correct path and create a list for them. After searching the left child and right child of the root, merge two lists.
+
+/**
+ * Definition for binary tree
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+public class Solution {
+    public List<List<Integer>> pathSum(TreeNode root, int sum) {
+        List<List<Integer>> pathList = new ArrayList<List<Integer>>();
+		if(root==null){
+			return pathList;
+		}
+        if(root.left==null&&root.right==null){//if find a path, create a new list and add to the pathList.
+        	if(root.val==sum){
+	        	List<Integer> list = new ArrayList<Integer>();
+	        	list.add(root.val);
+	        	pathList.add(list);
+        	}
+        	return pathList;
+        }
+        //find path left and right child and merge two list together.
+        pathList = pathSum(root.left, sum-root.val);
+        List<List<Integer>> pathList_right = pathSum(root.right, sum-root.val);
+        for(List<Integer> l:pathList_right){
+        	pathList.add(l);
+        }
+        //add current root to every list in path list.
+        for(List<Integer> l:pathList){
+        	l.add(0, root.val);
+        }
+        return pathList;
+    }
+}
+=========================================================================================================
