@@ -1,0 +1,817 @@
+Design your implementation of the circular queue. 
+The circular queue is a linear data structure in which the operations are performed based on FIFO (First In First Out) principle and the last position is
+connected back to the first position to make a circle. It is also called "Ring Buffer".
+
+One of the benefits of the circular queue is that we can make use of the spaces in front of the queue. In a normal queue, once the queue becomes full, 
+we cannot insert the next element even if there is a space in front of the queue. But using the circular queue, we can use the space to store new values.
+
+Implementation the MyCircularQueue class:
+
+MyCircularQueue(k) Initializes the object with the size of the queue to be k.
+int Front() Gets the front item from the queue. If the queue is empty, return -1.
+int Rear() Gets the last item from the queue. If the queue is empty, return -1.
+boolean enQueue(int value) Inserts an element into the circular queue. Return true if the operation is successful.
+boolean deQueue() Deletes an element from the circular queue. Return true if the operation is successful.
+boolean isEmpty() Checks whether the circular queue is empty or not.
+boolean isFull() Checks whether the circular queue is full or not.
+You must solve the problem without using the built-in queue data structure in your programming language. 
+
+ 
+
+Example 1:
+
+Input
+["MyCircularQueue", "enQueue", "enQueue", "enQueue", "enQueue", "Rear", "isFull", "deQueue", "enQueue", "Rear"]
+[[3], [1], [2], [3], [4], [], [], [], [4], []]
+Output
+[null, true, true, true, false, 3, true, true, true, 4]
+
+Explanation
+MyCircularQueue myCircularQueue = new MyCircularQueue(3);
+myCircularQueue.enQueue(1); // return True
+myCircularQueue.enQueue(2); // return True
+myCircularQueue.enQueue(3); // return True
+myCircularQueue.enQueue(4); // return False
+myCircularQueue.Rear();     // return 3
+myCircularQueue.isFull();   // return True
+myCircularQueue.deQueue();  // return True
+myCircularQueue.enQueue(4); // return True
+myCircularQueue.Rear();     // return 4
+ 
+
+Constraints:
+
+1 <= k <= 1000
+0 <= value <= 1000
+At most 3000 calls will be made to enQueue, deQueue, Front, Rear, isEmpty, and isFull.
+
+
+MY_SOLUTION
+
+Idea:
+(Update: On my initial read of the problem, I skipped the second half of the first paragraph which talks about connecting the end of the data structure 
+to its beginning, so I chose a linked list approach with the idea of saving on unused data structure memory allocation. 
+But with the full description in mind, the more correct interpretation would be an array-based approach with rolling indexes for the head and the tail of the queue.
+I've left the code for the linked list approach below, but I've updated this solution to effect the change in approach.)
+
+Since this problem tasks us with creating a queue data structure that is connected front-to-back, but with a set size, 
+we should be thinking of the standard array-based queue structure, but modified with a modulo index system in order to
+reuse the cleared space at the beginning of the queue without the need to constantly reallocate with push and shift operations.
+
+Otherwise, the code here is fairly straightforward. We'll use a modulo index system to seamlessly connect the back to the
+front of the queue and separate pointers for the head and tail.
+
+One challenge will be defining our isEmpty state. There are several options, but rather than using any other variables,
+and since the enQueue method will naturally increment tail, we can use tail = -1 to represent an empty queue, which will conveniently lead into tail = 0 
+once we add our first entry.
+
+That means that our deQueue method will need to reset back to this initial condition if there's only one element left (head = tail) prior to its removal.
+
+Finally, the queue isFull when the tail is just behind the head, except for the case of an empty queue.
+
+
+
+Java Code w/ Array Modulo:
+class MyCircularQueue {
+    int maxSize, head = 0, tail = -1;
+    int[] data;
+    public MyCircularQueue(int k) {
+        data = new int[k];
+        maxSize = k;
+    }
+    public boolean enQueue(int val) {
+        if (isFull()) return false;
+        tail = (tail + 1) % maxSize;
+        data[tail] = val;
+        return true;
+    }
+    public boolean deQueue() {
+        if (isEmpty()) return false;
+        if (head == tail) {
+            head = 0;
+            tail = -1;
+        } else head = (head + 1) % maxSize;
+        return true;
+    }
+    public int Front() {
+        return isEmpty() ? -1 : data[head];
+    }
+    public int Rear() {
+        return isEmpty() ? -1 : data[tail];
+    }
+    public boolean isEmpty() {
+        return tail == -1;
+    }
+    public boolean isFull() {
+        return !isEmpty() && (tail + 1) % maxSize == head;
+    }
+Java Code w/ Linked List:
+class ListNode {
+    int val;
+    ListNode next;
+    public ListNode(int val, ListNode next) {
+        this.val = val;
+        this.next = next;
+    }
+}
+class MyCircularQueue {
+    int maxSize, size = 0;
+    ListNode head = null, tail = null;
+    public MyCircularQueue(int k) {
+        maxSize = k;
+    }
+    public boolean enQueue(int val) {
+        if (isFull()) return false;
+        ListNode newNode = new ListNode(val, null);
+        if (isEmpty()) head = tail = newNode;
+        else {
+            tail.next = newNode;
+            tail = tail.next;
+        }
+        size++;
+        return true;
+    }
+    public boolean deQueue() {
+        if (isEmpty()) return false;
+        head = head.next;
+        size--;
+        return true;
+    }
+    public int Front() {
+        return isEmpty() ? -1 : head.val;
+    }
+    public int Rear() {
+        return isEmpty() ? -1 : tail.val;
+    }
+    public boolean isEmpty() {
+        return size == 0;
+    }
+    public boolean isFull() {
+        return size == maxSize;
+    }
+}
+
+
+============================================================================
+
+
+// Time Complexity: O(1)
+// Space Complexity: O(N)
+class MyCircularQueue {
+
+    public MyCircularQueue(int k) {
+        // the queue holding the elements for the circular queue
+        q = new int[k];
+        // the number of elements in the circular queue
+        cnt = 0;
+        // queue size
+        sz = k;
+        // the idx of the head element
+        headIdx = 0;
+    }
+    
+    public boolean enQueue(int value) {
+         // handle full case
+        if (isFull()) return false;
+        // set the value 
+        // Given an array of size of 4, we can find the position to be inserted using the formula
+        // targetIdx = (headIdx + cnt) % sz
+        // e.g. [1, 2, 3, _]
+        // headIdx = 0, cnt = 3, sz = 4, targetIdx = (0 + 3) % 4 = 3
+        // e.g. [_, 2, 3, 4]
+        // headIdx = 1, cnt = 3, sz = 4, targetIdx = (1 + 3) % 4 = 0
+        q[(headIdx + cnt) % sz] = value;
+        // increase the number of elements by 1
+        cnt += 1;
+        return true;
+    }
+    
+    public boolean deQueue() {
+        // handle empty case
+        if (isEmpty()) return false;
+        // update the head index
+        headIdx = (headIdx + 1) % sz;
+        // decrease the number of elements by 1
+        cnt -= 1;
+        return true;
+    }
+    
+    public int Front() {
+        // handle empty queue case
+        if (isEmpty()) return -1;
+        // return the head element
+        return q[headIdx];
+    }
+    
+    public int Rear() {
+        // handle empty queue case
+        if (isEmpty()) return -1;
+        // Given an array of size of 4, we can find the tailIdx using the formula
+        // tailIdx = (headIdx + cnt - 1) % sz
+        // e.g. [0 1 2] 3
+        // headIdx = 0, cnt = 3, sz = 4, tailIdx = (0 + 3 - 1) % 4 = 2
+        // e.g. 0 [1 2 3]
+        // headIdx = 1, cnt = 3, sz = 4, tailIdx = (1 + 3 - 1) % 4 = 3
+        // e.g. 0] 1 [2 3
+        // headIdx = 2, cnt = 3, sz = 4, tailIdx = (2 + 3 - 1) % 4 = 0
+        return q[(headIdx + cnt - 1) % sz];
+    }
+    
+    public boolean isEmpty() {
+        // no element in the queue
+        return cnt == 0;
+    }
+    
+    public boolean isFull() {
+        // return true if the count is equal to the queue size
+        // else return false
+        return cnt == sz;
+    }
+    
+    private int[] q;
+    private int headIdx, cnt, sz;
+}
+
+/**
+ * Your MyCircularQueue object will be instantiated and called as such:
+ * MyCircularQueue obj = new MyCircularQueue(k);
+ * boolean param_1 = obj.enQueue(value);
+ * boolean param_2 = obj.deQueue();
+ * int param_3 = obj.Front();
+ * int param_4 = obj.Rear();
+ * boolean param_5 = obj.isEmpty();
+ * boolean param_6 = obj.isFull();
+ */
+ 
+ 
+ 
+============================================================================
+class MyCircularQueue {
+
+    private int front;
+    private int rear;
+    private int[] arr;
+    private int cap;
+    
+    private int next(int i){ // to get next idx after i in circular queue
+        return (i+1)%cap;
+    }
+    private int prev(int i){ // to get prev idx before i in circular queue
+        return (i+cap-1)%cap;
+    }
+    
+	// rest is as simple as implmenting a normal queue using array.
+    public MyCircularQueue(int k) {
+        arr = new int[k];
+        cap=k;
+        front=-1;
+        rear=-1;
+    }
+    
+    public boolean enQueue(int value) {
+        if(isFull())return false;
+        if(front==-1){
+            front=0;
+            rear=0;
+            arr[rear]=value;
+            return true;
+        }
+        rear = next(rear);
+        arr[rear]=value;
+        return true;
+    }
+    
+    public boolean deQueue() {
+        if(isEmpty())return false;
+        if(front==rear){
+            front=-1;
+            rear=-1;
+            return true;
+        }
+        front=next(front);
+        return true;
+    }
+    
+    public int Front() {
+        if(front==-1)return -1;
+        return arr[front];
+    }
+    
+    public int Rear() {
+        if(rear==-1)return -1;
+        return arr[rear];
+    }
+    
+    public boolean isEmpty() {
+        return front==-1;
+    }
+    
+    public boolean isFull() {
+        return front!=-1 && next(rear)==front;
+    }
+}
+
+============================================================================
+// https://leetcode.com/problems/design-circular-queue/discuss/2362431/Java-Detailed-Chart-Very-easy-to-understand-3ms-100
+
+1. We'll use head and tail index to denote index of head and tail of the queue respectively, and size to denote how many elements are in queue
+   both are inclusive, so you can get Front() and Rear() directly with head and tail index. (as long as size > 0, of course)
+2.Per Java Queue interface standard, enQueue always go to tail, deQueue always from head. You could do either way, just need to be consistent.
+3.Once we go over the end of the array, just come back to the beginning
+
+class MyCircularQueue {
+    private int tail, head, size, n;
+    private final int[] a;
+    public MyCircularQueue(int k) {
+        a = new int[n = k];
+        tail = -1;
+    }
+    
+    public boolean enQueue(int x) {
+        if (size == n) return false;
+        a[tail = ++tail % n] = x;
+        size++;
+        return true;
+    }
+    
+    public boolean deQueue() {
+        if (size == 0) return false;
+        head = ++head % n;
+        size--;
+        return true;
+    }
+    
+    public int Front() {
+        return size == 0 ? -1 : a[head];
+    }
+    
+    public int Rear() {
+        return size == 0 ? -1 : a[tail];
+    }
+    
+    public boolean isEmpty() {
+        return size == 0;
+    }
+    
+    public boolean isFull() {
+        return size == n;
+    }
+}
+
+============================================================================
+
+class MyCircularQueue {
+
+    int[] queue;
+    int front,rear,maxSize,size;
+    /** Initialize your data structure here. Set the size of the queue to be k. */
+    public MyCircularQueue(int k) {
+        queue = new int[k];
+        maxSize = k;
+        size = 0;
+        front = 0;
+        rear = -1;
+    }
+    
+    /** Insert an element into the circular queue. Return true if the operation is successful. */
+    public boolean enQueue(int value) {
+        if(size < maxSize){
+            rear = ++rear % maxSize;
+            queue[rear] = value;
+            size++;
+            return true;
+        }
+        return false;
+    }
+    
+    /** Delete an element from the circular queue. Return true if the operation is successful. */
+    public boolean deQueue() {
+        if(size > 0){
+            front = ++front % maxSize;
+            size--;
+            return true;
+        }
+        return false;
+    }
+    
+    /** Get the front item from the queue. */
+    public int Front() {
+        return size > 0 ? queue[front] : -1;
+    }
+    
+    /** Get the last item from the queue. */
+    public int Rear() {
+        return size > 0 ? queue[rear] : -1 ;
+    }
+    
+    /** Checks whether the circular queue is empty or not. */
+    public boolean isEmpty() {
+        return size == 0;
+    }
+    
+    /** Checks whether the circular queue is full or not. */
+    public boolean isFull() {
+        return size == maxSize;
+    }
+}
+
+============================================================================
+class MyCircularQueue {
+
+    int size,front,rear;
+    ArrayList<Integer> ans = new ArrayList<>();
+    public MyCircularQueue(int k) {
+        this.size=k;
+        this.front=-1;
+        this.rear=-1;
+    }
+    
+    public boolean enQueue(int value) {
+        if(ans.size() < size) {
+            ans.add(value);
+            if(ans.size()==1){
+                front=0; rear=0;
+            }
+            else rear++;
+                              }
+        else return false;
+        return true;
+    }
+    
+    public boolean deQueue() {
+        if(ans.size()>0) {ans.remove(0);
+                         rear--;}
+        else return false;
+        return true;
+    }
+    
+    public int Front() {
+        if(ans.size()==0) return -1;
+        else return ans.get(0);
+    }
+    
+    public int Rear() {
+        
+        if(ans.size()==0) return -1;
+        else return ans.get(rear);
+    }
+    
+    public boolean isEmpty() {
+       return ans.size()==0;
+    }
+    
+    public boolean isFull() {
+       return ans.size()==size;
+    }
+}
+
+/**
+ * Your MyCircularQueue object will be instantiated and called as such:
+ * MyCircularQueue obj = new MyCircularQueue(k);
+ * boolean param_1 = obj.enQueue(value);
+ * boolean param_2 = obj.deQueue();
+ * int param_3 = obj.Front();
+ * int param_4 = obj.Rear();
+ * boolean param_5 = obj.isEmpty();
+ * boolean param_6 = obj.isFull();
+ */
+
+============================================================================
+
+Summary
+Make circular LinkedList with two pointers which are head and tail.
+head will be the pointer who has the very front non-empty value.
+tail will be the pointer who has the very non-empty last value.
+And the last ListNode is linked to the head ListNode.
+
+Process
+Firstly, initialize ListNodes with value -1 cause the condition in the problem was 0 <= value <= 1000
+I marked the value as -1 whenever deQueue() has been called. So that the value -1 means the ListNode is empty.
+
+And then when enQueue() is called, move tail to the next one.
+When deQueue() is called, move head to the next one.
+
+One special checking operation is below block on deQueue().
+
+if(head == tail) { 
+	tail = null;
+}
+It checks whether the dequeued value was the last value or not, and if it is, make tail to null which helps to check emptyness of the queue.
+
+Another crucial operation is below block on 'isFull()`
+
+if (tail.next == head && tail.val != -1 && head.val != -1) {
+	return true;
+}
+Whole code block is like below.
+
+Code
+class MyCircularQueue {
+
+	public ListNode head;
+	public ListNode tail = null;
+
+	public MyCircularQueue(int k) {
+		ListNode prev = null;
+		for (int i = 0; i < k; i++) {
+			if (i == 0) { // init head
+				head = new ListNode(-1);
+				prev = head;
+			} else { // init others
+				prev.next = new ListNode(-1);
+				prev = prev.next;
+			}
+			if (i == k - 1) { //link last ListNode to the head
+				prev.next = head;
+			}
+		}
+	}
+
+	public boolean enQueue(int value) {
+		if (isEmpty()) {
+			head.val = value;
+			tail = head;
+			return true;
+		}
+
+		if (isFull()) {
+			return false;
+		} else {
+			tail.next.val = value;
+			tail = tail.next;
+			return true;
+		}
+	}
+
+	public boolean deQueue() {
+		if (isEmpty()) {
+			return false;
+		}
+		head.val = -1;
+
+		//check whether the value is the last non-empty value
+		if(head == tail) { 
+			tail = null;
+		}
+		head = head.next;
+		return true;
+	}
+
+	public int Front() {
+		return head.val;
+	}
+
+	public int Rear() {
+		if(isEmpty()) {
+			return -1;
+		}
+		return tail.val;
+	}
+
+	public boolean isEmpty() {
+		return head.val == -1 || tail == null;
+	}
+
+	public boolean isFull() {
+		if(tail == null) {
+			return false;
+		}
+		if (tail.next == head && tail.val != -1 && head.val != -1) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public static class ListNode {
+		int val;
+		ListNode next;
+
+		ListNode(int val) {
+			this.val = val;
+		}
+	}
+}
+
+============================================================================
+class MyCircularQueue {
+
+    //FOR STORING THE VAL
+    int a[];
+    //LENGTH OF THE ARRAY
+    int n;
+    //FRONT AND REAR POINTER INDEX 
+    int front = -1, rear = -1;
+    
+    //INITIALIZATION OF THE ARRAY
+    public MyCircularQueue(int k) {
+        n = k;
+        a= new int[k];    
+    }
+    
+    //ADDING THE ELEMENT IN THE QUEUE
+    public boolean enQueue(int value) {
+        
+        //BASE CASE 
+        //IF ARRAY IF FULL RETURN FASLE
+        if(isFull()){
+            return false;
+        }
+        
+        //ADDING THE VAL IN THE ARRAY
+        if(front == -1)
+        {
+            front = 0;
+        }
+        //CHECKING IF ARRAY IS AT THE END INDEX 
+        //IF IT IS ME DO 
+        //LET REAR = 3 //(at last index of the array)
+        //n = 4;(SIZE OF THE ARRAY)
+        //WE DO (rear+1)%n;
+        //  (3+1)%4 => 4%4 =>0
+        //SO WE ARE AT THE 0TH INDEX
+        rear = (rear+1)%n;
+        a[rear] = value;
+        
+        
+        return true;
+    }
+    
+    public boolean deQueue() {
+        
+        //CHECKING IF THE ARRAY IS EMPTY
+        if(isEmpty())
+        {
+            return false;
+        }
+        
+        //SOTING THE VAL 
+        //WE ARE DEQUEUE-ING 
+        //IF WE WANT TO RETURN IT
+        int result = a[front];
+        
+        //CHECKING IF FRONT = REAR 
+        //MEANS LAST ELEMENT IN THE ARRY
+        //WE REMOVES IT THE INDEX BECOMES -1
+        if(front == rear)
+        {
+            front = rear= -1;
+        }else{
+            //LAST INDEX CONDITION
+            //SAME PROCESS AS ABOVE WE SEEN IN THE REAR
+            front = (front+1)%n;
+        }
+        
+        return true;
+    }
+    
+    
+    //RETUNING THE FRONT POSITION OF QUEUE IN THE ARRAY
+    public int Front() {
+        
+        if(front == -1)
+        {
+            return -1;
+        }
+        
+        return a[front];
+    }
+    
+     //RETUNING THE REAR POSITION OF QUEUE IN THE ARRAY
+    public int Rear() {
+        
+         if(rear == -1)
+        {
+            return -1;
+        }
+        
+        return a[rear];
+    }
+    
+    //CHECKING IF THE ARRAY IS EMPTY
+    public boolean isEmpty() {
+        if(front == -1)
+        {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    //CHECKING IF THE ARRAY IS FULL
+    public boolean isFull() {
+        if((rear+1)%n == front)
+        {
+            return true;
+        }
+        
+        return false;
+    }
+}
+
+/**
+ * Your MyCircularQueue object will be instantiated and called as such:
+ * MyCircularQueue obj = new MyCircularQueue(k);
+ * boolean param_1 = obj.enQueue(value);
+ * boolean param_2 = obj.deQueue();
+ * int param_3 = obj.Front();
+ * int param_4 = obj.Rear();
+ * boolean param_5 = obj.isEmpty();
+ * boolean param_6 = obj.isFull();
+ */
+
+============================================================================
+class MyCircularQueue {
+
+    int[] queue;
+    int size;
+    int used;
+    int front;
+    int rear;
+    
+    public MyCircularQueue(int k) {
+        queue = new int[k];
+        size = k;
+    }
+    
+    public boolean enQueue(int value) {
+        if(isFull())
+            return false;
+        queue[rear] = value;
+        rear = (rear+1)%size;
+        used++;
+        return true;
+    }
+    
+    public boolean deQueue()
+    {
+        if(isEmpty())
+            return false;
+        front = (front+1)%size;
+        used -- ;
+        return true;
+        
+    }
+    
+    public int Front() {
+        if(isEmpty())
+            return -1;
+        return queue[front];
+    }
+    
+    public int Rear() {
+        if(isEmpty())
+            return -1;
+        return queue[(rear-1+size)%size];
+    }
+    
+    public boolean isEmpty() {
+        return used ==0;
+    }
+    
+    public boolean isFull() {
+        return used == size;
+    }
+}
+
+============================================================================
+class MyCircularQueue {
+    static int arr[]=new int[1000],k,front,end;
+
+    public MyCircularQueue(int k) {
+        this.k=k;
+        front=end=0;
+    }
+    
+    public boolean enQueue(int value) {
+        if(end-front==k) return false;
+        arr[end%k]=value;
+        end++;
+        return true;
+    }
+    
+    public boolean deQueue() {
+        if(front==end) return false;
+        front++;
+        return true;
+    }
+    
+    public int Front() {
+        return (isEmpty())?-1:arr[front%k];
+    }
+    
+    public int Rear() {
+        return (isEmpty())?-1:arr[(end-1)%k];
+    }
+    
+    public boolean isEmpty() {
+        return end==front;
+    }
+    
+    public boolean isFull() {
+        return end-front==k;
+    }
+}
+
+============================================================================
+
