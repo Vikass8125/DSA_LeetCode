@@ -1,0 +1,358 @@
+You are given an array of strings equations that represent relationships between variables where each string equations[i] is of length 4 and takes one of
+two different forms: "xi==yi" or "xi!=yi".Here, xi and yi are lowercase letters (not necessarily different) that represent one-letter variable names.
+
+Return true if it is possible to assign integers to variable names so as to satisfy all the given equations, or false otherwise.
+
+ 
+
+Example 1:
+
+Input: equations = ["a==b","b!=a"]
+Output: false
+Explanation: If we assign say, a = 1 and b = 1, then the first equation is satisfied, but not the second.
+There is no way to assign the variables to satisfy both equations.
+Example 2:
+
+Input: equations = ["b==a","a==b"]
+Output: true
+Explanation: We could assign a = 1 and b = 1 to satisfy both equations.
+ 
+
+Constraints:
+
+1 <= equations.length <= 500
+equations[i].length == 4
+equations[i][0] is a lowercase letter.
+equations[i][1] is either '=' or '!'.
+equations[i][2] is '='.
+equations[i][3] is a lowercase letter.
+
+MY_SOLUTION
+
+class Solution {
+    int[] parent = new int[26];
+    public int find(int x) {
+        // with path compression
+        if (parent[x] == x) return x;
+        return parent[x] = find(parent[x]);
+        // without path compression
+        // return parent[x] == x ? x : find(parent[x]);
+    }
+    // the idea is to put all characters in the same group if they are equal
+    // in order to do that, we can use Disjoint Set Union (dsu) aka Union Find
+    // for dsu tutorial, please check out https://wingkwong.github.io/leetcode-the-hard-way/tutorials/graph-theory/disjoint-set-union
+    public boolean equationsPossible(String[] equations) {
+        int n = equations.length;
+        // at the beginning, put each character index in its own group
+        // so we will have 26 groups with one character each
+        // i.e. 'a' in group 0, 'b' in group 1, ..., 'z' in group 25
+        for (int i = 0; i < 26; i++) parent[i] = i;
+        for (String e : equations) {
+            // if two character is equal, 
+            if (e.charAt(1) == '=') {
+                // e.g. a = b
+                // then we group them together
+                // how? we use `find` function to find out the parent group of the target character index
+                // then update parent. a & b would be in group 1 (i.e. a merged into the group where b belongs to)
+                // or you can also do `parent[find(e.charAt(3)- 'a')] = find(e.charAt(0) - 'a');` (i.e. b merged into the group where a belongs to)
+                parent[find(e.charAt(0)- 'a')] = find(e.charAt(3) - 'a');
+            }
+        }
+        // handle != case
+        for (String e : equations) {
+            // if two characters are not equal
+            // then which means their parent must not be equal
+            if (e.charAt(1) == '!' && find(e.charAt(0) - 'a') == find(e.charAt(3) - 'a')) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+
+===============================================================================
+
+class Solution {
+    // parent is the root of the tree
+    int[] parent = new int[26];
+    //size is used to make the tree degree lower
+    int[] size = new int[26];
+    public boolean equationsPossible(String[] equations) {
+        // make themselves their parents
+        for(int i = 0; i < 26; i++){
+            size[i] = 1;
+            parent[i] = i;
+        }
+        // if "a == b" connet the a, b
+        for(String s: equations){
+            if(s.charAt(1) == '='){
+                int a = s.charAt(0) - 'a';
+                int b = s.charAt(3) - 'a';
+                connect(a, b);
+            }
+        }
+        //if "a != b" check whether these two has been connected
+        for(String s : equations){
+            if(s.charAt(1) == '!'){
+                int a = s.charAt(0) - 'a';
+                int b = s.charAt(3) - 'a';
+                if(checkConnection(a, b)) return false;
+            }
+        }
+        return true;
+    }
+    public void connect(int a, int b){
+        int roota = findRoot(a);
+        int rootb = findRoot(b);
+        if(roota == rootb) return;
+        if(size[roota] >= size[rootb]){
+            parent[rootb] = roota;
+            size[roota] += size[rootb];
+        }else{
+            parent[roota] = rootb;
+            size[rootb] += size[roota];
+        }
+    }
+    public int findRoot(int a){
+        while(parent[a] != a){
+            parent[a] = parent[parent[a]];
+            a = parent[a];
+        }
+        return a;
+    }
+    public boolean checkConnection(int a, int b){
+        int roota = findRoot(a);
+        int rootb = findRoot(b);
+        if(roota == rootb) return true;
+        return false;
+    }
+
+}
+===============================================================================
+class Solution {
+    
+    static int[] par;
+    
+    public static int findLeaderParent(int u){
+        return par[u]==u ? u : (par[u]=findLeaderParent(par[u]));
+    }
+    public boolean equationsPossible(String[] equations) {
+        
+        par=new int[26];
+        for(int i=0;i<26;i++){
+            par[i]=i;
+        }
+        
+        int[] notArray=new int[26];
+        
+        for(String str : equations){
+            if(str.charAt(1) == '='){
+                int p1=findLeaderParent(str.charAt(0) - 'a');
+                int p2=findLeaderParent(str.charAt(3) - 'a');
+                
+                if(p1!=p2){
+                    par[p2]=p1;
+                }
+            }
+        }
+        
+        for(String str : equations){
+            if(str.charAt(1)=='!'){
+                int p1=findLeaderParent(str.charAt(0) - 'a');
+                int p2=findLeaderParent(str.charAt(3) - 'a');
+                
+                if(p1==p2){
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+}
+
+===============================================================================
+public static int Find_par(int u, int[] par){
+        if(par[u] == u){
+            return u;
+        }
+        
+        return par[u] = Find_par(par[u], par);
+    }
+    
+    public boolean equationsPossible(String[] equations) {
+        int[] par = new int[26];
+        for(int i = 0; i < 26; i++){
+            par[i] = i;
+        }
+        
+        // Considering all Equal Equations
+        for(String s : equations){
+            char ch1 = s.charAt(0);
+            char ch2 = s.charAt(1);
+            char ch3 = s.charAt(3);
+            
+            int p1 = Find_par(ch1 - 'a', par);
+            int p2 = Find_par(ch3 - 'a', par);
+            
+            if(ch2 == '=' && p1 != p2){
+                par[p2] = p1;
+            }
+        }
+        
+        // Considering all Not Equal Equations
+        for(String s : equations){
+            char ch1 = s.charAt(0);
+            char ch2 = s.charAt(1);
+            char ch3 = s.charAt(3);
+            
+            int p1 = Find_par(ch1 - 'a', par);
+            int p2 = Find_par(ch3 - 'a', par);
+            
+            if(ch2 == '!' && p1 == p2){
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+===============================================================================
+class Solution {
+    public boolean equationsPossible(String[] equations) {
+        //1.first we use all equality equations to generate a graph
+        ArrayList<Integer>[] graph = new ArrayList[26];
+        for (int i = 0; i < 26; ++i){
+            graph[i] = new ArrayList(); 
+        }            
+        for(String equation: equations){
+            int n1 = equation.charAt(0) - 'a';
+            int n2 = equation.charAt(3) - 'a';
+            char op = equation.charAt(1);
+            if(op == '='){
+                graph[n1].add(n2);
+                graph[n2].add(n1);
+            }
+        }        
+        
+        //2.use DFS to color all connected vertices in the same color
+        int[] color = new int[26];
+        int curColor = 0;
+        for(int i = 0; i < 26; i++){
+            List<Integer> edgeList = graph[i];
+            for(int j = 0; j < edgeList.size(); j++){
+                int v = edgeList.get(j);
+                if(color[v] == 0){
+                    ++curColor;
+                    DFS(v, color, curColor, graph);
+                }
+            }
+        }
+
+        //3.we check inequality equations
+        for(String equation: equations){
+            int n1 = equation.charAt(0) - 'a';
+            int n2 = equation.charAt(3) - 'a';
+            char op = equation.charAt(1);
+            if(op == '!'){
+                //edge case: "a!=a" return false
+                //["c==c","b==d","x!=z"] color[x] = color[z] but it is possible, so check only colored vertices
+                if(n1 == n2 || (color[n1] != 0 && color[n1] == color[n2])){
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    private void DFS(int v, int[] color, int curColor, ArrayList<Integer>[] graph){
+        color[v] = curColor;
+        List<Integer> edgeList = graph[v];
+        for(int i = 0; i < edgeList.size(); i++){
+            int nextV = edgeList.get(i);
+            if(color[nextV] == 0){
+                DFS(nextV, color, curColor, graph);
+            }
+        }
+    }
+}class Solution {
+    /**
+    if a==b. Then build unionSet(a,b). Go through all the equal cases.
+    Then check those unequal equations. If they return the same find. Then it's false. Because they actually belong to the same group according to our unionSet. 
+    */
+    class UnionFind{
+        int[] parent;
+        public UnionFind(int N){
+            this.parent = new int[N];
+            for(int i=0; i<N; i++)
+                parent[i] = i;
+        }
+        public void union(int x, int y){
+            parent[find(x)] = find(y);
+        }
+        public int find(int x){
+            if(x!=parent[x]){
+                parent[x] = find(parent[x]);
+            }
+            return parent[x];
+        }
+    }
+    public boolean equationsPossible(String[] equations) {
+        UnionFind uf = new UnionFind(27);
+        for(String equation: equations){
+            if(equation.charAt(1)=='=')
+                uf.union(equation.charAt(0) - 'a', equation.charAt(3) - 'a');
+        }
+        for(String equation: equations){
+            if(equation.charAt(1)=='!'){
+                int findLetter1 = uf.find(equation.charAt(0) - 'a');
+                int findLetter2 = uf.find(equation.charAt(3) - 'a');
+                if(findLetter1==findLetter2)
+                    return false;
+            }
+        }
+        return true;
+    }
+}
+
+===============================================================================
+class Solution {
+    /**
+    if a==b. Then build unionSet(a,b). Go through all the equal cases.
+    Then check those unequal equations. If they return the same find. Then it's false. Because they actually belong to the same group according to our unionSet. 
+    */
+    class UnionFind{
+        int[] parent;
+        public UnionFind(int N){
+            this.parent = new int[N];
+            for(int i=0; i<N; i++)
+                parent[i] = i;
+        }
+        public void union(int x, int y){
+            parent[find(x)] = find(y);
+        }
+        public int find(int x){
+            if(x!=parent[x]){
+                parent[x] = find(parent[x]);
+            }
+            return parent[x];
+        }
+    }
+    public boolean equationsPossible(String[] equations) {
+        UnionFind uf = new UnionFind(27);
+        for(String equation: equations){
+            if(equation.charAt(1)=='=')
+                uf.union(equation.charAt(0) - 'a', equation.charAt(3) - 'a');
+        }
+        for(String equation: equations){
+            if(equation.charAt(1)=='!'){
+                int findLetter1 = uf.find(equation.charAt(0) - 'a');
+                int findLetter2 = uf.find(equation.charAt(3) - 'a');
+                if(findLetter1==findLetter2)
+                    return false;
+            }
+        }
+        return true;
+    }
+}
+
+
