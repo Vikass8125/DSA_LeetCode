@@ -1,0 +1,617 @@
+You have n dice and each die has k faces numbered from 1 to k.
+
+Given three integers n, k, and target, return the number of possible ways (out of the kn total ways) to roll the dice so the sum of the face-up numbers equals target. 
+Since the answer may be too large, return it modulo 109 + 7.
+
+ 
+
+Example 1:
+
+Input: n = 1, k = 6, target = 3
+Output: 1
+Explanation: You throw one die with 6 faces.
+There is only one way to get a sum of 3.
+Example 2:
+
+Input: n = 2, k = 6, target = 7
+Output: 6
+Explanation: You throw two dice, each with 6 faces.
+There are 6 ways to get a sum of 7: 1+6, 2+5, 3+4, 4+3, 5+2, 6+1.
+Example 3:
+
+Input: n = 30, k = 30, target = 500
+Output: 222616187
+Explanation: The answer must be returned modulo 109 + 7.
+ 
+
+Constraints:
+
+1 <= n, k <= 30
+1 <= target <= 1000
+
+MY_SOLUTION
+
+BOTTOM UP
+class Solution {
+    public int numRollsToTarget(int d, int f, int target) {
+        //to store the number of ways using bottom up approach
+        //dp array holds the row value as number of dice
+        // and col value as target
+        int[][] dp  = new int[d+1][target+1];
+        
+        //base case ==>
+        // if target = 0 and number of dice is zero
+        // then we can only have one way i.e, not doing anything => one way
+        
+        dp[0][0] = 1;
+        
+        //mod val
+        //simply use built in 1e and specify power value to get 10power number (in JAVA)
+        
+        int mod = (int) 1e9 + 7;
+        
+        for(int dice = 1;dice <= d ; dice++){
+            for(int target_val = 0;target_val<=target ; target_val++){
+                for(int face_val = 1; face_val<=f ; face_val++){
+                    //check if target_val is greater than face val and proceed
+                    
+                    if(target_val >= face_val){
+                        // way of getting target with current dice is 
+                        //sum of ways of getting target with previous dice with target as currtarget - facevalue
+                        //plus curr ways
+                        dp[dice][target_val] = (dp[dice][target_val] + dp[dice-1][target_val - face_val])%mod;
+                    }
+                }
+            }
+        }
+        
+        return dp[d][target];
+    }
+}
+=====================================================================
+
+
+class Solution {
+    public int numRollsToTarget(int d, int f, int target) {
+        return dfs(d, f, target, new Integer[d+1][target+1]);
+    }
+    
+    int dfs(int d, int f, int target, Integer[][] cache){
+        int MOD = 1_000_000_007;
+        
+        if(d == 0 && target == 0)
+            return 1;
+
+        if(d == 0 || target <= 0)
+            return 0;
+        
+        if(cache[d][target] == null){
+            int count = 0;
+            // For each face in a die
+            for(int i=1; i <= f; i++)
+                count = (count + dfs(d-1, f, target - i, cache)) % MOD;
+            cache[d][target] = count;
+        }        
+        return cache[d][target];
+    }
+}
+
+
+=====================================================================
+
+LOGIC :
+  We will be using a helper function which is going to take same parameters as our main function.
+  Base case would be, if I have covered all dices and if I am achieving the required sum, i.e sum == 0, then I will return 1 else 0.
+  Initialise the count = 0, which is our result.
+  Now try for all faces and recursive call for other dies.Store it in count and MOD with (10 ^ 9 + 7) to overcome overflow.
+  Extra if(sum - face >= 0) is added so that there will be no need of extra base case like if(sum < 0) return 0;
+  If you are solving this question, I don't think you will need no introduction of memoization!
+
+class Solution {
+    private final int MOD = 1_000_000_007;
+
+    public int numRollsToTarget(int n, int k, int target) {
+        //IMPOSSIBLE CASE SO RETURN 0!!
+        if (target > n * k) return 0;
+
+        int[][] dp = new int[n + 1][target + 1];
+        for (int[] row : dp) Arrays.fill(row, -1);
+
+        return solve(n, k, target, dp);
+    }
+
+    private int solve(int n, int k, int sum, int[][] dp) {
+		// BASE CASE (SUM will never become negative as we are handling that case below!)
+        if (n == 0) return sum == 0 ? 1 : 0;
+        
+        if (dp[n][sum] != -1) return dp[n][sum];
+        int count = 0;
+        for (int face = 1; face <= k; face++) 
+            if(sum - face >= 0)
+                count = (count + solve(n - 1, k, sum - face, dp)) % MOD;
+        
+        return dp[n][sum] = count;
+    }
+}
+
+
+
+=====================================================================
+
+
+Given the No of Dices (n) with each consisting of k faces, we need to find out the no of ways we can present the Target with the Numbers on the face of each (n) Dices.
+
+Lets take out a few Points from an Example
+We have 2 Dices with 6 faces, the different types of Combinations we can generate are:
+[
+{1,1}, {1,2}, {1,3}, {1,4}, {1,5}, {1,6}
+{2,1}, {2,2}, {2,3}, {2,4}, {2,5}, {2,6}
+{3,1}, {3,2}, {3,3}, {3,4}, {3,5}, {3,6}
+{4,1}, {4,2}, {4,3}, {4,4}, {4,5}, {4,6}
+{5,1}, {5,2}, {5,3}, {5,4}, {5,5}, {5,6}
+{6,1}, {6,2}, {6,3}, {6,4}, {6,5}, {6,6}
+]
+for a Target of 10 with n=2 & k=6, we can have 3 Combinations which I have highlighted above.
+So lets think of how we would Simulate our Thinking Process before Writing Code.
+
+For each Dice we can roll from Face Number 1 to k. Similarly we have n Dices to Roll, so we can Generate a Total of (k^n) Combinations.
+Likewise for above example we were able to generate 6^2 = 36 Different Combinations. 
+As for a Larger Dice Number with Large Number of Faces, we can get an idea that the No of Combinations will be large,
+& hence it will involve a lot of Repetitive Combinations for the Given no of Dices & a Given target Sum.
+In our above example we can see how we have 3 Different Combinations that can be Generated. 
+We can use Dynamic Programming with Memoization to Cache our Repetitve States.
+
+Now lets dive into the Important Stuff, building States for our Solution.
+
+-> For each Dice we have (1 - k) faces to roll so with each Dice we can generate k faces. This we can Simulate using a For Loop -> for(int i = 1; i <= k; i++) .
+   Every time, we will Subract target with the number we have on face of our Current Dice which will be target - i & 
+   this remaining target will be Computed Further with Remaining Dices.
+-> Now if we Pick one Dice we are left with (n-1) Dices. So we will call a Recursive Function helper -> private int helper(int n, int k, int target) with the 
+   remaining Dices & Target.
+   
+With the Above 2 Point we can justify that we will Transition between 2 states, the remaining number of Dices out of n Dices & the remaining Target Sum that is Left.
+Now its important to Define our Base cases when we will Stop our Computation.
+
+-> if(target == 0 && n == 0) return 1; -> when we have managed to roll all n Dices & our remaining target sum is 0, we know that we have found a Combination.
+-> If n > 0 && target == 0 or Vice versa, we know that we cannot generate the right Combination, simply return 0.
+
+Similarly within our Function, cache the Results for each remaining Dice & remaining sum in our 2D Matrix -> int[][] dp = new int[n + 1][target + 1];
+The rest we will follow up in our Code below:
+
+class Solution {
+    int mod = 1000_000_007;
+    int[][] dp;
+    
+    public int numRollsToTarget(int n, int k, int target) {
+        if(target > n*k) return 0; // another important base case to consider before moving forward 
+        dp = new int[n + 1][target + 1];
+        for(int[] row: dp)
+            Arrays.fill(row, -1);
+        
+        return helper(n, k, target);
+    }
+    
+    private int helper(int n, int k, int target)
+    {
+        if(target == 0 && n == 0) return 1;
+        if(target == 0 || n == 0) return 0;
+        
+        if(dp[n][target] != -1) return dp[n][target];
+        
+        int ans = 0;
+        for(int i = 1; i <= k; i++)
+        {
+            int x = target;
+            if(x - i >= 0)
+                ans = (ans + helper(n - 1, k, x - i)) % mod;
+            else // early pruning
+                break;
+        }
+        
+        dp[n][target] = ans;
+        return dp[n][target];
+    }
+}
+
+
+=====================================================================
+
+Java (Top-Down)
+class Solution {
+    private int[][] memo;
+    private int k, modulo = 1000000007;
+
+    private int dp(int dice_left, int target_left) {
+        if (dice_left == 0) {
+            if (target_left == 0) {
+                return 1;
+            }
+            return 0;
+        }
+        if (memo[dice_left][target_left] == -1) {
+            int res = 0;
+            for (int i = 1; i <= Math.min(k, target_left); i++) {
+                res += dp(dice_left - 1, target_left - i);
+                res %= modulo;
+            }
+            memo[dice_left][target_left] = res;
+        }
+        return memo[dice_left][target_left];
+    }
+
+    public int numRollsToTarget(int n, int k, int target) {
+        this.k = k;
+        this.memo = new int[n + 1][target + 1];
+        for (int[] i : memo) {
+            Arrays.fill(i, -1);
+        }
+        return dp(n, target);
+    }
+}
+
+Java (Bottom-Up)
+class Solution {
+    public int numRollsToTarget(int n, int k, int target) {
+        int[][] dp = new int[n + 1][target + 1];
+        int modulo = 1000000007;
+        dp[0][0] = 1;
+        for (int dice_left = 1; dice_left <= n; dice_left++) {
+            for (int target_left = 1; target_left <= target; target_left++) {
+                for (int i = 1; i <= Math.min(target_left, k); i++) {
+                    dp[dice_left][target_left] += dp[dice_left - 1][target_left - i];
+                    dp[dice_left][target_left] %= modulo;
+                }
+            }
+        }
+        return dp[n][target];
+    }
+}
+
+
+=====================================================================
+
+// dp - top down + memorization
+class Solution {
+    private static final int MODULO = 1000000007;
+    private int n;
+    private int k;
+    private int target;
+    private Integer[][] memo;
+    public int numRollsToTarget(int n, int k, int target) {
+        this.n = n;
+        this.k = k;
+        this.target = target;
+        this.memo = new Integer[n + 1][target + 1];
+        return dp(0, target);
+    }
+    
+    public int dp(int i, int remain) {
+        if(i == n && remain == 0) return 1;
+        
+        if(i > n || remain < 0) return 0;
+        
+        if(memo[i][remain] != null) return memo[i][remain];
+        
+        int ans = 0;
+        for(int num = 1; num <= k; ++num) {
+            ans += dp(i + 1, remain - num);
+            ans %= MODULO;
+        }
+        
+        return memo[i][remain] = ans;
+    }
+}
+// dp - bottom up
+class Solution {
+    private static final int MODULO = 1000000007;
+    public int numRollsToTarget(int n, int k, int target) {
+        int[][] dp = new int[n + 1][target + 1];
+        dp[n][0] = 1;
+        
+        for(int i = n - 1; i >= 0; --i) {
+            for(int remain = target; remain > 0; --remain) {
+                int ans = 0;
+                for(int num = 1; num <= k; ++num) {
+                    if(remain - num >= 0) {
+                        ans += dp[i + 1][remain - num];
+                        ans %= MODULO;
+                    }
+                }
+                dp[i][remain] = ans;
+            }
+        }
+        
+        return dp[0][target];
+    }
+}
+// dp - bottom up - reduce memory usage
+class Solution {
+    private static final int MODULO = 1000000007;
+    public int numRollsToTarget(int n, int k, int target) {
+        int[] dp0 = new int[target + 1];
+        int[] dp1 = new int[target + 1];
+        dp1[0] = 1;
+        for(int i = n - 1; i >= 0; --i) {
+            for(int remain = target; remain > 0; --remain) {
+                int ans = 0;
+                for(int num = 1; num <= k; ++num) {
+                    if(remain - num >= 0) {
+                        ans += dp1[remain - num];
+                        ans %= MODULO;
+                    }
+                }
+                dp0[remain] = ans;
+            }
+            
+            Arrays.fill(dp1, 0);
+            int[] tmp = dp0;
+            dp0 = dp1;
+            dp1 = tmp;
+        }
+        return dp1[target];
+    }
+}
+
+=====================================================================
+
+This problem is similar to max profit in selling n times problem (https://leetcode.com/problems/best-time-to-buy-and-sell-stock-iv/) - this is knapsack dp problem.
+
+Let's say we have a grid [n][m] where element at [n][m] represents the number of variants to represent number m with the n dices. 
+We can compute dp[n][m] as following:
+
+dp[n - 1][[m - f - 1] + dp[n - 1][[m - f] + .... + dp[n - 1][[m - 1]
+
+this is because to include the current dice we must add number 1...f to the result of n - 1 dices.
+Initially we put 1 to dp[0][1] ... dp[0][f] - meaning that with one dice we can create target 1 to f and only one way is possible.
+
+Few optimizations are possible:
+
+We can optimize the sum part for dp[n - 1][[m - f - 1] + dp[n - 1][[m - f] + .... + dp[n - 1][[m - 1].
+In every next step we exclude the smallest target but add the m - 1 target.
+So instead of one more nested loop for the sum we keep running sum and do one addition and one subtraction.
+This changes solution from cubic to quadratic
+We don't actually need the whole nxm grid. In reallity we only check the previous row, so two 1-d arrays are fine. 
+This lowers the space complaxity from O(nm) to O(n).
+Below is optmized solution.
+O(dxtarget) time, O(target) space
+
+    public int numRollsToTarget(int d, int f, int target) {
+        int mod = 1_000_000_007;
+        
+        int[] dpCur = new int[target + 1], dpNext = new int[target + 1];
+        
+        for (int i = 1; i <= Math.min(f, target); i++) 
+            dpCur[i] = 1;
+        
+        for (int dd = 1; dd < d; dd++) {
+            int sum = 0;
+            for (int t = 1; t <= target; t++) {
+                sum += dpCur[t - 1];
+                if (t - f - 1 >= 0) {
+                    sum-=dpCur[t - f - 1];
+                    if (sum < 0)
+                        sum += mod;
+                }
+                sum %= mod;
+                dpNext[t] = sum; 
+            }
+            dpCur = dpNext;
+            dpNext = new int[target + 1];
+        }
+        return dpCur[target];
+    }
+
+=====================================================================
+
+How to identify if this problem is a dynamic programming problem?
+Suppose we have 3 dices with 6 sides each and we need target sum of 9. We throw the dices.
+3 dices can have these combinations: 1+4+4, 1+2+6, 1+3+5, 1+6+2...etc.
+
+We notice that for dice number 1, if we fix value as 1, we can then solve the problem for dice 2 and 3 for a target sum of 8.
+Similarly, if we fix 2 for dice 2, we can solve rest of two dices for target sum of 7. Similarly for 3 and so on.
+
+So, basically we have a choice and making these choices take us in different directions - like a tree. 
+Also, we see that if we fix dice 1, we can reduce our problem for just 2 dices!
+Whenever we have a problem where we have choices and if these choices lead to reduction of a larger problem into smaller sub-problems, 
+the problem can be solved with dynamic programming (DP).
+
+The best way, I believe, to solve a DP problem is by writing a recursive solution and then optimising it.
+
+Approaching this problem
+We have seen that we can reduce our problem into smaller problems by fixing a dice's value and then solving for remaining dices for remaining target sum. 
+So, if we fix dice 1 to value 1, we have a smaller problem to solve where dices are 2 and target sum is 8.
+
+This continuous reduction ultimately will reduce to solving a problem where we have just one dice left and one target sum to achieve and
+if we invoke our solve function on this, we get to base case.
+
+Recursive functions work on faith, base condition and some small logic that we need to write for the faith to work.
+
+So, we can say from our discussion that we can have faith in our function that if we call the same function for a smaller input, it'll give me the correct answer.
+
+From our discussion above, we see that the reducing factors in problem are the target sum and the number of dices.
+
+So, if we solve f(number of dices, target sum) we can have faith that our f(number of dices - 1, target sum - dice_value)
+will give us the correct result for the sub-problem solving for n - 1 dices and target sum - dice_value.
+
+We can write:
+
+  private int numRollsToTarget(int n, int k, int target) {
+  	//recursive function call on smaller input
+  	numRollsToTarget(n - 1, k, target - dice_value); //have faith that this would give us the right result for the sub problem.
+  }
+Coming to base condition:
+
+The base condition can be derived from thinking of the smallest possible value for our function. 
+So, if we have 0 number of dices and target sum asked is 0, then we don't even need to throw dices. There is 1 way. This is our base condition.
+
+So, our base condition can be written as:
+
+  if (target == 0 && n == 0)
+  	return 1;
+    
+Cool. Now, say the recursive function gives us the correct value for the sub-problem.
+Initially count is 0. So, we can add the sub-problem's solution to our count.
+This can be written as:
+
+  private int numRollsToTarget(int n, int k, int target) {
+  if (target == 0 && n == 0)
+  		return 1;
+  	count = 0;	//initial count
+  	//recursive function call on smaller input
+  	int subCount = numRollsToTarget(n - 1, k, target - dice_value); //have faith that this would give us the right result for the sub problem.
+  	count = count + subCount;	//add the sub-problem count to the bigger problem count.
+  }
+But note that our dices have k faces. So, when we do target - dice_value, we need to check for counts for all combinations. This way:
+
+  total count if we set k = 1
+  total count if we set k = 2
+  total count if we set k = 3
+  total count if we set k = 4
+  .
+  .
+  .
+  total count if we set k = k
+So, our recursive function needs to be in an iteration from 1 to k.
+
+The last thing that we need to think about in extension to our base condition is - what if we hit our base case but the target is not yet zero?
+That's not a solution. Also, what if we make target -ve by setting wrong value?
+(For exapmple, to get 11 from 2 dices, if we fix 1st dice to 6, our recursive code will at some point in iteration send 11-6-6 = -1 as target.
+So, 6,6 cannot be counted as a solution.
+
+When these conditions are met, we need not count these as a solution. So, if these are true, we can return count as 0:
+
+  if (target < 0 || n == 0)
+  			return 0;
+That's it! We have built our solution.
+
+Let's code it.
+private int mod = (int) Math.pow(10, 9) + 7;	//mod initialisation
+public int numRollsToTarget(int n, int k, int target) {
+	if (target == 0 && n == 0)	//if we hit a valid case, return 0
+		return 1;
+	if (target < 0 || n == 0)	//if we hit an invalid case, return count as 0
+		return 0;
+	int count = 0;	//initial count set to zero
+	for (int i = 1; i <= k; i++) {	//iteration because we have dices face value from 1 to k.
+		count = (count + numRollsToTarget(n - 1, k, target - i) % mod) % mod;	//magic function based on faith. mod is as per question.
+	}
+	return count;	//return count.
+}
+The above solution works pretty well for smaller cases. But we hit TLE for larger testcases. Let's memoize this recursive solution now.
+
+The cache which we initialise is always based on parameters which are changing in recursive calls. 
+We have target and n changing every time in recursive call. So, we would make a 2-D cache array of size (n + 1) * (target + 1).
+And before making recursive call, we will check if the subproblem has already been solved for that n and target.
+If yes, we will return the value stored in cache and will not enter the rabbithole of recursion.
+Everything remains same except the cache.
+
+  private int mod = (int) Math.pow(10, 9) + 7;
+  public int numRollsToTarget(int n, int k, int target) {
+  	int[][] mem = new int[n + 1][target + 1];
+  	for (int[] a : mem)
+  		Arrays.fill(a, -1);	//fill all values in the 2-D matrix with -1 because count cannot be -1.
+  	return numRollsToTarget(n, k, target, mem);
+  }
+
+  private int numRollsToTarget(int n, int k, int target, int[][] mem) {
+  	if (target == 0 && n == 0)
+  		return 1;
+  	if (target < 0 || n == 0)
+  		return 0;
+  	if (mem[n][target] != -1)
+  		return mem[n][target];
+  	int count = 0;
+  	for (int i = 1; i <= k; i++) {
+  		count = (count + numRollsToTarget(n - 1, k, target - i, mem) % mod) % mod;
+  	}
+  	return mem[n][target] = count;
+  }
+We can solve this by backtracking as well by making a small change:
+
+  private int mod = (int) Math.pow(10, 9) + 7;
+  public int numRollsToTarget(int n, int k, int target) {
+  	int[][] mem = new int[n + 1][target + 1];
+  	for (int[] a : mem)
+  		Arrays.fill(a, -1);
+  	return numRollsToTarget(n, k, target, mem);
+  }
+
+  private int numRollsToTarget(int n, int k, int target, int[][] mem) {
+  	if (target == 0 && n == 0)
+  		return 1;
+  	if (target < 0 || n == 0)
+  		return 0;
+  	if (mem[n][target] != -1)
+  		return mem[n][target];
+  	int count = 0;
+  	for (int i = 1; i <= k; i++) {
+  		target -= i;
+  		count = (count + numRollsToTarget(n - 1, k, target, mem) % mod) % mod;
+  		target += i;          //backtracking
+  	}
+  	return mem[n][target] = count;
+  }
+
+=====================================================================
+class Solution {
+    private int mod = (int)(1e9 + 7);
+    public int numRollsToTarget(int n, int k, int target) {
+        return (int)numRolls(n, k, target, new Long[target + 1][n + 1]);
+    }
+    
+    private long numRolls(int n, int k, int target, Long[][] dp) {
+		// Base Cases
+        if(target == 0 && n == 0) {
+            return 1;
+        } else if(target < 0 || n < 0) {
+            return 0;
+        }
+        
+        if(dp[target][n] != null) return dp[target][n];
+        
+        long possibleWays = 0;
+        
+		// K possibilities on every dice 
+		for(int i = 1; i <= k; i++) {
+            possibleWays = (possibleWays + numRolls(n - 1, k, target - i, dp)) % mod;
+        }
+        
+        return dp[target][n] = possibleWays;
+    }
+}
+
+=====================================================================
+class Solution {
+    int mod = 1000_000_007;
+    int[][] dp;
+    
+    public int numRollsToTarget(int n, int k, int target) {
+        if(target > n*k) return 0; // another important base case to consider before moving forward 
+        dp = new int[n + 1][target + 1];
+        for(int[] row: dp)
+            Arrays.fill(row, -1);
+        
+        return helper(n, k, target);
+    }
+    
+    private int helper(int n, int k, int target)
+    {
+        if(target == 0 && n == 0) return 1;
+        if(target == 0 || n == 0) return 0;
+        
+        if(dp[n][target] != -1) return dp[n][target];
+        
+        int ans = 0;
+        for(int i = 1; i <= k; i++)
+        {
+            int x = target;
+            if(x - i >= 0)
+                ans = (ans + helper(n - 1, k, x - i)) % mod;
+            else // early pruning
+                break;
+        }
+        
+        dp[n][target] = ans;
+        return dp[n][target];
+    }
+}
