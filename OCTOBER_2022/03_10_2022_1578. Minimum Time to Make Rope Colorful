@@ -1,0 +1,431 @@
+Alice has n balloons arranged on a rope. You are given a 0-indexed string colors where colors[i] is the color of the ith balloon.
+
+Alice wants the rope to be colorful. She does not want two consecutive balloons to be of the same color, so she asks Bob for help.
+Bob can remove some balloons from the rope to make it colorful. 
+You are given a 0-indexed integer array neededTime where neededTime[i] is the time (in seconds) that Bob needs to remove the ith balloon from the rope.
+
+Return the minimum time Bob needs to make the rope colorful.
+
+Example 1:
+
+
+Input: colors = "abaac", neededTime = [1,2,3,4,5]
+Output: 3
+Explanation: In the above image, 'a' is blue, 'b' is red, and 'c' is green.
+Bob can remove the blue balloon at index 2. This takes 3 seconds.
+There are no longer two consecutive balloons of the same color. Total time = 3.
+Example 2:
+
+
+Input: colors = "abc", neededTime = [1,2,3]
+Output: 0
+Explanation: The rope is already colorful. Bob does not need to remove any balloons from the rope.
+Example 3:
+
+
+Input: colors = "aabaa", neededTime = [1,2,3,4,1]
+Output: 2
+Explanation: Bob will remove the ballons at indices 0 and 4. Each ballon takes 1 second to remove.
+There are no longer two consecutive balloons of the same color. Total time = 1 + 1 = 2.
+ 
+
+Constraints:
+
+n == colors.length == neededTime.length
+1 <= n <= 105
+1 <= neededTime[i] <= 104
+colors contains only lowercase English letters.
+
+MY_SOLUTION
+
+Overview
+In the problem, we are given a string colors representing a rope of balloons, and an array neededTime for the removal time of each corresponding balloon. 
+We need to remove some (could be none) of the balloons from the rope, so that there are no two consecutive balloons on the rope that have the same color.
+
+Recall that each balloon has a removal time, our task is to find the minimum total removal time among all such possible removing plans.
+
+Approach 1: Two pointers
+Intuition
+The solution to this problem is quite straightforward: 
+  we group the balloons on the rope by their colors.
+  Notice that there shouldn't be two consecutive balloons having the same color, thus we can only keep at most one balloon from each group.
+  
+Sub question 1: Should we delete any entire group?
+No, it is never optimal to delete a whole group. Imagine we remove a whole group group and end up with a total removal time t. 
+Now suppose that we keep one balloon from group, the string is still colorful and we end up with a smaller removal time t' (t' < t), 
+since we remove one less balloon this time.
+Therefore, we need to keep exactly one balloon from each group.
+
+Sub question 2: Which balloon shall we keep from each group?
+
+Since we are looking for the minimum removal time, it means that we should keep the balloon with the largest removal time among each group,
+and remove the rest balloons of the same colors but with a smaller removal time.
+
+The most intuitive method is to calculate the removal time of each group of balloons separately, we can use a two-pointer method to locate each group.
+
+Among each group, we calculate the total removal time currTotal and the removal time currMax of the balloon that has the maximum removal time.
+Therefore, we can get the minimum removal time of this group by keeping the balloon with the largest removal time and removing the rest, 
+that is: t = currTotal - currMax.
+
+We will calculate the removal time t for all of the groups and add them up to make the minimum removal time totalTime.
+
+Algorithm
+-> Initalize totalTime, left and right as 0.
+-> Iterate over balloons, for each group of balloons, we record the total removal time as currTotal and the maximum removal time as currMax.
+-> While the balloon indexed at right has the same color as the balloon indexed at left, we update currTotal and currMax, and increment right by 1.
+-> Otherwise, it means that we have finished iterating this group, we should add the removal time for this group currTotal - currMax to totalTime, 
+   and reset left as right.
+
+Implementation
+
+class Solution {
+    public int minCost(String colors, int[] neededTime) {
+        // Initalize two pointers i, j.
+        int totalTime = 0;
+        int i = 0, j = 0;
+        
+        while (i < neededTime.length && j < neededTime.length) {
+            int currTotal = 0, currMax = 0;
+            
+            // Find all the balloons having the same color as the 
+            // balloon indexed at i, record the total removal time 
+            // and the maximum removal time.
+            while (j < neededTime.length && colors.charAt(i) == colors.charAt(j)) {
+                currTotal += neededTime[j];
+                currMax = Math.max(currMax, neededTime[j]);
+                j++;
+            }
+            
+            // Once we reach the end of the current group, add the cost of 
+            // this group to total_time, and reset two pointers.
+            totalTime += currTotal - currMax;
+            i = j;
+        }
+        return totalTime;    
+    }
+}
+
+Complexity Analysis
+Let n be the length of input string colorscolors.
+
+Time complexity: O(n)
+We need to iterate over colors and neededTime. 
+The right index right is incremented by O(n) times while the left index left is updated by no more than O(n) times.
+In each step of the iteration, we have some calculations that take constant time.
+To sum up, the overall time complexity is O(n)
+
+Space complexity: O(1)
+We only need to update several values: totalTime, currTotal, currMax, i and j, which takes constant space.
+
+===========================================================
+
+Approach 2: Advanced 1-Pass
+Intuition
+In the previous approach, we split balloons into groups with the same color and calculate each group separately.
+However, we could save one variable currTotalTime by adding the smaller removal times directly to the answer totalTime.
+
+The key is that: 
+    for each group, we always record the largest removal time (Let's still call it currMaxTime for convenience) and add the other smaller removal times to totalTime. 
+    When we have another newly added removal time t[i] that belongs to the current group, we compare t[i] with currMaxTime, add the smaller one to totalTime,
+    and leave the larger one as currMaxTime.
+
+
+Algorithm
+-> Initalize totalTime, currMaxTime as 0.
+-> During the itertion over balloons, for each balloon i, it has color of colors[i] and removal time neededTime[i].
+-> If this balloon is the first balloon of a group, we reset currMaxTime as 0.
+-> Increment totalTime by the smaller one among neededTime[i] and currMaxTime, since we only remove the balloon with a smaller removal time.
+-> Update currMaxTime as the larger one among neededTime[i] and currMaxTime.
+-> Return totalTime as the minimum removal time.
+
+Implementation
+
+class Solution {
+    public int minCost(String colors, int[] neededTime) {
+        // totalTime: total time needed to make rope colorful;
+        // currMaxTime: maximum time of a balloon needed.
+        int totalTime = 0, currMaxTime = 0;
+        
+        // For each balloon in the array:
+        for (int i = 0; i < colors.length(); ++i) {
+            // If this balloon is the first balloon of a new group
+            // set the currMaxTime as 0.
+            if (i > 0 && colors.charAt(i) != colors.charAt(i - 1)) {
+                currMaxTime = 0;
+            }
+            
+            // Increment totalTime by the smaller one.
+            // Update currMaxTime as the larger one.
+            totalTime += Math.min(currMaxTime, neededTime[i]);
+            currMaxTime = Math.max(currMaxTime, neededTime[i]);
+        }
+        
+        // Return totalTime as the minimum removal time.
+        return totalTime;
+    }
+}
+
+Complexity Analysis
+Let n be the length of input string colorscolors.
+Time complexity: O(n)
+
+Similarly, we just need to iterate over colors and neededTime. 
+In each step of the iteration, we have some calculations that take constant time.
+To sum up, the overall time complexity is O(n)
+Space complexity: O(1)
+We only need to update two values: totalTime and currMaxTime, which takes constant space.
+
+
+==============================================================================================
+
+Here we first initialise a result variable to finally return the answer and it is 0 at first.
+Then we traverse through the string from the 1st index.
+Whenever we found the consecutive characters equal , then
+Update the result by adding the current result value and the min(cost[i], cost[i-1])
+
+Update the cost[i] by compareing bw the maximum value of cost[i] and cost[i-1]
+
+Finally return the result.
+
+class Solution {
+    public int minCost(String s, int[] cost) {
+        int n = s.length();
+        int result = 0;
+        for (int i=1; i<n; i++) {
+            if (s.charAt(i) == s.charAt(i-1)) {
+                result = result + Math.min(cost[i], cost[i-1]);
+                cost[i] = Math.max(cost[i], cost[i-1]);
+            }
+        }
+        return result;
+    }
+}
+
+
+==============================================================================================
+
+
+Here we first initialise a result variable to finally return the answer and it is 0 at first.
+Then we traverse through the string from the 1st index.
+Whenever we found the consecutive characters equal , then
+  -> Update the result by adding the current result value and the min(cost[i], cost[i-1])
+  -> Update the cost[i] by compareing bw the maximum value of cost[i] and cost[i-1]
+Finally return the result.
+
+class Solution {
+    public int minCost(String s, int[] cost) {
+        int n = s.length();
+        int result = 0;
+        for (int i=1; i<n; i++) {
+            if (s.charAt(i) == s.charAt(i-1)) {
+                result = result + Math.min(cost[i], cost[i-1]);
+                cost[i] = Math.max(cost[i], cost[i-1]);
+            }
+        }
+        return result;
+    }
+}
+
+==============================================================================================
+
+So the main idea is to scan whole string using two pointers (max and i). While scanning we are checking if characters at positions max and i are identical. 
+If they are identical we add the lower cost of these two to our result. 
+The thing that we need to keep in mind is that we are ALWAYS "deleting" the character with lower cost so when we finish with the removal, 
+at the end, the characters that are left in the string were the ones with the highest cost.
+The order in which we are doing the removal doesn't matter since our result is always the same. 
+This conclusion allows us to do simple comparison between two letters, when we compare them we "remove" the one with smaller value (we are simulating removal by 
+shifting our pointers max and i to the next position, or in the case of max to the i-th position). 
+The only possible confusing part might be if(cost[max] < cost[i]) max = i;.
+This line of code says that if the cost of max was smaller than cost of i, we delete max and set element at position i as my current element with highest cost in 
+this sequence of identical letters, which might stay in the string or may not, if the next element at position i has higher cost.
+
+Time complexity - O(n)
+Space complexity - O(1) - the line 4 where string is converted to char array is unnecessary
+
+class Solution {
+    public int minCost(String s, int[] cost) {
+        int result = 0;
+        char[] a = s.toCharArray();
+        int max = 0; //pointer to the element with highest cost in sequence of identical characters
+        for(int i = 1; i < a.length; ++i){
+            if(a[max] == a[i]){
+                result += Math.min(cost[max], cost[i]);
+                if(cost[max] < cost[i]) max = i; //if i points to the character with higher cost we set this character as our current maximum.
+            }
+            else max = i; // If characters are different we move "max" by one place, or in other words element at max has the highest cost in it's sequence of size 1.
+        }
+        return result;
+    }
+}
+
+
+==============================================================================================
+class Solution {
+    
+    /*-------------------------Recursive-------------------*/
+//     public int minCost(String str, int[] arr) {
+//         return helper(str,arr,0);
+//     }
+//     public int helper(String str,int[] arr,int index){
+//         if(index==str.length()-1){
+//             return 0;
+//         }
+        
+//         if(str.charAt(index)==str.charAt(index+1)){
+//             if(arr[index+1]<arr[index]){
+//                 int temp=arr[index+1];
+//                 arr[index+1]=arr[index];
+//                 arr[index]=temp;
+//             }
+//             return Math.min(arr[index],arr[index+1])+helper(str,arr,index+1);
+//         }
+//         else{
+//             return helper(str,arr,index+1);
+//         }
+//     }
+    
+    /*------------------------Memoization-----------------------*/
+//     public int minCost(String str, int[] arr) {
+//         int n=str.length();
+//         int [] storage=new int[n+1];
+//         for(int i=0;i<=n;i++){
+//             storage[i]=-1;
+//         }
+//         return helper(str,arr,0,storage);
+//     }
+//     public int helper(String str,int[] arr,int index,int [] storage){
+//         if(index==str.length()-1){
+//             storage[index]=0;
+//             return 0;
+//         }
+        
+//         if(storage[index]!=-1){
+//             return storage[index];
+//         }
+//         if(str.charAt(index)==str.charAt(index+1)){
+//             if(arr[index+1]<arr[index]){
+//                 int temp=arr[index+1];
+//                 arr[index+1]=arr[index];
+//                 arr[index]=temp;
+//             }
+//             storage[index]=Math.min(arr[index],arr[index+1])+helper(str,arr,index+1,storage);
+//             return storage[index];
+//         }
+//         else{
+//             storage[index]=helper(str,arr,index+1,storage);
+//             return storage[index];
+//         }
+//     }
+    
+    /*------------------------DP----------------------*/
+    public int minCost(String str, int[] arr) {
+        int n=str.length();
+        int [] storage=new int[n];
+        storage[n-1]=0;
+        for(int i=n-2;i>=0;i--){
+            if(str.charAt(i)==str.charAt(i+1)){
+                if(arr[i+1]>arr[i]){
+                    int temp=arr[i+1];
+                    arr[i+1]=arr[i];
+                    arr[i]=temp;
+                }
+                storage[i]=Math.min(arr[i],arr[i+1])+storage[i+1];
+            }
+            else{
+                storage[i]=storage[i+1];
+            }
+        }
+        return storage[0];
+    }
+}
+
+
+
+==============================================================================================
+
+// Time Complexity: O(n)
+// Space Complexity: O(1)
+class Solution {
+    // intuition: 
+    // ---------------
+    // if there are consecutive balloons with the same color, 
+    // we want to keep the one with maximum neededTime and remove others 
+    
+    // if there are 2 balloons with different colors, ans = 0 as it is colorful
+    // if there are 2 balloons with same color, ans = min(neededTime[0], neededTime[1])
+    // if there are 3 consecutive balloons with same color, ans = sum(neededTime[0 .. 2]) - max(neededTime[0 .. 2])
+    // if there are N consecutive balloons with same color, ans = sum(neededTime[0 .. n - 1]) - max(neededTime[0 .. n - 1])
+    // we don't need to calculate the sum and subtract the max though. instead, we can either
+    // 1. update neededTime in place to the max of neededTime[i] and neededTime[i - 1] (shown in below solution) or 
+    // 2. store the current max time in a variable
+    // why? let's say colors = "aaa" and neededTime = [1,2,1]
+    // we first compare neededTime[0] and neededTime[1] and decide to remove the first balloon (neededTime[0] < neededTime[1])
+    // now colors = "_aa" and neededTime = [_,2,1] and the current max time is 2
+    // then compare neededTime[1] and neededTime[2] and decide to remove the last balloon, (neededTime[2] < neededTime[1])
+    // now colors = "_a_" and neededTime = [_,2,_]. we remove all balloons but the one with maximum neededTime
+    public int minCost(String colors, int[] neededTime) {
+        int ans = 0, n = colors.length();
+        for (int i = 1; i < n; i++) {
+            // if the i-th balloon has the same color as (i - 1)th one
+            // e.g. aba[a]c and i = 3 (0-based)
+            if (colors.charAt(i) == colors.charAt(i - 1)) {
+                // then we remove the one with less time
+                // e.g. in above example, we remove the balloon at index 2 
+                // with neededTime[2] since neededTime[2] < neededTime[3] 
+                ans += Math.min(neededTime[i], neededTime[i - 1]);
+                // update the max neededTime inplace 
+                // or alternatively you can store it in a variable
+                neededTime[i] = Math.max(neededTime[i], neededTime[i - 1]);
+            }
+        }
+        return ans;
+    }
+}
+
+==============================================================================================
+
+class Solution {
+    public int minCost(String s, int[] cost) {
+        int prev = 0;
+        int res = 0;
+        char arr[] = s.toCharArray();
+        for (int i = 1; i < arr.length; i++) {
+            if (arr[prev] != arr[i])
+               prev = i;
+            
+            else {
+                if (cost[prev] < cost[i]) {
+                    res += cost[prev];
+                    prev = i;
+                }
+                
+                else {
+                    res += cost[i];
+                }
+            }
+        }
+        return res;
+    }
+}
+
+
+==============================================================================================
+class Solution {
+    public int minCost(String colors, int[] neededTime) {
+        int n = neededTime.length;
+        char[] colorsArr = colors.toCharArray();
+        int cost = 0;
+        for (int i = 0; i < n - 1; i++) {
+            if (colorsArr[i] == colorsArr[i + 1]) {
+
+                if (neededTime[i] < neededTime[i + 1]) {
+                    cost += neededTime[i];
+                } else {
+                    cost += neededTime[i + 1];
+                    neededTime[i + 1] = neededTime[i];
+                }
+            }
+        }
+        return cost;
+    }
+}
