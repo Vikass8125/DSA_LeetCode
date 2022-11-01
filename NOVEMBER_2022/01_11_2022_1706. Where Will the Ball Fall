@@ -1,0 +1,560 @@
+You have a 2-D grid of size m x n representing a box, and you have n balls. The box is open on the top and bottom sides.
+
+Each cell in the box has a diagonal board spanning two corners of the cell that can redirect a ball to the right or to the left.
+
+A board that redirects the ball to the right spans the top-left corner to the bottom-right corner and is represented in the grid as 1.
+A board that redirects the ball to the left spans the top-right corner to the bottom-left corner and is represented in the grid as -1.
+We drop one ball at the top of each column of the box. Each ball can get stuck in the box or fall out of the bottom. 
+A ball gets stuck if it hits a "V" shaped pattern between two boards or if a board redirects the ball into either wall of the box.
+
+Return an array answer of size n where answer[i] is the column that the ball falls out of at the bottom after dropping the ball from the ith column at the top,
+or -1 if the ball gets stuck in the box.
+
+ 
+
+Example 1:
+
+
+
+Input: grid = [[1,1,1,-1,-1],[1,1,1,-1,-1],[-1,-1,-1,1,1],[1,1,1,1,-1],[-1,-1,-1,-1,-1]]
+Output: [1,-1,-1,-1,-1]
+Explanation: This example is shown in the photo.
+Ball b0 is dropped at column 0 and falls out of the box at column 1.
+Ball b1 is dropped at column 1 and will get stuck in the box between column 2 and 3 and row 1.
+Ball b2 is dropped at column 2 and will get stuck on the box between column 2 and 3 and row 0.
+Ball b3 is dropped at column 3 and will get stuck on the box between column 2 and 3 and row 0.
+Ball b4 is dropped at column 4 and will get stuck on the box between column 2 and 3 and row 1.
+Example 2:
+
+Input: grid = [[-1]]
+Output: [-1]
+Explanation: The ball gets stuck against the left wall.
+Example 3:
+
+Input: grid = [[1,1,1,1,1,1],[-1,-1,-1,-1,-1,-1],[1,1,1,1,1,1],[-1,-1,-1,-1,-1,-1]]
+Output: [0,1,2,3,4,-1]
+ 
+
+Constraints:
+
+m == grid.length
+n == grid[i].length
+1 <= m, n <= 100
+grid[i][j] is 1 or -1.
+
+
+MY_SOLUTION
+
+Overview
+It is an interesting problem. We can visualize it as a zig-zag bowling game where the grid represents the bowling surface. Every column is a different lane.
+
+The balls thrown from the first row of every lane, travel in a zig-zag direction based on the walls in the grid.
+
+Problem Visualisation
+
+The question is, where will each of these balls fall at the end?
+
+There could be one of the two consequences.
+
+The ball reaches the last row of the grid and drops out from some lane. In this case, we have to return the lane number(in other words, column number) 
+from which the ball drops out of the grid.
+
+The ball reaches a certain point where it is stuck and cannot move ahead. In this case, we have to return -1.
+
+Now that we understand the problem, let's look at different approaches to solving this problem.
+
+==================================
+
+Approach 1: Depth First Search (DFS)
+Intuition
+Using Depth First Search(DFS) algorithm is an intuitive approach to solve this problem by simulating the actual flow of the ball.
+It is followed for every ball thrown from the first row of every column.
+
+Then, it follows the direction in which the ball would travel in a depth-first search manner. 
+This process is repeated until either of the two conditions are satisfied:
+
+Condition 1: The ball reaches a point where it can no longer move ahead. 
+In this case, we will return -1. Condition 2: The ball reaches the last row. 
+In this case, we will return the column in which the ball will drop.
+
+Now, the problem narrows down to finding when either of these 2 conditions is satisfied as this will be the terminating condition for the depth first search.
+
+Let's understand how will we find if a ball can move ahead or is stuck.
+
+The first thing to note is that the ball always moves in diagonal direction.
+
+Ball moves diagonally in the right direction if the value of the current cell is 1 and left direction if the value of the current cell is -1.
+
+
+Let's first look at the case where the ball has to move in right diagonal. (Value of current cell is 1)
+
+Now, for the ball to fall in the next row from the current cell, the adjacent cell should provide the way for the ball to go ahead. 
+There could be 2 possible scenarios here,
+
+Carefully look at the value of an adjacent cell in the right direction in both scenarios.
+
+In scenario 1, the ball can go ahead because the adjacent column does not block the way.
+Here, the value of the adjacent cell is the same as the current cell.
+
+In scenario 2, the ball cannot go ahead because the adjacent column blocks its way.
+In this case, it forms a V shape. Here, the value of the adjacent cell is different from the current cell.
+
+Similar intuition is applicable if the ball moves on the left diagonal.
+
+From this, we can establish that, "The ball can move into the next row from the current cell if and only if the adjacent column has the same value".
+
+Note: The adjacent cell to be checked will differ based on the direction in which the ball will fall. 
+      If the ball positioned a cell(row, col) has to move in the left direction(value of the cell is 1), the adjacent cell would be the left cell (row, col - 1).
+      And, if the current ball has to move in the right direction(value of the cell is -1), the adjacent cell would be the right cell (row, col - 1).
+      
+
+Condition: Adjacent cell value must be the same as the current cell.
+
+Algorithm
+The depth first search algorithm is implemented by using a recursive function that identifies the next position of the ball from the current cell.
+
+Let the current position of the ball be at a cell(row, col). 
+There could be 2 possible values of any cell in the grid that will decide the next move of the ball.
+
+Case 1: The value of the current cell in the grid (row, col) is 1. The ball must move in the right direction.
+
+ Adjacent Cell is `row` `column + 1`
+ Condition to check = grid[row][column] must be equal to grid[row][column + 1]
+ If the condition is satisfied,
+ Next Row = row + 1
+ Next Column = column + 1
+Case 2: The value of the current cell in the grid (row, col) is -1. The ball must move in the left direction.
+
+Adjacent Cell is `row` `column - 1`
+Condition to check = grid[row][column] must be equal to grid[row][column - 1]
+If the condition is satisfied,
+Next Row = row + 1
+Next Column = col - 1
+
+If at any point, the conditions mentioned above are not satisfied, it would imply that the ball is stuck at its current position. Return -1 in such cases.
+
+Let's define the function findBallDropColumn(row, column, grid) to recursively compute the result for the ball at cell (row, column) in the grid.
+
+The algorithm can be written as,
+
+if (grid[row][col] == 1) {
+    int nextColumn = col + 1;
+    if (col != grid[0].length - 1 && grid[row][col] == grid[row][nextColumn])
+        return findBallPath(row + 1, nextColumn, grid);
+    else
+        return -1;
+}
+if (grid[row][col] == -1) {
+    int nextColumn = col - 1;
+    if (col != 0 && grid[row][col] == grid[row][nextColumn])
+        return findBallPath(row + 1, nextColumn, grid);
+    else
+        return -1;
+}
+
+Additionally, we can simplify the above implementation. Note the common pattern to find the next column in both cases,
+
+nextColumn = current Column + Value of current cell in the grid.
+
+Base Case: The recursive depth-first search is terminated under the following conditions,
+
+We hit a V shape wall, and there is no way to move forward. This case is taken care of in the above algorithm.
+
+We reach the last row, and the ball drops out. In this case, we will return the column where the ball will eventually end up.
+
+
+       if(row == grid.length)
+            return col;
+
+Implementation
+
+class Solution {
+    public int[] findBall(int[][] grid) {
+        int result[] = new int[grid[0].length];
+        for (int i = 0; i < grid[0].length; i++) {
+            result[i] = findBallDropColumn(0, i, grid);
+        }
+        return result;
+    }
+
+    public int findBallDropColumn(int row, int col, int[][] grid) {
+        // base case; ball reached the last row
+        if (row == grid.length)
+            return col;
+        int nextColumn = col + grid[row][col];
+        if (nextColumn < 0 ||
+                nextColumn > grid[0].length - 1 ||
+                grid[row][col] != grid[row][nextColumn]) {
+            return -1;
+        }
+        return findBallDropColumn(row + 1, nextColumn, grid);
+    }
+}
+
+Complexity Analysis
+Let M be the number of rows and NN be the number of columns in the grid.
+
+Time Complexity: O(M⋅N) The recursive method findBallDropColumn to find ball position is called for each of the NN columns.
+
+For each recursive call for findBallDropColumn the row number starts with 0 and increments by 1 in every recursive call. 
+In the worst case, if the ball is not stuck at any cell in the middle of the grid, the recursion will continue for MM rows.
+
+Thus, the time complexity is O(M⋅N).
+
+Space Complexity: O(M) The maximum depth of recursive call stack will be equal to number of rows that is, M.
+
+=================================
+
+
+Approach 2: Dynamic Programming Approach
+Intuition
+There is yet another way to solve the problem. Let's try to answer the following question,
+
+What information is required to compute the result for a ball positioned at a cell(row, column)"?
+
+The answer is that to compute the result for the current cell, we require the values of the next column in row + 1.
+Can we implement the solution, such that values required for the current cell are pre-computed and can be referred to by the current cell?
+
+Yes, if we find the result for every cell of the grid in a bottom-up fashion, that is, starting from the last row to the first row,
+we will always have the result of row + 1 while computing the result for row.
+
+
+Algorithm
+
+Build an additional 2-dimensional array dp of the size of the grid. Iteratively compute the result of every column starting from the last row to the first row.
+
+The result is computed by referring to the results of the next column in the dp array.
+
+For the last row,
+
+dp[row][col] = nextColumn
+For the remaining rows,
+
+ int nextColumn = currentColumn + grid[currentRow][currentColumn]
+ dp[row][col] = dp[row+1][nextColumn]
+This works because the result for row + 1 is already computed and stored in dp.
+
+On reaching row 0, copy the values in all the columns in the result array.
+
+Implementation
+
+class Solution {
+    public int[] findBall(int[][] grid) {
+        int result[] = new int[grid[0].length];
+        Integer memo[][] = new Integer[grid.length + 1][grid[0].length];
+
+        for (int row = grid.length; row >= 0; row--) {
+            for (int col = 0; col < grid[0].length; col++) {
+                if (row == grid.length) {
+                    memo[row][col] = col;
+                    continue;
+                }
+                int nextColumn = col + grid[row][col];
+                if (nextColumn < 0 ||
+                        nextColumn > grid[0].length - 1 ||
+                        grid[row][col] != grid[row][nextColumn])
+                    memo[row][col] = -1;
+                else
+                    memo[row][col] = memo[row + 1][nextColumn];
+                if (row == 0) {
+                    result[col] = memo[row][col];
+                }
+            }
+        }
+        return result;
+    }
+}
+
+Complexity Analysis
+Let M be the number of rows and NN be the number of columns in the grid.
+
+Time Complexity: O(M⋅N) In the nested for loop, the outer loop iterates M times for each row and the inner loop iterates N times for every column in that row.
+
+Thus, the time complexity is O(M⋅N).
+
+Space Complexity: O(M⋅N) The space is for the additional 2-dimensional array memo of size (M⋅N).
+
+=============================
+
+Approach 3: Iterative Approach, Simulation
+Intuition
+This approach simulates the flow of the ball iteratively (Approach 1 followed the recursive approach).
+
+The flow of the ball can be described as,
+
+"A ball starts moving from a column, say col of the first row (row 0).
+On every move, the ball falls into the next row and column. 
+The next row is always row + 1. 
+But, the next column is computed based on the value of the current cell (row, col). "
+
+This flow is simulated for every ball starting from columns and moving from the first row to the last row.
+
+Using this analysis, let's look at the algorithm to implement this approach.
+
+Algorithm
+Start by picking up a ball starting from every column col, iterating from the 0th column to the last column. Initialize the current column as col.
+
+For every such ball, simulate its movement in every row ranging from the 0th to the nth row. The next column is calculated as,
+
+nextColumn = Value of Current column + Value of current cell. 
+To understand the intuition behind this calculation, refer to the Intuition section of Approach 1.
+
+Update the value of nextColumn in the result array for every row. In the end, the result will store the column number where the ball will fall after the last row.
+
+Implementation
+
+class Solution {
+    public int[] findBall(int[][] grid) {
+        int result[] = new int[grid[0].length];
+
+        for (int col = 0; col < grid[0].length; col++) {
+            int currentCol = col;
+            for (int row = 0; row < grid.length; row++) {
+                int nextColumn = currentCol + grid[row][currentCol];
+                if (nextColumn < 0 ||
+                        nextColumn > grid[0].length - 1 ||
+                        grid[row][currentCol] != grid[row][nextColumn]) {
+                    result[col] = -1;
+                    break;
+                }
+                result[col] = nextColumn;
+                currentCol = nextColumn;
+            }
+        }
+        return result;
+    }
+}
+
+Complexity Analysis
+Let M be the number of rows and N be the number of columns in the grid.
+
+Time Complexity: O(M⋅N) In the nested for loop, the outer loop iterates N times for each column and inner loop iterates M times for every row in that column.
+
+Thus, the time complexity is O(M⋅N).
+
+Space Complexity: O(1) The algorithm uses constant extra space.
+
+
+===========================================================================
+
+Explanation
+We drop the ball at grid[0][i]
+and track ball position i1, which initlized as i.
+
+An observation is that,
+if the ball wants to move from i1 to i2,
+we must have the board direction grid[j][i1] == grid[j][i2]
+
+
+Complexity
+Time O(mn)
+Space O(n)
+
+
+Java:
+
+    public int[] findBall(int[][] grid) {
+        int m = grid.length, n = grid[0].length, res[] = new int[n];
+        for (int i = 0; i < n; ++i) {
+            int i1 = i, i2;
+            for (int j = 0; j < m; ++j) {
+                i2 = i1 + grid[j][i1];
+                if (i2 < 0 || i2 >= n || grid[j][i2] != grid[j][i1]) {
+                    i1 = -1;
+                    break;
+                }
+                i1 = i2;
+            }
+            res[i] = i1;
+        }
+        return res;
+    }
+    
+    
+===============================================================
+
+Logic:
+If the current value(i,j) is 1 then the next value in the column(i,j+1) should also be 1.
+Then, check for next row next col (i+1,j+1)
+
+If the current value(i,j) is -1 then the prev value of the column(i,j-1) should also be -1.
+Then, check for next row prev col(i+1,j-1)
+
+If any of the condition fail or goes out of bounds that ball won't reach the end.
+
+class Solution {
+    public int dfs(int[][] grid, int i, int j){
+        if(i==grid.length)
+            return j;
+        
+        if(j<0 || j>=grid[0].length)
+            return -1;
+        
+        if(grid[i][j]==1 && j+1<grid[0].length && grid[i][j+1]==1)
+            return dfs(grid,i+1,j+1);
+        
+        else if(grid[i][j]==-1 && j-1>=0 && grid[i][j-1]==-1)
+            return dfs(grid,i+1,j-1);
+         
+        return -1;
+    }
+    public int[] findBall(int[][] grid) {
+        int m = grid[0].length;
+        int[] ar = new int[m];
+        
+        for(int j=0;j<m;j++)
+            ar[j]=dfs(grid,0,j);
+        
+        return ar;
+    }
+}
+
+===============================================================
+
+class Solution {
+    public int[] findBall(int[][] grid) {
+        int m = grid.length;
+        int n = grid[0].length;
+
+        final int[] result = new int[n];
+        for (int i = 0; i < n; ++i) {
+            int cy = 0;
+            int cx = i;
+            while(cy < m && !isBlocked(grid, cy, cx)) {
+                cx += grid[cy][cx];
+                cy += 1;
+            }
+
+            result[i] = cy == m ? cx : -1;
+        }
+
+        return result;
+    }
+
+    private boolean isBlocked(
+        int[][] grid,
+        int cy,
+        int cx
+    ) {
+        int n = grid[0].length;
+        return (grid[cy][cx] == 1 && cx == n - 1) // will hit right wall
+            || (grid[cy][cx] == -1 && cx == 0)    // will hit left wall
+            || (grid[cy][cx] == 1 && grid[cy][cx + 1] == -1) // V shape with next
+            || (grid[cy][cx] == -1 && grid[cy][cx - 1] == 1); // V shape with previous
+    }
+}
+
+
+===============================================================
+public int[] findBall(int[][] grid) {
+        int[] results = new int[grid[0].length];
+        for (int i = 0; i < grid[0].length; i++) {
+            results[i] = dfs(grid, 0, i);
+        }
+
+        return results;
+    }
+
+    private int dfs(int[][] grid, int row, int column) {
+        if (row == grid.length)
+            return column;
+
+        if ((grid[row][column] == 1 && (column == grid[0].length - 1 || grid[row][column + 1] == -1)) ||
+                grid[row][column] == -1 && (column == 0 || grid[row][column - 1] == 1))
+            return -1;
+
+        if (grid[row][column] == 1)
+            return dfs(grid, row + 1, column + 1);
+        else
+            return dfs(grid, row + 1, column - 1);
+    }
+===============================================================
+
+
+So to begin with, let's divide question into three scenarios:
+
+Ball falls
+Ball gets stuck
+Ball moves through array
+Scenario 1
+First lets see when will will the 1. scenario work, i guess if the ball has reached the end most row, that means it has fallen sucessfully, so, this is our only base case:
+
+if(i==m){
+           //assign the corresponding coloumn to my answer array
+		   ans[k]=j;
+		   return;
+        }
+Scenario 2
+Now, lets come to 2. scenario, if you think carefully, you would get to learn that ball gets stuck only when:
+
+Value of arr[i][j]=1 and Right neighbour is wall or Right neighbour is -1 i.e.
+1->wall OR 1->-1
+
+ ```
+ if(arr[i][j]==1 && (j+1>=n || arr[i][j+1]==-1))
+     return;
+ ```
+Value of arr[i][j]=-1 and Left neighbour is wall or Left neighbour is 1 i.e.
+wall<- -1 OR 1<- -1
+
+else if(arr[i][j]==-1 && (j-1<0 || arr[i][j-1]==1))
+        return;
+Scenario 3
+Lastly, ball will move through the array if it escapes the above two scenarios, so it can move in two ways:
+
+Diagonal Right: when arr[i][j]=1
+ else if(arr[i][j]==1)
+            func(arr,i+1,j+1,m,n,ans);
+Diagonal Left: when arr[i][j]=-1
+else if(arr[i][j]==-1)
+            func(arr, i+1, j-1,m,n, ans);
+CODE
+
+class Solution {
+    int k=0;
+    public int[] findBall(int[][] arr) {
+        
+        int m=arr.length;
+        int n=arr[0].length;
+		
+        //Initialize []ans with -1
+        int []ans=new int[n];
+        Arrays.fill(ans, -1);                  
+        
+		//Step-by-Step iterate through first row of [][]arr
+        for(int j=0;j<n;j++){
+            func(arr,0,j,m,n,ans);
+            k++;
+        }
+        
+        return ans;
+    }
+    
+    void func(int [][]arr, int i, int j, int m, int n, int []ans){
+        
+		// if i has traversed through last row, that means ball has fallen successfully, hence save ans[k]=jth index of arr[i]
+        if(i==m){
+            ans[k]=j;
+            return;
+        }
+		
+        //if 1 is being traversed and its RIGHT neighbour is wall or RIGHT neighbour is -1
+		//ball will get stuck
+        if(arr[i][j]==1 && (j+1>=n || arr[i][j+1]==-1))
+            return;
+			
+        //if -1 is being traversed and its LEFT neighbour is wall or LEFT neighbour is 1
+		//ball will get stuck
+        else if(arr[i][j]==-1 && (j-1<0 || arr[i][j-1]==1))
+            return;
+        
+		// if 1 is being traversed so take me to RIGHT diagonal because 1->\
+        else if(arr[i][j]==1)
+            func(arr,i+1,j+1,m,n,ans);
+        
+		// if -1 is being traversed so take me to LEFT diagonal because -1->/
+        else if(arr[i][j]==-1)
+            func(arr, i+1, j-1,m,n, ans);
+        
+    }
+}
