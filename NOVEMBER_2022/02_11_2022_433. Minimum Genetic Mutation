@@ -1,0 +1,369 @@
+A gene string can be represented by an 8-character long string, with choices from 'A', 'C', 'G', and 'T'.
+
+Suppose we need to investigate a mutation from a gene string start to a gene string end where one mutation is defined as one single character changed in the gene string.
+
+For example, "AACCGGTT" --> "AACCGGTA" is one mutation.
+There is also a gene bank bank that records all the valid gene mutations. A gene must be in bank to make it a valid gene string.
+
+Given the two gene strings start and end and the gene bank bank, return the minimum number of mutations needed to mutate from start to end. 
+If there is no such a mutation, return -1.
+
+Note that the starting point is assumed to be valid, so it might not be included in the bank.
+
+ 
+
+Example 1:
+
+Input: start = "AACCGGTT", end = "AACCGGTA", bank = ["AACCGGTA"]
+Output: 1
+Example 2:
+
+Input: start = "AACCGGTT", end = "AAACGGTA", bank = ["AACCGGTA","AACCGCTA","AAACGGTA"]
+Output: 2
+Example 3:
+
+Input: start = "AAAAACCC", end = "AACCCCCC", bank = ["AAAACCCC","AAACCCCC","AACCCCCC"]
+Output: 3
+ 
+
+Constraints:
+
+start.length == 8
+end.length == 8
+0 <= bank.length <= 10
+bank[i].length == 8
+start, end, and bank[i] consist of only the characters ['A', 'C', 'G', 'T'].
+
+MY_SOLUTION
+
+
+Approach: BFS (Breadth-First Search)
+Intuition
+
+We can imagine the problem as a graph. Each gene string is a node, and mutations are the edges. 
+Two nodes have an edge (are neighbors) if they differ by one character. 
+The added constraints are that the characters must be one of "ACGT", and each node must be in bank.
+
+Then, the problem is simplified: what is the shortest path between start and end? When a graph problem involves finding a shortest path, BFS should be used over DFS. 
+This is because with BFS, all nodes at distance x from start will be visited before any node at distance x + 1 will be visited. 
+Once we find the target (end), we know that we found it in the shortest number of steps possible.
+
+Algorithm
+
+Perform a BFS starting from node start. Keep track of the number of steps taken so far and return that number of steps when we find end. 
+Only traverse to nodes that are in bank. Neighbors can be found by iterating over each node and replacing one of the characters with a character from "ACGT".
+
+To check if a node is in bank, we would normally first convert bank to a set to have O(1) checking.
+However, the problem's constraints state that 0 <= bank.length <= 10. 
+With such a small constraint, it may actually be slower to use a set due to the overhead associated with hashing. 
+Therefore, we will keep bank as an array.
+
+Initialize a queue queue and a set seen. The queue will be used for BFS and the set will be used to prevent visiting a node more than once. 
+Initially, the queue and set should hold start.
+
+Perform a BFS. At each node, if node == end, return the number of steps so far. 
+Otherwise, iterate over all the neighbors. For each neighbor, if neighbor is not in seen and neighbor is in bank, add it to queue and seen.
+
+If we finish the BFS and did not find end, then the task is impossible. Return -1.
+
+Implementation
+class Solution {
+    public int minMutation(String start, String end, String[] bank) {
+        Queue<String> queue = new LinkedList<>();
+        Set<String> seen = new HashSet<>();
+        queue.add(start);
+        seen.add(start);
+        
+        int steps = 0;
+        
+        while (!queue.isEmpty()) {
+            int nodesInQueue = queue.size();
+            for (int j = 0; j < nodesInQueue; j++) {
+                String node = queue.remove();
+                if (node.equals(end)) {
+                    return steps;
+                }
+
+                for (char c: new char[] {'A', 'C', 'G', 'T'}) {
+                    for (int i = 0; i < node.length(); i++) {
+                        String neighbor = node.substring(0, i) + c + node.substring(i + 1);
+                        if (!seen.contains(neighbor) && Arrays.asList(bank).contains(neighbor)) {
+                            queue.add(neighbor);
+                            seen.add(neighbor);
+                        }
+                    }
+                }
+            }
+            
+            steps++;
+        }
+        
+        return -1;
+    }
+}
+
+Complexity Analysis
+
+Time complexity: O(B), where B = bank.length.
+
+As stated before, this is because we are not converting bank to a set due to the low size. 
+If we did convert bank to a set however, it would still cost O(B) to do so. Checking if a neighbor is in the bank costs O(B) with an array.
+
+Technically, the BFS runs in constant time because the problem limits the length of the gene strings to 8 and the strings can only have 4 characters.
+However, let's say the gene strings could have length nn and could have mm kind of characters. 
+In this problem, we have n=8 and m=4. 
+Then, how many possible nodes are there? There would be m^n possible nodes, because for each of the nn characters, there are m options.
+
+If we are to analyze the complexity like this, let's assume that we are converting bank to a set prior to the BFS. 
+In that case, the time complexity would be O(nB + m^n ⋅ n^2 ⋅ m). 
+Converting bank costs O(nB), then there are n^m states that we could visit. 
+At each state, we perform a nested for loop which iterates n⋅m times, and also perform string operations which cost O(n).
+
+Space complexity: O(1)
+
+Same logic as before, because the problem limits the input explicitly, we technically use constant space.
+
+However, with the same scenario as above, the space complexity would be O(nB + m^n) Converting bank to a set would create a set that takes up O(nB) space, 
+and then the seen set could grow to n^m size if all states are visited.
+
+====================================================================================
+
+class Solution {
+    // Intuition: we can see each string as a node and we can connect them if 
+    // 1. there is only one single character different
+    // 2. the target node is available in `bank`
+    // the problem is now to find the shortest path from the starting point to the ending point
+    // so we can use BFS
+    public int minMutation(String start, String end, String[] bank) {
+        // a queue to store each gene string (node)
+        Queue<String> q = new LinkedList<>();
+        // a hash set to store if we've visited a node
+        HashSet<String> vis = new HashSet<String>();
+        // convert bank to List
+        List<String> banks = Arrays.asList(bank);
+        // distance
+        int steps = 0;
+        // we start from gene string `start` as a starting point
+        // push it to the queue
+        q.add(start);
+        // and mark it visited
+        vis.add(start);
+        // BFS
+        while (!q.isEmpty()) {
+            // iterate from the back because the size of q varies
+            // which would result in wrong answer if you iterate from 0
+            // alternatively, you can define a new variable for q.size() before the for-loop
+            // i.e. 
+            // int n = q.size();
+            // for (int i = 0; i < n; i++) { 
+            for (int i = q.size(); i > 0; i--) {
+                // get the gene string from the queue
+                String s = q.poll();
+                // if it is same as `end`, that means we found the answer
+                if (s.equals(end)) return steps;
+                // otherwise, given a gene string with 8-character long
+                // we can replace each character with "A", "C", "G" and "T"
+                char[] ca = s.toCharArray();
+                for (int j = 0; j < 8; j++) {
+                    // s[j] will be modified later, 
+                    // hence store the original character here
+                    char oc = ca[j];
+                    // iterate ACGT
+                    // alternatively, you can use `for (char c : "ACGT") { ... }`
+                    for (int k = 0; k < 4; k++) {
+                        // replace the j-th character in s with the k-th character in ACGT
+                        ca[j] = "ACGT".charAt(k);
+                        // we can reach the next node if the next node hasn't been visited
+                        // and the next node is available in `bank`
+                        String t = new String(ca);
+                        if (!vis.contains(t) && banks.contains(t)) {
+                            // push the next node to the queue
+                            q.add(t);
+                            // and mark it visited
+                            vis.add(t);
+                        }
+                    }
+                    // since we updated the character, we revert it back
+                    ca[j] = oc;
+                }
+            }
+            // increase the step count
+            steps += 1;
+        }
+        // not able to reach `end`, return -1 here
+        return -1;
+    }
+}
+
+
+
+====================================================================================
+
+This question is similar to Word Ladder. We just have to check out all possible mutations with a given string. We can apply bfs on the given string start . If a generated mutation is present in our Gene Bank then only we will consider it as a valid mutation or a valid node. If we are not able to generate end String we can simply return -1. And thus by using a simple bfs we can find the minimum number of mutations needed to mutate from start to end.
+
+Steps for solving this problem :-
+
+Save all mutations of gene bank into a hashset .This hashset will be used to check whether a generated mutation is valid or not.
+Use a queue for implementing breadth first search.
+Start your bfs by pushing the given string start into the queue.
+Once removed from the queue , check all possible mutation from that gene and push all valid mutation into the queue.
+Keep doing this untill you get end gene or your queue is empty.
+Return ans.
+	class Solution {
+    
+    public int minMutation(String start, String end, String[] bank) {
+        int level = 0,  len = bank.length;
+        char[] chr = {'A','C','G','T'}; // THIS ARRAY WILL BE USED TO GENERATE POSSIBLE MUTATIONS
+        
+        Set<String> hset = new HashSet<String>(); // TO STORE ALL VALID MUTATIONS
+        
+        for(String s : bank) hset.add(s);
+        
+        Queue<String> queue = new LinkedList<>(); // FOR IMPLEMENTING BFS
+        queue.add(start);
+        
+        while(true){
+            ++level;
+            int n = queue.size();
+
+            if(n == 0 ) return -1; // NO GENE STRING LEFT TO GENERATE ANY OTHER MUTATION 
+            
+            for(int i=0;i<n;i++){
+                char[] ch = queue.poll().toCharArray();
+            
+                
+                for(int j=0;j<8;j++){                  // HERE WE WILL CHECK EVERY LETTER OF GENE STRING
+                    char org_char = ch[j];
+                    for(int c =0 ; c<4;c++){           // TRYING ALL POSSIBLE MUTATION WITH THE GIVEN GENE STRING
+                        ch[j] = chr[c];
+                        String str = String.valueOf(ch);
+                        if(str.equals(end) && hset.contains(str)) // RETURN IF END GENE IS FOUND AND IS VALID 
+                            return (level);
+                        if(hset.contains(str) == false) 
+                            continue;
+                        hset.remove(str);
+                        queue.add(str);
+                    }
+                    ch[j]= org_char;
+                }
+            }
+        }
+    }
+}
+
+
+====================================================================================
+class Solution {
+    public int minMutation(String start, String end, String[] bank) {
+        if(!check(end,bank))return -1;
+        
+        Queue<String> q=new LinkedList<>();
+         q.add(start);
+
+        Map<String,Integer> m=new HashMap<>();
+        m.put(start,0);
+        
+        List<String> visi=new ArrayList<>();
+        visi.add(start);
+        
+        String str="ACGT";
+        
+        while(!q.isEmpty()){
+            
+            String gene = q.poll();
+            int level = m.get(gene);
+            if(gene.equals(end)) return level;
+            
+        for(int i=0;i<8;i++)
+        {
+            for(int j=0;j<4;j++){
+                
+                String new_gene = gene.substring(0,i)+
+                                  str.charAt(j)+
+                                  gene.substring(i+1,gene.length());
+                
+                if( !visi.contains(new_gene) && check(new_gene,bank) ){
+                    q.add(new_gene);
+                    m.put(new_gene,level+1);
+                    visi.add(new_gene);
+                }
+            }
+        }
+            
+        }
+        
+        return -1;
+    }
+    
+    
+    // here , it is check string conatins in bank or not 
+    
+    public boolean check(String str,String[] b)
+    {
+        int c=0;
+        for(String s:b){
+            if(s.equals(str))c++;
+        }
+        return c!=0;
+    }
+}
+
+
+
+====================================================================================
+
+class Solution {
+    public int minMutation(String start, String end, String[] bank) {
+        
+        // BFS shortest distance from start to end ----> source to dest
+        
+        // using given bank ----> checking that after every once character change if the total string present in the bank or not
+        
+        
+        Queue<String> q = new LinkedList<>(); // for standard BFS
+        
+        Set<String> vis = new HashSet<>(); // if a string as a node is visited or not
+        
+        q.add(start);
+        vis.add(start); // init cond
+        
+        int steps = 0;
+        
+        while(!q.isEmpty())
+        {
+            int size = q.size();
+            for(int j=0;j<size;j++)
+            {
+                // base cond
+                
+                String node = q.remove();
+                if(node.equals(end)) // if start equals to end simply returning the total steps involved hypothetically
+                {
+                    return steps;
+                }
+                
+                for(char ch : new char[]{'A','C','G','T'})
+                {
+                    for(int i=0;i<node.length();i++)
+                    {
+                        String neighbour = node.substring(0,i) + ch + node.substring(i+1); // take out pen and paper and try it
+                        if(!vis.contains(neighbour) && Arrays.asList(bank).contains(neighbour))
+                        {
+                            // only if the neighbour not visited before and contains in bank we will add to queue and make it visited and this is what bfs says
+                            
+                            q.add(neighbour);
+                            vis.add(neighbour);
+                            
+                        }
+                    }
+                }
+            }
+            steps++;
+        }
+        return -1;
+        
+        
+    }
+}
+
+====================================================================================
