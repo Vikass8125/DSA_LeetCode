@@ -1,0 +1,552 @@
+You are given an array of strings words. Each element of words consists of two lowercase English letters.
+
+Create the longest possible palindrome by selecting some elements from words and concatenating them in any order. Each element can be selected at most once.
+
+Return the length of the longest palindrome that you can create. If it is impossible to create any palindrome, return 0.
+
+A palindrome is a string that reads the same forward and backward.
+
+ 
+
+Example 1:
+
+Input: words = ["lc","cl","gg"]
+Output: 6
+Explanation: One longest palindrome is "lc" + "gg" + "cl" = "lcggcl", of length 6.
+Note that "clgglc" is another longest palindrome that can be created.
+Example 2:
+
+Input: words = ["ab","ty","yt","lc","cl","ab"]
+Output: 8
+Explanation: One longest palindrome is "ty" + "lc" + "cl" + "yt" = "tylcclyt", of length 8.
+Note that "lcyttycl" is another longest palindrome that can be created.
+Example 3:
+
+Input: words = ["cc","ll","xx"]
+Output: 2
+Explanation: One longest palindrome is "cc", of length 2.
+Note that "ll" is another longest palindrome that can be created, and so is "xx".
+ 
+
+Constraints:
+
+1 <= words.length <= 105
+words[i].length == 2
+words[i] consists of lowercase English letters.
+
+HINTS:
+
+A palindrome must be mirrored over the center. Suppose we have a palindrome. 
+If we prepend the word "ab" on the left, what must we append on the right to keep it a palindrome?
+
+We must append "ba" on the right. The number of times we can do this is the minimum of (occurrences of "ab") and (occurrences of "ba").
+
+For words that are already palindromes, e.g. "aa", we can prepend and append these in pairs as described in the previous hint. 
+We can also use exactly one in the middle to form an even longer palindrome.
+
+MY_SOLUTION
+
+
+Approach 1: A Hash Map Approach
+Intuition
+One possible way to count the words is to use a hash map, maintaining the number of occurrences for each word.
+
+A hash map is a data structure that maps keys to values. A hash map uses a hash function to compute an index in an array of buckets or slots, from which we can obtain the value for the key in constant time.
+Here, we will not focus on the internal workings of the hash map. 
+
+Algorithm
+
+-> Count the number of occurrences of each word using a hashmap (can use a Counter in Python).
+
+-> Initialize answer=0, central=false. The answer will denote the number of words in the final string and the boolean variable
+   centralcentral will denote whether we have a central word.
+
+-> For each palindromic wordword do the following. If count[word] is even, increase answer by count[word].
+   Otherwise, if count[word] is odd, increase answeranswer by count[word]−1 and set central=true (we can use the wordword as a central word).
+
+-> For each non-palindrome wordword such that word[0] < word[1] (we need this condition to consider each pair only once and not twice, e.g.
+  we don't want to consider both baba and abab separately) 
+  increase answer by 2 ⋅ min(count[word],count[reversedWord]) (we use min(count[word],count[reversedWord]) pairs of the corresponding words).
+
+-> If central = true, increase answeranswer by 1.
+
+-> Return 2 ⋅ answer. (Because each word has a length of 2).
+
+class Solution {
+    public int longestPalindrome(String[] words) {
+        HashMap<String, Integer> count = new HashMap<String, Integer>();
+        for (String word : words) {
+            Integer countOfTheWord = count.get(word);
+            if (countOfTheWord == null) {
+                count.put(word, 1);
+            } else {
+                count.put(word, countOfTheWord + 1);
+            }
+        }
+        int answer = 0;
+        boolean central = false;
+        for (Map.Entry<String, Integer> entry : count.entrySet()) {
+            String word = entry.getKey();
+            int countOfTheWord = entry.getValue();
+            // if the word is a palindrome
+            if (word.charAt(0) == word.charAt(1)) {
+                if (countOfTheWord % 2 == 0) {
+                    answer += countOfTheWord;
+                } else {
+                    answer += countOfTheWord - 1;
+                    central = true;
+                }
+            // consider a pair of non-palindrome words such that one is the reverse of another
+            } else if (word.charAt(0) < word.charAt(1)) {
+                String reversedWord = "" + word.charAt(1) + word.charAt(0);
+                if (count.containsKey(reversedWord)) {
+                    answer += 2 * Math.min(countOfTheWord, count.get(reversedWord));
+                }
+            }
+        }
+        if (central) {
+            answer++;
+        }
+        return 2 * answer;
+    }
+};
+
+Complexity Analysis
+Let N be the number of words in the input array and ∣Σ∣ be the size of the English alphabet (|Σ∣=26).
+
+Time complexity: O(N + min(N,∣Σ∣ ^ 2)).
+
+We count the words in O(N) time (assuming one operation with a hash map takes O(1) time). 
+Calculating the answer after that takes O(min(N,∣Σ∣ ^ 2)) time as we iterate all hash map elements, and the size of the hash map is O(min(N,∣Σ∣ ^ 2)).
+
+Space complexity: O(min(N,∣Σ∣ ^ 2)).
+
+There can be up to ∣Σ∣ ^ 2 distinct words of two letters (|∣Σ∣ options for the first letter and ∣Σ∣ options for the second one). Also, the total number of words is N.
+
+
+Approach 2: A Two-Dimensional Array Approach
+Intuition
+We already know that there are not more than ∣Σ∣ ^ 2 distinct words. 
+Let's think about which data structure other than a hash map we can use to count the words.
+
+It's possible to arrange two-letter words into a square table. Instead of a hash map, we can use a two-dimensional array countcount of size ∣Σ∣×∣Σ∣. 
+Each cell of the matrix will contain the number of occurrences of the corresponding word.
+
+
+Algorithm
+-> Count the number of occurrences of each word using a two-dimensional array.
+   When a wordword occurs, increase count[word[0]-‘a’][word[1]-‘a’] (the number 0 corresponds to the letter a, 1 corresponds tob, 25 – to z).
+
+-> Initialize answer = 0, central = false. The answeranswer will denote the number of words in the final string and the boolean variable centralcentral will 
+   denote whether we have a central word. (The same as in the hash map approach.)
+
+-> Iterate over |0≤i<∣Σ∣. If count[i][i] is even, increase answeranswer by count[i][i].
+   Otherwise, if count[i][i] is odd, increase answeranswer by count[i][i] - 1 and set central=true (we can use the corresponding word as central word).
+
+-> For each pair (i, j) such that 0≤i<j<∣Σ∣ increase answeranswer by 2⋅min(count[i][j],count[j][i]) (we use min(count[i][j],count[j][i]) pairs of the corresponding words).
+
+-> If central = true, increase answeranswer by 1. (The same as in the hash map approach.)
+
+-> Return 2⋅answer. (The same as in the hash map approach.)
+
+The algorithm is almost the same as in the previous approach.
+
+class Solution {
+    public int longestPalindrome(String[] words) {
+        final int alphabetSize = 26;
+        int[][] count = new int[alphabetSize][alphabetSize];
+        for (String word : words) {
+            count[word.charAt(0) - 'a'][word.charAt(1) - 'a']++;
+        }
+        int answer = 0;
+        boolean central = false;
+        for (int i = 0; i < alphabetSize; i++) {
+            if (count[i][i] % 2 == 0) {
+                answer += count[i][i];
+            } else {
+                answer += count[i][i] - 1;
+                central = true;
+            }
+            for (int j = i + 1; j < alphabetSize; j++) {
+            	answer += 2 * Math.min(count[i][j], count[j][i]);
+            }
+        }
+        if (central) {
+            answer++;
+        }
+        return 2 * answer;
+    }
+}
+
+
+Complexity Analysis
+Let NN be the number of words in the input array.
+
+Time complexity: O(N+∣Σ∣ ^ 2).
+
+We count the words in O(N) time and then calculate the answer in O(∣Σ∣ ^ 2) time.
+
+Space complexity: O(∣Σ∣ ^ 2).
+
+We are using an auxilary two-dimensional array countcount of size ∣Σ∣ ^ 2.
+
+=========================================================================================
+
+Explanation:
+
+2 letter words can be of 2 types:
+
+Where both letters are same
+Where both letters are different
+Based on the above information:
+
+If we are able to find the mirror of a word, ans += 4
+The variable unpaired is used to store the number of unpaired words with both letters same.
+Unpaired here means a word that has not found its mirror word.
+At the end if unpaired same letter words are > 0, we can use one of them as the center of the palindromic string.
+
+Solution 1: With HashMap
+
+public int longestPalindrome(String[] words) {
+    HashMap<String, Integer> m = new HashMap();
+    int unpaired = 0, ans = 0;
+    for (String w: words) {
+        if (!m.containsKey(w)) m.put(w, 0);
+        if (w.charAt(0) == w.charAt(1)) {
+            if (m.get(w) > 0) {
+                unpaired--;
+                m.put(w, m.get(w) - 1);
+                ans += 4;
+            }
+            else {
+                m.put(w, m.get(w) + 1);
+                unpaired++;
+            }
+        }
+        else {
+            String rev = Character.toString(w.charAt(1)) + 
+                Character.toString(w.charAt(0));
+            if (m.containsKey(rev) && m.get(rev) > 0) {
+                ans += 4;
+                m.put(rev, m.get(rev) - 1);
+            }
+            else m.put(w, m.get(w) + 1);
+        }
+
+    }
+    if (unpaired > 0) ans += 2;
+    return ans;
+}
+
+
+Solution 2: Without HashMap
+
+public int longestPalindrome(String[] words) {
+    int counter[][] = new int[26][26];
+    int ans = 0;
+    for (String w: words) {
+        int a = w.charAt(0) - 'a', b = w.charAt(1) - 'a';
+        if (counter[b][a] > 0) {
+            ans += 4; 
+            counter[b][a]--; 
+        }
+        else counter[a][b]++;
+    }
+    for (int i = 0; i < 26; i++) {
+        if (counter[i][i] > 0) {
+            ans += 2;
+            break;
+        }
+    }
+    return ans;
+}
+
+
+
+=========================================================================================
+
+Intuition:
+
+In order to build a palindrome from given input, we can start from the center to construct one;
+There are 2 possibilites for the center of the palindrome:
+a empty string;
+a palindromic word, which implies word[0] == word[1];
+According to the problem, each word is allowed to use at most once; Also, we only need the length of the longest palindrome.
+Therefore, we can use HashMap/dict to save non-paired words and try to pair the words during traversal; 
+Once find a counter-part for current word, remove it from the HashMap/dict, increase the pairs counter and update the count of the symmitric words accordingly.
+
+Count pairs and symmetric words
+
+Use a HashMap, nonPaired, to count words not in pairs yet; use pairs to count the number of pairs of mirror words we found, 
+use sym to count the symmetric words not in pairs;
+Traverse input; For each word, first check if its mirror word already in nonPaired; if yes, found a pair, deduct its mirror count in nonPaired;
+otherwise, increase the count of the word in nonPaired;
+Adjust the sym accordingly in 2.
+If at least 1 symmetric word not in pairs, we can put it in the middle of the palindrome to construct, and put those counted in pairs on the two sides.
+Each pairs has a size of 4, and a symmetric word, if exists, has a size of 2; therefore, 4 * pairs + (sym > 0 ? 2 : 0) is the answer.
+    public int longestPalindrome(String[] words) {
+        Map<String, Integer> nonPaired = new HashMap<>();
+        int pairs = 0, sym = 0;
+        for (String w : words) {
+            String reverse = new StringBuilder(w).reverse().toString();
+            if (nonPaired.getOrDefault(reverse, 0) > 0) { // Find a counterpart for w among non-paired words.
+                ++pairs;                                  // Increase the counter by 1.  
+                nonPaired.merge(reverse, -1, Integer::sum); // Decrease reverse by 1 since it has been counted in pairs.
+                sym -= w.charAt(0) == w.charAt(1) ? 1 : 0; // Decrease sym by 1 since it has been counted in pairs. 
+            }else {
+                nonPaired.merge(w, 1, Integer::sum); // Increase the occurrence of w. 
+                sym += w.charAt(0) == w.charAt(1) ? 1 : 0; // Increase sym by 1. 
+            }
+        }
+        return 4 * pairs + (sym > 0 ? 2 : 0);        
+    }
+Q & A:
+Q1: What does the following statement mean?
+
+            nonPaired.merge(w, 1, Integer::sum); 
+A1: It is same as the following:
+
+            nonPaired.put(w, 1 + nonPaired.getOrDefault(w, 0)); 
+    def longestPalindrome(self, words: List[str]) -> int:
+        pairs, sym, nonPaired = 0, 0, Counter()
+        for w in words:
+            if nonPaired[w[:: -1]] > 0:
+                pairs += 1
+                nonPaired[w[:: -1]] -= 1
+                sym -= 1 if w[0] == w[1] else 0
+            else:
+                nonPaired[w] += 1    
+                sym += 1 if w[0] == w[1] else 0
+        return pairs * 4 + (2 if sym > 0 else 0)
+Analysis:
+
+Time & space: O(n), where n = words.length.
+
+
+=========================================================================================
+
+Approach 1:
+
+We have 26 total alphabets so we can store their pair in 26*26 matrix.
+If we get both char same then we will add 2(because adding them more wil not make the string palindrome)
+When we find a pair of string(eg. "ab","ba"), then we add 4 to our answer.
+Time: O(n);
+Space: O(1) (constant space);
+
+public int longestPalindrome(String[] words) {
+   int result = 0;//store final answer
+   int freq[][] = new int[26][26];//for keeping frequency of all words
+   
+    for (String s: words) {// iterating over all words
+        int i = s.charAt(0) - 'a';// first char
+		int j = s.charAt(1) - 'a';// second char
+        if (freq[j][i] > 0) {// if reverse word have atleast one frequency
+            result += 4; //then we got one pair so add 4
+            freq[j][i]--; // one pair is found so decrement freq by only 1 as we haven't added [i][j]th word yet.
+        }else{
+			freq[i][j]++;// if no pair found then increment frequency
+		}	
+    }
+	
+    for (int i = 0; i < 26; i++) {
+        if (freq[i][i] > 0) {// [i][i] index bcz every similar word will be at diagonal position
+            result += 2;
+            break; //if more similar words are added then our string will not be a palindrome
+        }
+    }
+    return result;
+}
+Approach 2:
+
+Conditions are similar just steps to count the frequency are different
+
+TIme:O(n);
+Space:O(1) (constant size array)
+
+class Solution {
+  public int longestPalindrome(String[] words) {
+    int[][] freq = new int[26][26];//array for all alphabet combinations
+    for (String word : words)
+      freq[word.charAt(0) - 'a'][word.charAt(1) - 'a']++;// here we first increase the freq for every word
+    int left = 0;//to store freq counts
+    boolean odd = false;
+    for (int i = 0; i != 26; i++) {//iterate over our array
+      odd |= (freq[i][i] & 1) == 1;//means odd number of freq for similar words are there
+      left += freq[i][i] / 2;
+      for (int j = i + 1; j != 26; j++)//nested iteration to find non similar pairs
+        left += Math.min(freq[i][j], freq[j][i]);//taking min times from both present 
+    }
+    int res = left * 2 * 2;//res from total freq found!!
+    if (odd){
+        res+=2;// if odd then adding 2
+    } 
+    return res;
+  }
+}
+
+=========================================================================================
+
+
+class Solution {
+    public int longestPalindrome(String[] words) {
+        int result = 0;
+        int[][] letterArr= new int[26][26];
+        for (int i=0; i<words.length; i++) {
+            int index1 = words[i].charAt(0) - 'a';
+            int index2 = words[i].charAt(1) - 'a';
+            if (letterArr[index2][index1] > 0) {
+                --letterArr[index2][index1];  result += 4;
+            } else ++letterArr[index1][index2];
+        }
+        for(int i=0; i<26; i++){
+           if(letterArr[i][i]>0) return result + 2;
+        }
+        return result;
+    }
+}
+
+
+
+=========================================================================================
+
+if words contains reverse of the same words ,then it must be a part of the answer.
+for already palindrome words like "gg" or " rr" ,count++;
+if already palindrome words have also the pair ,both are part of the answer and count--;
+if(count>0) then add 2 to your answer
+code ......
+
+class Solution {
+public int longestPalindrome(String[] words) {
+
+    HashMap<String,Integer> map=new HashMap<>();
+    int ans=0;
+    int count=0;
+    for(int i=0;i<words.length;i++){
+        String s=words[i].charAt(1) +""+ words[i].charAt(0);
+        if(s.equals(words[i])==true){
+            if(map.containsKey(s)==true){
+                count--;
+                ans+=4;
+                map.remove(s);
+            }
+            else{
+                count++;
+                map.put(s,1);
+            }
+            
+        }
+        else{
+            
+            int v=map.getOrDefault(s,0);
+            if(v==0){
+                int k=map.getOrDefault(words[i],0);
+                k++;
+                map.put(words[i],k);
+            }
+            else{
+                v--;
+                ans+=4;
+                // System.out.println(i);
+                if(v==0){
+                    map.remove(s);
+                }
+                else{
+                    map.put(s,v);
+                }
+            }
+        }
+    }
+    // System.out.println(count);
+    return count>0 ? ans+2 : ans;
+}
+}
+
+
+=========================================================================================
+class Solution {
+    // SPACE COMP :-> O(N) for hashMap
+    // TIME COMP  :-> O(N) for traversing it.
+    public int longestPalindrome(String[] words) {
+        //len to count the length of longest palindrome !
+        int len = 0;
+        // Map to store string with it's value of repetions.
+        HashMap<String,Integer> map = new HashMap<>();
+        //Fill the hashMap, if it is repetead increase it by 1.
+        for(String s : words)
+            map.put(s,1+ map.getOrDefault(s,0));
+        
+        boolean found = true;
+        
+        //Traverse through map
+        for(Map.Entry m : map.entrySet()){
+            // Take the string and reverse it , search for reverse string in hashmap
+            String str = (String)m.getKey();
+            String rev = String.valueOf(str.charAt(1)) + String.valueOf(str.charAt(0));
+            
+            /* System.out.println("str : " + str + " rev : " + rev); */
+            
+            if(str.charAt(1) != str.charAt(0) && map.containsKey(rev)){
+                // Make sure their count is greater than zero.
+                if(map.get(str) > 0 && map.get(rev) > 0){
+                    // Take the min of count from both words str and rev.
+                    int min = Math.min(map.get(str),map.get(rev));
+                    // Update the value by subtracting min 
+                    map.put(str,map.getOrDefault(str,0) - min);
+                    map.put(rev,map.getOrDefault(rev,0) - min);
+                    // Increase the length by 4 * min
+                    len += 4*min;
+                   /* System.out.println("len :"+ len); */
+                }
+                // If both the characters are same in a string and their count is even 
+                //We divide count by 2 so that we can put half half part on both sides and multiply by 4 to increase it corresponding length
+            }else if(str.charAt(1) == str.charAt(0)){
+                len += (map.get(str)/2) * 4;
+                // If count is odd we just wanna use that word once so increase length by 2 only. 
+                if(map.get(str)%2 != 0 && found){
+                    found = false; len += 2;
+                }
+                /* System.out.println("len :"+ len); */
+                
+            }
+        }
+        //Finally return the ans.
+        return len;
+    }
+}
+
+/*
+  * DRY RUN
+  // Input : 
+     ["lc","cl","lc","cl","gg","gg"]
+     
+    : ->
+        str : gg rev : gg
+        len :4
+        str : lc rev : cl
+        len :12
+        str : cl rev : lc
+     
+  // OUTPUT :
+      12
+      
+      // Input : 
+     ["cc","ll","xx"]
+     
+    : ->
+        str : cc rev : cc
+        len :2
+        str : ll rev : ll
+        len :2
+        str : xx rev : xx
+        len :2
+     
+  // OUTPUT :
+      2
+  
+*/
+
+
+
+
+
+=========================================================================================
