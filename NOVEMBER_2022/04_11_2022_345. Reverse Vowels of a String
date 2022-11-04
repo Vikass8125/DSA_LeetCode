@@ -1,0 +1,246 @@
+Given a string s, reverse only all the vowels in the string and return it.
+
+The vowels are 'a', 'e', 'i', 'o', and 'u', and they can appear in both lower and upper cases, more than once.
+
+ 
+
+Example 1:
+
+Input: s = "hello"
+Output: "holle"
+Example 2:
+
+Input: s = "leetcode"
+Output: "leotcede"
+ 
+
+Constraints:
+
+1 <= s.length <= 3 * 105
+s consist of printable ASCII characters.
+
+MY_SOLUTION
+
+In the inner while loop, don't forget the condition "start less than end" while incrementing start and decrementing end.
+// update! May use a HashSet to reduce the look up time to O(1)
+
+class Solution {
+    public String reverseVowels(String s) {
+         if(s == null || s.length()==0) return s;
+    String vowels = "aeiouAEIOU";
+    char[] chars = s.toCharArray();
+    int start = 0;
+    int end = s.length()-1;
+    while(start<end){
+        
+        while(start<end && !vowels.contains(chars[start]+"")){
+            start++;
+        }
+        
+        while(start<end && !vowels.contains(chars[end]+"")){
+            end--;
+        }
+        
+        char temp = chars[start];
+        chars[start] = chars[end];
+        chars[end] = temp;
+        
+        start++;
+        end--;
+    }
+    return new String(chars);
+        
+    }
+}
+================================================================================
+
+public class Solution {
+    public String reverseVowels(String s) {
+        char[] list=s.toCharArray();
+        Set<Character> set=new HashSet<>();
+        set.add('a');
+        set.add('e');
+        set.add('i');
+        set.add('o');
+        set.add('u');
+        set.add('A');
+        set.add('E');
+        set.add('I');
+        set.add('O');
+        set.add('U');
+        for (int i=0, j=list.length-1; i<j; ) {
+            if (!set.contains(list[i])) {
+                i++;
+                continue;
+            }
+            if (!set.contains(list[j])) {
+                j--;
+                continue;
+            }
+            char temp=list[i];
+            list[i]=list[j];
+            list[j]=temp;
+            i++;
+            j--;
+        }
+        return String.valueOf(list);
+    }
+}
+
+We could also initilize the set like this:
+
+Set<Character> vowels = new HashSet<>(Arrays.asList(new Character[]{'a','e','i','o','u','A','E','I','O','U'}));
+
+================================================================================
+public class Solution {
+    public String reverseVowels(String s) {
+        Set<Character> set = new HashSet<>(Arrays.asList('a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'));
+        char[] arr = s.toCharArray();
+        int left = 0, right = arr.length - 1;
+        while (left < right) {
+            if (!set.contains(arr[left])) {
+                left++;
+            } else if (!set.contains(arr[right])) {
+                right--;
+            } else {
+                char tmp = arr[left];
+                arr[left] = arr[right];
+                arr[right] = tmp;
+                left++;
+                right--;
+            }
+        }
+        return new String(arr);
+    }
+}
+
+
+================================================================================
+
+// Time Complexity: O(N)
+// Space Complexity: O(N) due to s.toCharArray()
+class Solution {
+    // fun fact: 
+    // `Y` and `y` can be a vowel as well. 
+    // glad the problem statement defines it well
+    boolean isVowel(char c) {
+        // alternatively, we can just check 
+        // return c == 'A' || c == 'E' || c == 'I' || c == 'O' || c == 'U' || 
+        //        c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u'
+        c = Character.toLowerCase(c);
+        return c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u';
+    }
+    
+    public String reverseVowels(String s) {
+        // `l` is the left pointer to track the vowel character
+        // `r` is the right pointer to track the vowel character
+        int n = s.length(), l = 0, r = n - 1;
+        char[] ca = s.toCharArray();
+        while (l < r) {
+            // find the index of the first vowel in the given range
+            while (l < r && !isVowel(ca[l])) l++;
+            // find the index of last vowel in the given range
+            while (r > l && !isVowel(ca[r])) r--;
+            // swap ca[l] and ca[r]
+            {
+                char tmp = ca[l];
+                ca[l] = ca[r];
+                ca[r] = tmp;
+            }
+            // since we've processed the character s[l],
+            // we move the left pointer to the right
+            l += 1;
+            // since we've processed the character s[r],
+            // we move the right pointer to the left
+            r -= 1;
+        }
+        return new String(ca);
+    }
+}
+================================================================================
+
+Approach
+Use two pointers to traverse from left and right towards to center.
+
+Swap when both position contains vowels "aeiouAEIOU".
+
+Complexity
+Time complexity: O(n)O(n)O(n)
+where nnn is the length of the String.
+
+Space complexity: O(n)O(n)O(n)
+due to the toCharArray( ) function.
+
+Java (Clean Code)
+class Solution {
+    public String reverseVowels(String s) {
+        char[] chars = s.toCharArray();
+
+        int left = 0;
+        int right = s.length() - 1;
+
+        while (left < right) {
+            while (left < right && !isVowel(chars[left]))
+                left++;
+            while (left < right && !isVowel(chars[right]))
+                right--;
+
+            if (left < right) {
+                char temp = chars[left];
+                chars[left++] = chars[right];
+                chars[right--] = temp;
+            }
+        }
+        return new String(chars);
+    }
+
+    private boolean isVowel(char c) {
+        return c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u'
+                || c == 'A' || c == 'E' || c == 'I' || c == 'O' || c == 'U';
+    }
+}
+Java (With Explanation)
+class Solution {
+
+    // Approach:
+    // Use two pointers to traverse from left and right towards to center.
+    // Swap when both position contains vowels "aeiouAEIOU".
+
+    public String reverseVowels(String s) {
+
+        // Convert the string to charArray.
+        char[] chars = s.toCharArray();
+
+        int left = 0;
+        int right = s.length() - 1;
+
+        // When both pointers meet, we know all the vowels are swapped.
+        while (left < right) {
+            // If chars[left] is not vowel, continue to move right.
+            while (left < right && !isVowel(chars[left])) {
+                left++;
+            }
+            // If chars[right] is not vowel, continue to move left.
+            while (left < right && !isVowel(chars[right])) {
+                right--;
+            }
+
+            // Swap the vowels.
+            if (left < right) {
+                char temp = chars[left];
+                chars[left++] = chars[right];
+                chars[right--] = temp;
+            }
+        }
+        return new String(chars);
+    }
+
+    // Return true if char is a vowel.
+    private boolean isVowel(char c) {
+        return c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u'
+                || c == 'A' || c == 'E' || c == 'I' || c == 'O' || c == 'U';
+    }
+}
+
+
+================================================================================
